@@ -29,7 +29,7 @@ Singleton {
     readonly property bool showSeconds: values.showSeconds ?? false
     readonly property bool showMedia: values.showMedia ?? true
     readonly property var pinned: values.pinned ?? [
-        "org.mozilla.firefox", "Alacritty", "org.gnome.Nautilus",
+        "org.mozilla.firefox", "foot", "org.gnome.Nautilus",
         "steam", "so.vabu.Settings", "org.gnome.TextEditor"
     ]
     // Gün yayı için konum; boşsa saat diliminden bulunur (bkz. Sun.qml).

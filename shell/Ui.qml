@@ -33,6 +33,6 @@ Singleton {
     }
 
     function run(cmd) { Quickshell.execDetached(cmd) }
-    function terminal(cmd) { Quickshell.execDetached(["alacritty", "--class", "vabu-term", "-e"].concat(cmd)) }
+    function terminal(cmd) { Quickshell.execDetached(["foot", "--app-id", "vabu-term"].concat(cmd)) }
     function settings(page) { Quickshell.execDetached(page ? ["vabu-settings", page] : ["vabu-settings"]) }
 }

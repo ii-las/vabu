@@ -40,7 +40,7 @@ Requires:       swayidle
 # Vabu Shell açılamazsa kilit için yedek
 Requires:       swaylock
 # Uygulamalar
-Requires:       alacritty
+Requires:       foot
 Requires:       nautilus
 Requires:       flatpak
 Requires:       fastfetch
@@ -117,6 +117,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %config(noreplace) %{_sysconfdir}/niri/config.kdl
 %config(noreplace) %{_sysconfdir}/greetd/vabu.toml
 %config(noreplace) %{_sysconfdir}/xdg/fastfetch/config.jsonc
+%config(noreplace) %{_sysconfdir}/xdg/foot/foot.ini
 %config(noreplace) %{_sysconfdir}/dnf/libdnf5-plugins/actions.d/vabu-snapper.actions
 %config(noreplace) %{_sysconfdir}/nvidia/nvidia-application-profiles-rc.d/50-vabu-niri.json
 %{_bindir}/vabu

@@ -83,6 +83,7 @@ window-rule {
     match app-id=r#"^\.?blueman-manager"#
     match app-id=r#"^nm-connection-editor$"#
     match title="^Vabu Ayarlar$"
+    match app-id="^vabu-shell-error$"
     open-floating true
 }
 
@@ -98,7 +99,7 @@ binds {
     Mod+Ctrl+Slash { show-hotkey-overlay; }
 
     // Uygulamalar
-    Mod+Return hotkey-overlay-title="Terminal" { spawn "alacritty"; }
+    Mod+Return hotkey-overlay-title="Terminal" { spawn "foot"; }
     Mod+Space hotkey-overlay-title="Ara ve başlat" { spawn "vabu-launcher"; }
     Mod+I hotkey-overlay-title="Uygulama kur" { spawn "vabu-launcher" "--install"; }
     Mod+E hotkey-overlay-title="Dosyalar" { spawn "nautilus"; }
