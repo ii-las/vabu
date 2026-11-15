@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Vabu Oyun (Steam)
+Comment=Steam Big Picture, tam ekran oyun oturumu
+Exec=/usr/libexec/vabu/gaming-session
+Type=Application
+DesktopNames=gamescope

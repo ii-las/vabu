@@ -1,0 +1,25 @@
+// Vabu giriş ekranı için en küçük niri ayarı (greetd'nin "greeter" kullanıcısıyla çalışır).
+input {
+    keyboard {
+        xkb {
+            layout "us,tr"
+            options "grp:alt_shift_toggle"
+        }
+    }
+    touchpad {
+        tap
+    }
+}
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+cursor {
+    xcursor-theme "Adwaita"
+}
+
+spawn-at-startup "qs" "-p" "/usr/share/vabu/shell/greeter.qml"
+
+binds {
+}

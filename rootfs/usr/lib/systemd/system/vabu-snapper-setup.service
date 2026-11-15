@@ -1,0 +1,11 @@
+[Unit]
+Description=Vabu: kök dosya sistemi için geri alma noktalarını (snapper) hazırla
+ConditionPathExists=!/etc/snapper/configs/root
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/vabu/snapper-setup
+
+[Install]
+WantedBy=multi-user.target

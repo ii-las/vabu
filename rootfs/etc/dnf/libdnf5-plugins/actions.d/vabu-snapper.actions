@@ -1,0 +1,5 @@
+# Vabu: her dnf işleminden önce ve sonra btrfs geri alma noktası (snapper).
+# Biçim: libdnf5 "actions" eklentisi. snapper yapılandırması yoksa sessizce atlanır.
+pre_transaction::::/usr/bin/sh -c test\ -e\ /etc/snapper/configs/root\ &&\ echo\ "tmp.vabu_cmd=$(ps\ -o\ command\ --no-headers\ -p\ '${pid}')"\ ||\ true
+pre_transaction::::/usr/bin/sh -c test\ -e\ /etc/snapper/configs/root\ &&\ echo\ "tmp.vabu_pre=$(snapper\ -c\ root\ create\ -t\ pre\ -p\ -c\ number\ -d\ '${tmp.vabu_cmd}')"\ ||\ true
+post_transaction::::/usr/bin/sh -c [\ -n\ "${tmp.vabu_pre}"\ ]\ &&\ snapper\ -c\ root\ create\ -t\ post\ --pre-number\ "${tmp.vabu_pre}"\ -c\ number\ -d\ '${tmp.vabu_cmd}'\ ||\ true

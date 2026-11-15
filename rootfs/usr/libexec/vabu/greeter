@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# greetd'nin çalıştırdığı giriş ekranı: Vabu Shell greeter'ı, yoksa metin tabanlı tuigreet.
+if [[ -e /usr/share/vabu/shell/greeter.qml ]] && command -v qs >/dev/null && command -v niri >/dev/null; then
+    exec niri -c /usr/share/vabu/greeter/niri.kdl
+fi
+exec tuigreet --time --remember --remember-session --asterisks --cmd niri-session

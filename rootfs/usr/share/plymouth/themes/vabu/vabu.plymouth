@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Vabu
+Description=Vabu açılış ekranı
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/vabu
+ScriptFile=/usr/share/plymouth/themes/vabu/vabu.script

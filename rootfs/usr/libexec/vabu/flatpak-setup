@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# İlk açılışta Flathub'ı ekler, Fedora Flatpak deposunu kaldırır, varsayılan uygulamaları kurar.
+set -euo pipefail
+
+flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+if flatpak remotes --system --columns=name | grep -qx fedora; then
+    flatpak remote-delete --system --force fedora
+fi
+
+mapfile -t apps < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' /usr/share/vabu/flatpaks/default.list)
+flatpak install --system --noninteractive -y flathub "${apps[@]}"
+
+mkdir -p /var/lib/vabu
+touch /var/lib/vabu/flatpak-setup.done

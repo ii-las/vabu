@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# vabu - Vabu sistem aracı.
+# Vabu klasik (değiştirilebilir) bir Fedora sistemidir: dnf, RPM ve Flatpak doğrudan çalışır.
+# Bu araç sadece sık yapılan işleri tek komuta toplar; hiçbir şeyi zorunlu kılmaz.
+set -euo pipefail
+
+VABU_SHARE=/usr/share/vabu
+
+if [[ -t 1 ]]; then
+    C_MINT=$'\e[38;2;142;240;198m'; C_SKY=$'\e[38;2;169;199;247m'
+    C_DIM=$'\e[2m'; C_RED=$'\e[38;2;247;168;168m'; C_OFF=$'\e[0m'
+else
+    C_MINT=; C_SKY=; C_DIM=; C_RED=; C_OFF=
+fi
+say()  { printf '%s›%s %s\n' "$C_MINT" "$C_OFF" "$*"; }
+warn() { printf '%s!%s %s\n' "$C_RED" "$C_OFF" "$*" >&2; }
+die()  { warn "$*"; exit 1; }
+
+as_root() {
+    if [[ $EUID -eq 0 ]]; then "$@"
+    elif [[ -t 0 ]]; then sudo "$@"
+    else pkexec "$@"
+    fi
+}
+
+vabu_version() { rpm -q --qf '%{VERSION}' vabu-desktop 2>/dev/null || echo "?"; }
+
+# --- komutlar ----------------------------------------------------------------
+cmd_info() {
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    printf '%sVabu%s %s  %s(Fedora %s tabanlı)%s\n' "$C_SKY" "$C_OFF" "$(vabu_version)" "$C_DIM" "${VERSION_ID:-?}" "$C_OFF"
+    printf '  Çekirdek : %s\n' "$(uname -r)"
+    printf '  Kabuk    : %s\n' "$(rpm -q --qf '%{NAME} %{VERSION}' vabu-shell 2>/dev/null || echo 'yedek kabuk (waybar)')"
+    printf '  Paketler : %s rpm · %s flatpak\n' "$(rpm -qa | wc -l)" "$(flatpak list --app --columns=application 2>/dev/null | wc -l)"
+    if command -v snapper >/dev/null; then
+        printf '  Geri alma: %s nokta\n' "$(as_root snapper -c root list --columns number 2>/dev/null | tail -n +3 | wc -l)"
+    fi
+}
+
+cmd_update() {
+    say "Paketler güncelleniyor (dnf). Öncesinde otomatik geri alma noktası alınır…"
+    as_root dnf upgrade --refresh -y
+    say "Flatpak uygulamaları güncelleniyor…"
+    flatpak update -y --noninteractive || warn "Flatpak güncellemesi tamamlanamadı."
+    if [[ -e /run/reboot-required ]] || needs_reboot; then
+        say "Çekirdek veya sürücü güncellendi: yeniden başlatman önerilir."
+    fi
+    say "Tamam."
+}
+
+needs_reboot() {
+    command -v dnf >/dev/null || return 1
+    dnf needs-restarting -r >/dev/null 2>&1 && return 1 || return 0
+}
+
+cmd_snapshots() {
+    command -v snapper >/dev/null || die "snapper kurulu değil."
+    as_root snapper -c root list
+}
+
+cmd_rollback() {
+    command -v snapper >/dev/null || die "snapper kurulu değil."
+    local n="${1:-}"
+    if [[ -z "$n" ]]; then
+        cmd_snapshots
+        echo
+        die "Kullanım: vabu rollback <numara>   (yukarıdaki listeden bir 'pre' numarası)"
+    fi
+    say "Sistem $n numaralı geri alma noktasına döndürülüyor (ev klasörüne dokunulmaz)…"
+    as_root snapper -c root undochange "${n}..0"
+    say "Tamam. Yeniden başlatman önerilir."
+}
+
+cmd_reset() {
+    case "${1:-}" in
+        niri)
+            local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+            [[ -e "$cfg/vabu/niri.json" ]] && mv "$cfg/vabu/niri.json" "$cfg/vabu/niri.json.$(date +%Y%m%d-%H%M%S).bak"
+            /usr/libexec/vabu/niri-config --force
+            say "niri ayarları Vabu varsayılanına döndü (eski dosyalar .bak olarak saklandı)." ;;
+        *) die "Kullanım: vabu reset niri" ;;
+    esac
+}
+
+cmd_doctor() {
+    local ok=1
+    check() { if eval "$2" >/dev/null 2>&1; then say "$1"; else warn "$1 - SORUN"; ok=0; fi; }
+    check "İnternet bağlantısı"            "curl -fsS --max-time 5 https://dl.flathub.org -o /dev/null"
+    check "Fedora depoları"                "dnf repolist --enabled | grep -q '^fedora'"
+    check "RPM Fusion depoları"            "dnf repolist --enabled | grep -q rpmfusion"
+    check "Vabu deposu"                    "dnf repolist --enabled | grep -qi vabu"
+    check "Flathub"                        "flatpak remotes | grep -q flathub"
+    check "Geri alma noktaları (snapper)"  "test -e /etc/snapper/configs/root"
+    check "Ekran kartı sürücüsü"           "vabu-drivers status --quiet"
+    ((ok)) && say "Her şey yolunda görünüyor." || warn "Bazı kontroller başarısız. Ayrıntı için: vabu-drivers status"
+}
+
+usage() {
+    cat <<EOF
+${C_SKY}vabu${C_OFF} - Vabu sistem aracı
+
+  vabu info                  Sürüm, çekirdek, kabuk, paket sayısı
+  vabu update                dnf + Flatpak güncellemesi (öncesinde geri alma noktası)
+  vabu snapshots             Geri alma noktalarını listele
+  vabu rollback <numara>     Sistemi bir geri alma noktasına döndür
+  vabu drivers [...]         Ekran kartı ve codec sürücüleri (vabu-drivers)
+  vabu reset niri            niri ayarlarını varsayılana döndür
+  vabu doctor                Sistem sağlık kontrolü
+
+Paket kurmak için her zamanki yollar geçerli:
+  sudo dnf install <paket>        Fedora / RPM Fusion / Vabu deposu
+  sudo dnf install ./dosya.rpm    indirilen RPM
+  flatpak install flathub <uyg>   Flathub
+EOF
+}
+
+case "${1:-help}" in
+    info)       cmd_info ;;
+    update)     cmd_update ;;
+    snapshots)  cmd_snapshots ;;
+    rollback)   shift; cmd_rollback "${1:-}" ;;
+    drivers)    shift; exec vabu-drivers "$@" ;;
+    reset)      shift; cmd_reset "${1:-}" ;;
+    doctor)     cmd_doctor ;;
+    --version)  echo "vabu $(vabu_version)" ;;
+    help|-h|--help) usage ;;
+    *) usage; exit 1 ;;
+esac

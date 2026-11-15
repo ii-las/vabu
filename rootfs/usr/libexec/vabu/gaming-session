@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# "Vabu Oyun" oturumu: giriş ekranından seçilir, Steam Big Picture'ı gamescope içinde açar.
+if command -v steam >/dev/null; then
+    steam_cmd=(steam)
+elif flatpak info com.valvesoftware.Steam >/dev/null 2>&1; then
+    steam_cmd=(flatpak run com.valvesoftware.Steam)
+else
+    echo "Steam kurulu değil. Başlatıcıda 'kur: steam' yazarak kurabilirsin." >&2
+    exit 1
+fi
+exec gamemoderun gamescope -e -f --adaptive-sync --mangoapp -- "${steam_cmd[@]}" -gamepadui

@@ -1,0 +1,10 @@
+{
+  "logo": {
+    "source": "/usr/share/vabu/fastfetch/logo.txt",
+    "color": { "1": "cyan", "2": "magenta" }
+  },
+  "modules": [
+    "title", "separator", "os", "kernel", "uptime", "packages",
+    "wm", "terminal", "cpu", "gpu", "memory", "disk", "break", "colors"
+  ]
+}

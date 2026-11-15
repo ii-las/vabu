@@ -1,0 +1,41 @@
+# Vabu canlı/kurulum ISO'su. Elle ya da v* etiketiyle çalışır.
+# Paketler COPR'dan gelir: önce RPM workflow'u ve COPR derlemeleri başarıyla bitmiş olmalı.
+#
+# Not: GitHub'ın ücretsiz arm64 derleme makineleri yalnızca PUBLIC repolarda var.
+# Repo private iken sadece x86_64 ISO üretilir; public olunca aarch64 (Apple Silicon/UTM) de gelir.
+name: ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      fedora:
+        description: "Fedora sürümü (boşsa FEDORA_VERSION dosyası)"
+        required: false
+      arch:
+        description: "Mimari"
+        type: choice
+        default: both
+        options: [both, x86_64, aarch64]
+  push:
+    tags: ["v*"]
+
+jobs:
+  x86_64:
+    if: ${{ inputs.arch != 'aarch64' }}
+    uses: ./.github/workflows/iso-build.yml
+    permissions:
+      contents: write
+    with:
+      arch: x86_64
+      runner: ubuntu-24.04
+      fedora: ${{ inputs.fedora }}
+
+  aarch64:
+    if: ${{ !github.event.repository.private && inputs.arch != 'x86_64' }}
+    uses: ./.github/workflows/iso-build.yml
+    permissions:
+      contents: write
+    with:
+      arch: aarch64
+      runner: ubuntu-24.04-arm
+      fedora: ${{ inputs.fedora }}

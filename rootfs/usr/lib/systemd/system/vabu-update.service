@@ -1,0 +1,14 @@
+[Unit]
+Description=Vabu: güncellemeleri arka planda indir (kurulum kullanıcının onayıyla yapılır)
+Wants=network-online.target
+After=network-online.target
+ConditionACPower=true
+
+[Service]
+Type=oneshot
+# Sadece indirir; kurulum Vabu Ayarlar > Güncellemeler'den ya da `vabu update` ile yapılır.
+ExecStart=/usr/bin/dnf upgrade --refresh --downloadonly -y -q
+# Flatpak güncellemeleri uygulamaları birbirinden yalıtılmış güncellediği için doğrudan kurulur.
+ExecStart=/usr/bin/flatpak update --system --noninteractive -y
+Nice=19
+IOSchedulingClass=idle

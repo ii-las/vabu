@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# niri yapılandırmasını şablondan üretir.
+#
+#   niri-config                     ~/.config/vabu/niri.json'dan ~/.config/niri/config.kdl üret
+#   niri-config --defaults -o FILE  varsayılanlarla FILE üret (paket derlemesi, vabu reset)
+#   niri-config --force             elle düzenlenmiş dosyanın üzerine yaz (yedek alınır)
+#
+# Ayarlar (niri.json):
+#   {"xkbLayout":"us,tr","xkbVariant":",f","xkbOptions":"grp:alt_shift_toggle","naturalScroll":true,
+#    "gaps":12,"radius":14,"animations":true,
+#    "outputs":[{"name":"DP-1","mode":"2560x1440@165.000","scale":1.25,"x":0,"y":0,"vrr":true}]}
+# Odak halkası rengi Vabu Shell vurgu renginden (~/.config/vabu/shell.json) gelir.
+#
+# Çıkış kodları: 0 tamam · 2 doğrulama hatası (dosyaya dokunulmadı) · 3 dosya elle düzenlenmiş
+set -euo pipefail
+
+TEMPLATE="${VABU_NIRI_TEMPLATE:-/usr/share/vabu/niri/config.kdl.in}"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+SETTINGS="$CONFIG_HOME/vabu/niri.json"
+SHELL_SETTINGS="$CONFIG_HOME/vabu/shell.json"
+OUT="$CONFIG_HOME/niri/config.kdl"
+defaults=0 force=0
+
+while (($#)); do
+    case "$1" in
+        --defaults) defaults=1 ;;
+        --force)    force=1 ;;
+        -o)         shift; OUT="$1" ;;
+        *) echo "Bilinmeyen seçenek: $1" >&2; exit 1 ;;
+    esac
+    shift
+done
+
+if ((defaults)); then SETTINGS=/dev/null; SHELL_SETTINGS=/dev/null; fi
+
+j() {  # j <dosya> <jq ifadesi> <varsayılan>
+    local v
+    # (jq'nin // işleci false'u da boş sayar; burada sadece null boş sayılır)
+    v="$(jq -r "($2) | if . == null then empty else tostring end" "$1" 2>/dev/null || true)"
+    [[ -n "$v" ]] && printf '%s' "$v" || printf '%s' "$3"
+}
+
+export XKB_LAYOUT XKB_VARIANT XKB_OPTIONS NATURAL_SCROLL GAPS RADIUS FOCUS_COLOR ANIMATIONS OUTPUTS USER_BLOCK
+XKB_LAYOUT="$(j "$SETTINGS" .xkbLayout "us,tr")"
+XKB_VARIANT="$(j "$SETTINGS" .xkbVariant "")"
+XKB_OPTIONS="$(j "$SETTINGS" .xkbOptions "grp:alt_shift_toggle")"
+[[ "$(j "$SETTINGS" .naturalScroll true)" == "true" ]] && NATURAL_SCROLL="natural-scroll" || NATURAL_SCROLL=""
+GAPS="$(j "$SETTINGS" .gaps 12)"
+RADIUS="$(j "$SETTINGS" .radius 14)"
+[[ "$(j "$SETTINGS" .animations true)" == "false" ]] && ANIMATIONS=$'animations {\n    off\n}' || ANIMATIONS=""
+
+case "$(j "$SHELL_SETTINGS" .accent gok)" in
+    nane)    FOCUS_COLOR="#8EF0C6" ;;
+    seftali) FOCUS_COLOR="#F2B48A" ;;
+    gul)     FOCUS_COLOR="#F7A8C4" ;;
+    kagit)   FOCUS_COLOR="#F3F1EC" ;;
+    *)       FOCUS_COLOR="#A9C7F7" ;;
+esac
+
+OUTPUTS="$(jq -r '
+    .outputs[]? |
+    "output \"\(.name)\" {\n" +
+    (if .off then "    off\n" else "" end) +
+    (if .mode then "    mode \"\(.mode)\"\n" else "" end) +
+    (if .scale then "    scale \(.scale)\n" else "" end) +
+    (if .x != null and .y != null then "    position x=\(.x) y=\(.y)\n" else "" end) +
+    (if .vrr then "    variable-refresh-rate\n" else "" end) +
+    "}"' "$SETTINGS" 2>/dev/null || true)"
+
+# Mevcut dosyadaki kullanıcı bölümünü koru
+USER_BLOCK=""
+if [[ -e "$OUT" ]]; then
+    if ! head -n1 "$OUT" | grep -q "VABU-AYARLAR-YÖNETİR"; then
+        if ((force)); then
+            cp "$OUT" "$OUT.$(date +%Y%m%d-%H%M%S).bak"
+        else
+            echo "Bu niri ayarı elle düzenlenmiş; Vabu Ayarlar dokunmuyor ($OUT)." >&2
+            exit 3
+        fi
+    else
+        USER_BLOCK="$(sed -n '/VABU-KULLANICI-BAŞLANGIÇ/,/VABU-KULLANICI-SON/p' "$OUT" | sed '1d;$d')"
+    fi
+fi
+
+tmp="$(mktemp --suffix=.kdl)"
+trap 'rm -f "$tmp"' EXIT
+perl -pe '
+    s/\@\@XKB_LAYOUT\@\@/$ENV{XKB_LAYOUT}/g;
+    s/\@\@XKB_VARIANT\@\@/$ENV{XKB_VARIANT}/g;
+    s/\@\@XKB_OPTIONS\@\@/$ENV{XKB_OPTIONS}/g;
+    s/\@\@NATURAL_SCROLL\@\@/$ENV{NATURAL_SCROLL}/g;
+    s/\@\@GAPS\@\@/$ENV{GAPS}/g;
+    s/\@\@RADIUS\@\@/$ENV{RADIUS}/g;
+    s/\@\@FOCUS_COLOR\@\@/$ENV{FOCUS_COLOR}/g;
+    s/\@\@ANIMATIONS\@\@/$ENV{ANIMATIONS}/g;
+    s/\@\@OUTPUTS\@\@/$ENV{OUTPUTS}/g;
+    s/\@\@USER\@\@/$ENV{USER_BLOCK}/g;
+' "$TEMPLATE" > "$tmp"
+
+# Doğrula: hatalı bir ayar oturumu bozmasın
+if command -v niri >/dev/null && ! niri validate -c "$tmp" >/dev/null 2>&1; then
+    echo "Üretilen niri ayarı geçersiz, uygulanmadı:" >&2
+    niri validate -c "$tmp" >&2 || true
+    exit 2
+fi
+
+mkdir -p "$(dirname "$OUT")"
+install -m0644 "$tmp" "$OUT"

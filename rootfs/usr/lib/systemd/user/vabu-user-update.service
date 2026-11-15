@@ -1,0 +1,10 @@
+[Unit]
+Description=Kullanıcı Flatpak uygulamalarını ve distrobox kutularını güncelle
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak update --user --noninteractive -y
+ExecStart=-/usr/bin/distrobox upgrade --all
+Nice=19

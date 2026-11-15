@@ -1,0 +1,46 @@
+import QtQuick
+import QtQuick.Layouts
+
+Item {
+    id: root
+    property string label: ""
+    property string sub: ""
+    default property alias control: slot.data
+
+    Layout.fillWidth: true
+    implicitHeight: Math.max(64, texts.implicitHeight + 24)
+
+    RowLayout {
+        anchors.fill: parent
+        spacing: 16
+        ColumnLayout {
+            id: texts
+            Layout.fillWidth: true
+            spacing: 2
+            Text {
+                Layout.fillWidth: true
+                text: root.label
+                color: Theme.paper
+                font.family: Theme.sans
+                font.pixelSize: 15
+                wrapMode: Text.Wrap
+            }
+            Text {
+                Layout.fillWidth: true
+                visible: root.sub !== ""
+                text: root.sub
+                color: Theme.muted
+                font.family: Theme.sans
+                font.pixelSize: 12
+                wrapMode: Text.Wrap
+            }
+        }
+        Row {
+            id: slot
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+            spacing: 8
+        }
+    }
+
+    DashLine { anchors.bottom: parent.bottom; width: parent.width }
+}

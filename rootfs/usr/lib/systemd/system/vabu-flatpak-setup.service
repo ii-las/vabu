@@ -1,0 +1,14 @@
+[Unit]
+Description=Vabu ilk açılış: Flathub ve varsayılan uygulamalar
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=!/var/lib/vabu/flatpak-setup.done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/vabu/flatpak-setup
+Restart=on-failure
+RestartSec=5min
+
+[Install]
+WantedBy=multi-user.target

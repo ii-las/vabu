@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Oturum menüsü: Vabu Shell'inki, yoksa fuzzel ile basit liste.
+if command -v qs >/dev/null && qs -p /usr/share/vabu/shell ipc call session toggle >/dev/null 2>&1; then
+    exit 0
+fi
+choice="$(printf '%s\n' "Kilitle" "Oturumu kapat" "Uyku" "Yeniden başlat" "Kapat" | fuzzel --dmenu --lines 5)"
+case "$choice" in
+    Kilitle)          /usr/libexec/vabu/lock ;;
+    "Oturumu kapat")  niri msg action quit --skip-confirmation ;;
+    Uyku)             systemctl suspend ;;
+    "Yeniden başlat") systemctl reboot ;;
+    Kapat)            systemctl poweroff ;;
+esac

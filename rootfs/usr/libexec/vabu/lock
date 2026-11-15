@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Ekranı kilitle: Vabu Shell kilit ekranı (IPC), o çalışmıyorsa swaylock.
+if command -v qs >/dev/null && qs -p /usr/share/vabu/shell ipc call lock lock >/dev/null 2>&1; then
+    exit 0
+fi
+exec swaylock -f -c 121216 --ring-color 8EF0C6 --key-hl-color A9C7F7 --inside-color 121216 \
+    --line-color 00000000 --separator-color 00000000 --text-color F3F1EC

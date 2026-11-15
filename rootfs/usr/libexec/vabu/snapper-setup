@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Kök btrfs ise snapper yapılandırmasını oluşturur. dnf her işlemden önce/sonra
+# otomatik geri alma noktası alır (bkz. /etc/dnf/libdnf5-plugins/actions.d/vabu-snapper.actions).
+set -euo pipefail
+[[ "$(findmnt -no FSTYPE /)" == "btrfs" ]] || { echo "Kök btrfs değil, atlanıyor."; exit 0; }
+snapper -c root create-config /
+snapper -c root set-config NUMBER_LIMIT=10 NUMBER_LIMIT_IMPORTANT=5 TIMELINE_CREATE=no ALLOW_GROUPS=wheel SYNC_ACL=yes
+snapper -c root create -d "Kurulum sonrası" -c important

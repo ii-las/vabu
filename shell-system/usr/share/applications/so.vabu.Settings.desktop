@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Ayarlar
+GenericName=Vabu Ayarlar
+Comment=Görünüm, ekranlar, ağ, ses, sürücüler, güncellemeler
+Exec=vabu-settings
+Icon=vabu-logo
+Terminal=false
+Type=Application
+Categories=Settings;System;
+Keywords=ayar;settings;ekran;display;wifi;bluetooth;ses;sound;sürücü;driver;nvidia;güncelleme;update;klavye;keyboard;
+StartupNotify=false

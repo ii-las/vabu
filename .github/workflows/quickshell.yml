@@ -1,0 +1,35 @@
+# Quickshell paketi: sadece spec değişince ya da elle (ör. Fedora Qt'yi güncelleyince) çalışır.
+# Kaynak paketi üretip COPR'a gönderir; asıl derleme COPR'da x86_64 + aarch64 için yapılır.
+name: Quickshell
+
+on:
+  push:
+    branches: [main]
+    paths: ["packaging/quickshell.spec", ".github/workflows/quickshell.yml"]
+  workflow_dispatch:
+  schedule:
+    # Her pazartesi: Fedora Qt güncellemesine karşı yeniden derle (özel API bağımlılığı)
+    - cron: "0 5 * * 1"
+
+jobs:
+  srpm:
+    runs-on: ubuntu-24.04
+    container: registry.fedoraproject.org/fedora:latest
+    steps:
+      - name: Araçlar
+        run: dnf -y install git rpm-build rpmdevtools copr-cli
+      - uses: actions/checkout@v4
+      - name: Kaynak paket
+        run: |
+          rpmdev-setuptree
+          # Her derleme yeni bir sürüm numarası alsın ki kullanıcılara güncelleme olarak gitsin
+          sed -i "s/^Release:.*/Release:        $(date -u +%Y%m%d%H)%{?dist}/" packaging/quickshell.spec
+          spectool -g -R packaging/quickshell.spec
+          rpmbuild -bs packaging/quickshell.spec
+      - name: COPR'a gönder
+        env:
+          COPR_CONFIG: ${{ secrets.COPR_CONFIG }}
+        run: |
+          if [[ -z "${COPR_CONFIG}" ]]; then echo "::warning::COPR_CONFIG yok"; exit 0; fi
+          mkdir -p ~/.config && printf '%s' "${COPR_CONFIG}" > ~/.config/copr
+          copr-cli build --nowait "$(cat COPR_OWNER)/vabu" ~/rpmbuild/SRPMS/quickshell-*.src.rpm

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Vabu oturum başlatıcısı (niri spawn-at-startup ile çalışır).
+# Vabu Shell: duvar kağıdı, yan çubuk, başlatıcı, bildirimler, kilit, göstergeler.
+# Kabuk kurulu değilse (ör. elle kaldırıldıysa) waybar + mako + swaybg yedek kabuğu açılır.
+VABU_SHARE=/usr/share/vabu
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+start() { "$@" >/dev/null 2>&1 & disown; }
+
+start lxqt-policykit-agent
+start gnome-keyring-daemon --start --components=secrets
+
+if command -v qs >/dev/null && [[ -e "$VABU_SHARE/shell/shell.qml" ]]; then
+    start qs -p "$VABU_SHARE/shell"
+else
+    start nm-applet --indicator
+    start swaybg -m fill -i "$VABU_SHARE/assets/wallpaper.png"
+    start waybar -c "$VABU_SHARE/waybar/config.jsonc" -s "$VABU_SHARE/waybar/style.css"
+    start mako --config "$VABU_SHARE/mako/config"
+fi
+
+# Boşta: 5 dk kilit, 10 dk ekranı kapat; uykudan önce kilit
+start swayidle -w \
+    timeout 300 '/usr/libexec/vabu/lock' \
+    timeout 600 'niri msg action power-off-monitors' \
+    before-sleep '/usr/libexec/vabu/lock'

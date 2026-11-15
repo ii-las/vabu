@@ -1,0 +1,3 @@
+#%PAM-1.0
+# Vabu kilit ekranı (Quickshell PamContext)
+auth       include      login

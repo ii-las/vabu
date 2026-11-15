@@ -1,0 +1,8 @@
+out/
+*.iso
+*.rpm
+.DS_Store
+
+# yerel çalışma dosyaları
+design/
+docs/HAZIRLIK.md

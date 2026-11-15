@@ -1,0 +1,124 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell
+
+ColumnLayout {
+    id: page
+    spacing: 20
+
+    readonly property var catalog: [
+        { layout: "tr", variant: "", name: "Türkçe Q" },
+        { layout: "tr", variant: "f", name: "Türkçe F" },
+        { layout: "us", variant: "", name: "İngilizce (ABD)" },
+        { layout: "gb", variant: "", name: "İngilizce (BK)" },
+        { layout: "de", variant: "", name: "Almanca" },
+        { layout: "fr", variant: "", name: "Fransızca" },
+        { layout: "es", variant: "", name: "İspanyolca" },
+        { layout: "it", variant: "", name: "İtalyanca" },
+        { layout: "ru", variant: "", name: "Rusça" },
+        { layout: "ara", variant: "", name: "Arapça" },
+        { layout: "az", variant: "", name: "Azerice" }
+    ]
+
+    // niri.json'daki "us,tr" + ",f" → [{layout, variant}]
+    readonly property var current: {
+        const ls = NiriConf.xkbLayout.split(","), vs = NiriConf.xkbVariant.split(",")
+        return ls.filter(l => l).map((l, i) => ({ layout: l, variant: vs[i] || "" }))
+    }
+    function nameOf(e) { return (catalog.find(c => c.layout === e.layout && c.variant === e.variant) || { name: e.layout + (e.variant ? " (" + e.variant + ")" : "") }).name }
+    function save(list) {
+        NiriConf.setMany({
+            xkbLayout: list.map(e => e.layout).join(","),
+            xkbVariant: list.some(e => e.variant) ? list.map(e => e.variant).join(",") : ""
+        })
+    }
+
+    readonly property var switches: [
+        { opt: "grp:alt_shift_toggle", name: "Alt + Shift" },
+        { opt: "grp:ctrl_shift_toggle", name: "Ctrl + Shift" },
+        { opt: "grp:caps_toggle", name: "Caps Lock" }
+    ]
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 0
+        SectionLabel { text: "KLAVYE DÜZENLERİ · İLKİ VARSAYILAN" }
+        DashLine { Layout.fillWidth: true }
+        Repeater {
+            model: page.current
+            delegate: SettingRow {
+                required property var modelData
+                required property int index
+                label: (index + 1) + ".  " + page.nameOf(modelData)
+                IconButton {
+                    visible: index > 0
+                    icon: "arrow-left"; tooltip: "Yukarı taşı"
+                    rotation: 90
+                    onClicked: { const l = page.current.slice(); [l[index - 1], l[index]] = [l[index], l[index - 1]]; page.save(l) }
+                }
+                IconButton {
+                    visible: page.current.length > 1
+                    icon: "close"; tooltip: "Kaldır"
+                    onClicked: page.save(page.current.filter((_, i) => i !== index))
+                }
+            }
+        }
+        Flow {
+            Layout.fillWidth: true
+            Layout.topMargin: 14
+            spacing: 8
+            Repeater {
+                model: page.catalog.filter(c => !page.current.some(e => e.layout === c.layout && e.variant === c.variant))
+                delegate: PillButton {
+                    required property var modelData
+                    implicitHeight: 38
+                    icon: "plus"
+                    label: modelData.name
+                    onClicked: page.save(page.current.concat([{ layout: modelData.layout, variant: modelData.variant }]))
+                }
+            }
+        }
+    }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 0
+        DashLine { Layout.fillWidth: true }
+        SettingRow {
+            visible: page.current.length > 1
+            label: "Düzenler arasında geçiş"
+            Segmented {
+                options: page.switches.map(s => s.name)
+                currentIndex: page.switches.findIndex(s => NiriConf.xkbOptions.includes(s.opt))
+                onPicked: i => NiriConf.set("xkbOptions", page.switches[i].opt)
+            }
+        }
+        SettingRow {
+            label: "Doğal kaydırma"
+            sub: "Dokunmatik yüzeyde içerik parmağınla aynı yöne kayar"
+            Toggle { checked: NiriConf.naturalScroll; onToggled: NiriConf.set("naturalScroll", !NiriConf.naturalScroll) }
+        }
+    }
+
+    NiriStatus { Layout.fillWidth: true }
+
+    ColumnLayout {
+        Layout.fillWidth: true
+        spacing: 10
+        SectionLabel { text: "KISAYOLLAR" }
+        RowLayout {
+            spacing: 10
+            PillButton { label: "Kısayolları göster"; icon: "keyboard"; primary: true; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }
+            PillButton {
+                label: "niri ayar dosyasını aç"
+                icon: "terminal"
+                onClicked: Ui.run(["xdg-open", Quickshell.env("HOME") + "/.config/niri/config.kdl"])
+            }
+        }
+        Text {
+            Layout.fillWidth: true
+            text: "Kendi kısayollarını ayar dosyasının en altındaki “Kendi eklemelerin” bölümüne yazabilirsin; Vabu Ayarlar o bölüme dokunmaz."
+            color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12; wrapMode: Text.Wrap
+        }
+    }
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Vabu Ayarlar'ı aç; açıksa istenen sayfaya geç.
+#   vabu-settings [look|display|network|sound|drivers|apps|updates|keyboard|users|about]
+ENTRY=/usr/share/vabu/shell/settings.qml
+page="${1:-look}"
+if qs -p "$ENTRY" ipc call settings open "$page" >/dev/null 2>&1; then
+    exit 0
+fi
+VABU_SETTINGS_PAGE="$page" exec qs -p "$ENTRY"

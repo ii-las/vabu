@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Parlaklık tuşları: brightnessctl ile ayarla, Vabu Shell göstergesinde göster.
+#   vabu-brightness 5%+   |   vabu-brightness 5%-
+set -euo pipefail
+brightnessctl -q set "${1:-5%+}"
+pct="$(brightnessctl -m | cut -d, -f4 | tr -d '%')"
+qs -p /usr/share/vabu/shell ipc call osd brightness "$pct" >/dev/null 2>&1 || true

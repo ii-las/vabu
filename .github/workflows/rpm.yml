@@ -1,0 +1,96 @@
+# Vabu RPM paketleri (vabu-*): her PR'da Fedora container'ında derlenip doğrulanır,
+# main'e push'ta kaynak paketler (SRPM) COPR'a gönderilir ve orada x86_64 + aarch64 derlenir.
+# Quickshell ayrı workflow'da (quickshell.yml): uzun sürdüğü için sadece değişince derlenir.
+name: RPM
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "**.md", "packaging/quickshell.spec", ".github/workflows/quickshell.yml"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: registry.fedoraproject.org/fedora:latest
+    steps:
+      - name: Araçlar
+        run: dnf -y install git rpm-build rpmdevtools rpmlint dnf-plugins-core librsvg2-tools systemd-rpm-macros copr-cli tar
+
+      - uses: actions/checkout@v4
+
+      - name: Kaynak arşivleri
+        run: |
+          git config --global --add safe.directory "$PWD"
+          ver="$(cat VERSION)"
+          rpmdev-setuptree
+          git archive --format=tar.gz --prefix="vabu-${ver}/" -o ~/rpmbuild/SOURCES/vabu-${ver}.tar.gz HEAD rootfs branding shell shell-system
+          for s in vabu-release vabu-desktop vabu-shell; do
+            sed -i "s/^Version:.*/Version:        ${ver}/" packaging/$s.spec
+          done
+          sed -i "s/^%global copr_owner .*/%global copr_owner $(cat COPR_OWNER)/" packaging/vabu-release.spec
+          # Dış kaynaklar (Quickshell, yazı tipleri)
+          for spec in packaging/vabu-*.spec; do spectool -g -R "$spec"; done
+
+      - name: Lint
+        run: rpmlint packaging/*.spec || true
+
+      - name: Derle
+        run: |
+          for spec in packaging/vabu-fonts.spec packaging/vabu-release.spec packaging/vabu-desktop.spec packaging/vabu-shell.spec; do
+            dnf -y builddep "$spec"
+            rpmbuild -ba "$spec"
+          done
+          ls -R ~/rpmbuild/RPMS ~/rpmbuild/SRPMS
+
+      - name: Paket içeriğini kontrol et
+        run: |
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/bin/vabu-drivers
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/shell.qml
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/greeter.qml
+          rpm -qp --provides ~/rpmbuild/RPMS/noarch/vabu-release-*.rpm | grep -q system-release
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/settings.qml
+
+      - name: niri ayarlarını doğrula
+        run: |
+          dnf -y install niri jq perl-interpreter
+          export VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in
+          bash rootfs/usr/libexec/vabu/niri-config --defaults -o /tmp/varsayilan.kdl
+          niri validate -c /tmp/varsayilan.kdl
+          # Tüm seçenekler dolu bir örnek de geçerli olmalı
+          mkdir -p /tmp/h/vabu
+          echo '{"xkbLayout":"tr,us","xkbVariant":"f,","xkbOptions":"grp:caps_toggle","naturalScroll":false,"gaps":20,"radius":0,"animations":false,
+                 "outputs":[{"name":"DP-1","mode":"2560x1440@165.000","scale":1.25,"x":0,"y":0,"vrr":true},{"name":"HDMI-A-1","off":true}]}' > /tmp/h/vabu/niri.json
+          echo '{"accent":"seftali"}' > /tmp/h/vabu/shell.json
+          XDG_CONFIG_HOME=/tmp/h bash rootfs/usr/libexec/vabu/niri-config
+          niri validate -c /tmp/h/niri/config.kdl
+          niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
+
+      - name: QML denetimi (qmllint, bilgi amaçlı)
+        continue-on-error: true
+        run: |
+          dnf -y copr enable "$(cat COPR_OWNER)/vabu" && dnf -y install quickshell qt6-qtdeclarative-devel
+          /usr/lib64/qt6/bin/qmllint -I /usr/lib64/qt6/qml -I shell shell/*.qml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpms
+          path: |
+            ~/rpmbuild/RPMS/*/*.rpm
+            ~/rpmbuild/SRPMS/*.rpm
+
+      - name: COPR'a gönder
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          COPR_CONFIG: ${{ secrets.COPR_CONFIG }}
+        run: |
+          if [[ -z "${COPR_CONFIG}" ]]; then
+            echo "::warning::COPR_CONFIG tanımlı değil, COPR gönderimi atlanıyor."
+            exit 0
+          fi
+          mkdir -p ~/.config && printf '%s' "${COPR_CONFIG}" > ~/.config/copr
+          owner="$(cat COPR_OWNER)"
+          for srpm in ~/rpmbuild/SRPMS/vabu-*.src.rpm; do
+            copr-cli build --nowait "${owner}/vabu" "$srpm"
+          done

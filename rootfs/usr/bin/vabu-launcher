@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Super+Space / Super+I. Vabu Shell varsa onun başlatıcısını açar, yoksa yedek fuzzel.
+mode=search
+[[ "${1:-}" == "--install" ]] && mode=install
+if command -v qs >/dev/null && [[ -d /usr/share/vabu/shell ]]; then
+    exec qs -p /usr/share/vabu/shell ipc call launcher open "$mode"
+fi
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+if [[ -e "$CONFIG_HOME/fuzzel/fuzzel.ini" ]]; then exec fuzzel; fi
+exec fuzzel --config /usr/share/vabu/fuzzel/fuzzel.ini

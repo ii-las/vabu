@@ -1,0 +1,11 @@
+[Unit]
+Description=Günlük Vabu güncelleme kontrolü
+
+[Timer]
+OnBootSec=15min
+OnCalendar=daily
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

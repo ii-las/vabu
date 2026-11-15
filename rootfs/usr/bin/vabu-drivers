@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# vabu-drivers - ekran kartını algılar, doğru sürücüyü ve codec'leri kurar.
+#
+#   vabu-drivers status [--json] [--quiet]   Algılanan donanım ve sürücü durumu
+#   vabu-drivers install auto                Önerilen her şeyi kur
+#   vabu-drivers install nvidia|amd|intel|codecs
+#
+# NVIDIA: RPM Fusion akmod-nvidia (kernel güncellemelerinde modül otomatik yeniden derlenir).
+# AMD/Intel: Mesa zaten hazır; RPM Fusion'dan donanım video hızlandırma eklenir.
+# Secure Boot açıksa akmods imza anahtarı oluşturulur ve bir kerelik MOK onayı istenir.
+# Vabu Ayarlar > Sürücüler sayfası bu aracı --json ile kullanır.
+set -euo pipefail
+
+say()  { printf '› %s\n' "$*"; }
+warn() { printf '! %s\n' "$*" >&2; }
+die()  { warn "$*"; exit 1; }
+
+as_root() {
+    if [[ $EUID -eq 0 ]]; then "$@"
+    elif [[ -t 0 ]]; then sudo "$@"
+    else pkexec "$@"
+    fi
+}
+
+# --- algılama ------------------------------------------------------------------
+# lspci -nn çıktısından ekran denetleyicilerini (sınıf 0300/0302/0380) okur.
+gpus() {
+    lspci -nn 2>/dev/null | grep -E '\[(0300|0302|0380)\]' || true
+}
+has_vendor() { gpus | grep -qi "\[$1:"; }
+has_nvidia() { has_vendor 10de; }
+has_amd()    { has_vendor 1002; }
+has_intel()  { has_vendor 8086; }
+
+pkg_installed() { rpm -q "$1" >/dev/null 2>&1; }
+nvidia_loaded() { lsmod 2>/dev/null | grep -q '^nvidia '; }
+secure_boot_on() { mokutil --sb-state 2>/dev/null | grep -qi 'enabled'; }
+rpmfusion_on() { dnf repolist --enabled 2>/dev/null | grep -q rpmfusion-nonfree; }
+
+codecs_ok() { pkg_installed ffmpeg && ! pkg_installed ffmpeg-free; }
+
+nvidia_state() {
+    if ! has_nvidia; then echo "none"
+    elif nvidia_loaded; then echo "active"
+    elif pkg_installed akmod-nvidia; then echo "pending-reboot"
+    else echo "missing"
+    fi
+}
+
+# --- durum -------------------------------------------------------------------
+cmd_status() {
+    local json=0 quiet=0
+    for a in "$@"; do
+        case "$a" in --json) json=1 ;; --quiet) quiet=1 ;; esac
+    done
+
+    local nv; nv="$(nvidia_state)"
+    local sb=false; secure_boot_on && sb=true
+    local codecs=false; codecs_ok && codecs=true
+
+    if ((quiet)); then
+        [[ "$nv" == "missing" || "$nv" == "pending-reboot" ]] && exit 1
+        exit 0
+    fi
+
+    if ((json)); then
+        local list
+        list="$(gpus | sed -E 's/^[^ ]+ [^:]+: //' | jq -R . | jq -s .)"
+        jq -n \
+            --argjson gpus "$list" \
+            --arg nvidia "$nv" \
+            --argjson amd "$(has_amd && echo true || echo false)" \
+            --argjson intel "$(has_intel && echo true || echo false)" \
+            --argjson secureBoot "$sb" \
+            --argjson codecs "$codecs" \
+            --argjson rpmfusion "$(rpmfusion_on && echo true || echo false)" \
+            '{gpus: $gpus, nvidia: $nvidia, amd: $amd, intel: $intel,
+              secureBoot: $secureBoot, codecs: $codecs, rpmfusion: $rpmfusion}'
+        return
+    fi
+
+    say "Ekran kartları:"
+    gpus | sed -E 's/^[^ ]+ [^:]+: /    /'
+    case "$nv" in
+        active)          say "NVIDIA sürücüsü etkin." ;;
+        pending-reboot)  say "NVIDIA sürücüsü kurulu, yeniden başlatma bekliyor." ;;
+        missing)         say "NVIDIA kartı var ama önerilen sürücü kurulu değil:  vabu-drivers install nvidia" ;;
+    esac
+    has_amd   && say "AMD: Mesa (Vulkan, OpenGL) hazır."
+    has_intel && say "Intel: Mesa (Vulkan, OpenGL) hazır."
+    $codecs && say "Medya codec'leri kurulu." || say "Medya codec'leri eksik:  vabu-drivers install codecs"
+    $sb && say "Secure Boot açık."
+    true
+}
+
+# --- kurulum -----------------------------------------------------------------
+require_rpmfusion() {
+    rpmfusion_on && return 0
+    say "RPM Fusion depoları ekleniyor…"
+    local v; v="$(rpm -E %fedora)"
+    as_root dnf install -y \
+        "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${v}.noarch.rpm" \
+        "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${v}.noarch.rpm"
+}
+
+install_codecs() {
+    require_rpmfusion
+    say "Tam codec desteği kuruluyor (ffmpeg, GStreamer eklentileri)…"
+    as_root dnf swap -y ffmpeg-free ffmpeg --allowerasing
+    as_root dnf update -y @multimedia --setopt=install_weak_deps=False --exclude=PackageKit-gstreamer-plugin
+}
+
+install_amd() {
+    require_rpmfusion
+    say "AMD donanım video hızlandırması (VA-API/VDPAU) kuruluyor…"
+    pkg_installed mesa-va-drivers && as_root dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld
+    pkg_installed mesa-vdpau-drivers && as_root dnf swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
+    true
+}
+
+install_intel() {
+    require_rpmfusion
+    say "Intel donanım video hızlandırması kuruluyor…"
+    as_root dnf install -y intel-media-driver
+}
+
+setup_secure_boot_key() {
+    secure_boot_on || return 0
+    [[ -e /etc/pki/akmods/certs/public_key.der ]] || as_root kmodgenca -a
+    if ! mokutil --test-key /etc/pki/akmods/certs/public_key.der 2>/dev/null | grep -q 'already enrolled'; then
+        say "Secure Boot açık: sürücü imza anahtarı kaydediliyor."
+        say "Şimdi BİR KEREYE MAHSUS bir şifre belirle. Yeniden başlatınca mavi MOK ekranında"
+        say "'Enroll MOK' > 'Continue' > 'Yes' seçip bu şifreyi gir."
+        as_root mokutil --import /etc/pki/akmods/certs/public_key.der
+    fi
+}
+
+install_nvidia() {
+    has_nvidia || die "NVIDIA ekran kartı bulunamadı."
+    require_rpmfusion
+    as_root dnf install -y akmods mokutil openssl kmodtool
+    setup_secure_boot_key
+    say "NVIDIA sürücüsü kuruluyor (RPM Fusion)…"
+    as_root dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda libva-nvidia-driver
+    say "Çekirdek modülü derleniyor (birkaç dakika sürebilir)…"
+    as_root akmods --force
+    as_root dracut --force
+    if has_intel || has_amd; then
+        say "Hibrit grafik algılandı: uygulamalar varsayılan olarak tümleşik kartla açılır,"
+        say "istediğinde 'NVIDIA ile başlat' seçeneği kullanılabilir (switcheroo-control)."
+        as_root systemctl enable --now switcheroo-control.service || true
+    fi
+    say "Tamam. Sürücünün devreye girmesi için yeniden başlat."
+}
+
+cmd_install() {
+    case "${1:-auto}" in
+        nvidia) install_nvidia ;;
+        amd)    install_amd ;;
+        intel)  install_intel ;;
+        codecs) install_codecs ;;
+        auto)
+            install_codecs
+            has_amd    && install_amd
+            has_intel  && install_intel
+            has_nvidia && install_nvidia
+            true ;;
+        *) die "Kullanım: vabu-drivers install auto|nvidia|amd|intel|codecs" ;;
+    esac
+}
+
+case "${1:-status}" in
+    status)  shift || true; cmd_status "$@" ;;
+    install) shift; cmd_install "${1:-auto}" ;;
+    *) die "Kullanım: vabu-drivers status [--json] | install auto|nvidia|amd|intel|codecs" ;;
+esac
