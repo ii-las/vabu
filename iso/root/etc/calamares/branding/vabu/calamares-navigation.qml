@@ -13,7 +13,8 @@ Rectangle {
     Row {
         anchors.centerIn: parent
         spacing: 12
-        visible: ViewManager.backAndNextVisible
+        // İlk sayfada kendi düğmeleri var (Vabu'yu kur / Kurmadan dene)
+        visible: ViewManager.backAndNextVisible && ViewManager.currentStepIndex > 0
 
         Rectangle {
             visible: ViewManager.backEnabled

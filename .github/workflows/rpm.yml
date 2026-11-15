@@ -78,11 +78,16 @@ jobs:
           niri validate -c /tmp/h/niri/config.kdl
           niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
 
-      - name: QML denetimi (qmllint, bilgi amaçlı)
-        continue-on-error: true
+      - name: QML denetimi (qmllint)
         run: |
-          dnf -y copr enable "$(cat COPR_OWNER)/vabu" && dnf -y install quickshell qt6-qtdeclarative-devel
-          /usr/lib64/qt6/bin/qmllint -I /usr/lib64/qt6/qml -I shell shell/*.qml
+          # quickshell bir önceki adımda kuruldu
+          dnf -y install qt6-qtdeclarative-devel
+          QMLLINT=$(command -v qmllint-qt6 || echo /usr/lib64/qt6/bin/qmllint)
+          $QMLLINT --unqualified disable -I /usr/lib64/qt6/qml -I shell shell/*.qml 2>&1 | tee /tmp/qmllint.txt || true
+          # Var olmayan özellik/tip kullanımı kabuğun hiç açılmamasına yol açar: bunları hata say
+          if grep -E "Could not find property|is not a type|Unknown component|Property .* does not exist|Cannot assign" /tmp/qmllint.txt; then
+            echo "::error::QML hataları var"; exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

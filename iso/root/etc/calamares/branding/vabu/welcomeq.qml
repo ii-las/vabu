@@ -98,24 +98,37 @@ Rectangle {
             }
         }
 
-        // Kurmadan dene: kurulumu kapatıp canlı masaüstüne geçer.
-        // Kurulum daha sonra başlatıcıdan "Vabu'yu kur" ile açılabilir.
-        Rectangle {
+        // İki yol: kur ya da kurmadan dene (canlı masaüstüne geçer; kurulum sonra
+        // başlatıcıdaki "Vabu'yu kur" ile açılabilir)
+        RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: tryRow.implicitWidth + 44
-            implicitHeight: 52
-            radius: 26
-            color: tryMouse.containsMouse ? "#34313B" : "#26242C"
-            Row {
-                id: tryRow
-                anchors.centerIn: parent
-                spacing: 10
-                Text { text: "Kurmadan dene"; color: "#F3F1EC"; font.family: "Geist"; font.pixelSize: 15 }
-                Text { text: "→"; color: "#A3A1A8"; font.pixelSize: 15 }
+            Layout.topMargin: 10
+            spacing: 12
+
+            Rectangle {
+                implicitWidth: 240; implicitHeight: 64; radius: 32
+                color: tryMouse.containsMouse ? "#34313B" : "#26242C"
+                Text { anchors.centerIn: parent; text: "Kurmadan dene"; color: "#F3F1EC"; font.family: "Geist"; font.pixelSize: 16 }
+                MouseArea { id: tryMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.quit() }
+                Accessible.role: Accessible.Button
+                Accessible.name: "Kurmadan dene"
             }
-            MouseArea { id: tryMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.quit() }
-            Accessible.role: Accessible.Button
-            Accessible.name: "Kurmadan dene"
+            Rectangle {
+                implicitWidth: 260; implicitHeight: 64; radius: 32
+                opacity: ViewManager.nextEnabled ? 1 : 0.45
+                color: installMouse.containsMouse && ViewManager.nextEnabled ? "#A6F5D3" : "#8EF0C6"
+                Text { anchors.centerIn: parent; text: "Vabu’yu kur"; color: "#0E3B2C"; font.family: "Geist"; font.pixelSize: 16; font.weight: Font.DemiBold }
+                MouseArea {
+                    id: installMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: ViewManager.nextEnabled
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: ViewManager.next()
+                }
+                Accessible.role: Accessible.Button
+                Accessible.name: "Vabu’yu kur"
+            }
         }
         Text {
             Layout.alignment: Qt.AlignHCenter

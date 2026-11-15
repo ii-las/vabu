@@ -92,13 +92,14 @@ Item {
         font.pixelSize: 40
     }
 
-    // Hatalı şifrede kısa titreme
+    // Hatalı şifrede kısa titreme (Translate ile; NumberAnimation'da "by" yok)
+    transform: Translate { id: shakeT; x: 0 }
     SequentialAnimation {
         id: shake
-        NumberAnimation { target: root; property: "x"; by: -12; duration: 50 }
-        NumberAnimation { target: root; property: "x"; by: 24; duration: 70 }
-        NumberAnimation { target: root; property: "x"; by: -20; duration: 70 }
-        NumberAnimation { target: root; property: "x"; by: 8; duration: 60 }
+        NumberAnimation { target: shakeT; property: "x"; to: -12; duration: 50 }
+        NumberAnimation { target: shakeT; property: "x"; to: 12; duration: 70 }
+        NumberAnimation { target: shakeT; property: "x"; to: -8; duration: 70 }
+        NumberAnimation { target: shakeT; property: "x"; to: 0; duration: 60 }
     }
     function shakeIt() { shake.start() }
 
