@@ -63,6 +63,9 @@ hotkey-overlay {
 }
 
 environment {
+    // Vabu varsayılan uygulama ayarları (ör. foot teması) /etc/xdg'den önce okunur;
+    // paketlerin kendi dosyalarıyla çakışmaz, kullanıcı ayarı (~/.config) yine önceliklidir
+    XDG_CONFIG_DIRS "/usr/share/vabu/xdg:/etc/xdg"
     QT_QPA_PLATFORM "wayland"
     ELECTRON_OZONE_PLATFORM_HINT "auto"
 }

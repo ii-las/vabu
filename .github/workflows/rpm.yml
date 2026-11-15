@@ -52,6 +52,17 @@ jobs:
           rpm -qp --provides ~/rpmbuild/RPMS/noarch/vabu-release-*.rpm | grep -q system-release
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/settings.qml
 
+      - name: Paketleri gerçekten kur (dosya çakışması, eksik bağımlılık)
+        run: |
+          v="$(rpm -E %fedora)"
+          dnf -y install \
+            "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${v}.noarch.rpm" \
+            "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${v}.noarch.rpm"
+          dnf -y copr enable "$(cat COPR_OWNER)/vabu"
+          dnf -y install --allowerasing --setopt=protected_packages= ~/rpmbuild/RPMS/noarch/*.rpm
+          rpm -q vabu-release vabu-desktop vabu-shell vabu-fonts quickshell
+          niri validate -c /etc/niri/config.kdl
+
       - name: niri ayarlarını doğrula
         run: |
           dnf -y install niri jq perl-interpreter
