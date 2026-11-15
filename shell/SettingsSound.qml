@@ -39,7 +39,7 @@ ColumnLayout {
             delegate: ColumnLayout {
                 id: dev
                 required property var modelData
-                readonly property bool on: list.current === modelData
+                readonly property bool isOn: list.current === modelData
                 Layout.fillWidth: true
                 spacing: 0
                 Item {
@@ -52,8 +52,8 @@ ColumnLayout {
                             implicitWidth: 22; implicitHeight: 22; radius: 11
                             color: "transparent"
                             border.width: 2
-                            border.color: dev.on ? Theme.accent : Qt.rgba(1, 1, 1, 0.3)
-                            Rectangle { anchors.centerIn: parent; visible: dev.on; width: 10; height: 10; radius: 5; color: Theme.accent }
+                            border.color: dev.isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.3)
+                            Rectangle { anchors.centerIn: parent; visible: dev.isOn; width: 10; height: 10; radius: 5; color: Theme.accent }
                         }
                         Text { Layout.fillWidth: true; text: page.label(dev.modelData); color: Theme.paper; font.family: Theme.sans; font.pixelSize: 15; elide: Text.ElideRight }
                         Icon {

@@ -14,6 +14,8 @@ BuildArch:      noarch
 
 Provides:       system-release
 Provides:       system-release(%{fedora_ver})
+# dnf $releasever'ı buradan okur; yoksa paket sürümünü (0.1.0) kullanır ve depolar bozulur
+Provides:       system-release(releasever) = %{fedora_ver}
 Provides:       base-module(platform:f%{fedora_ver})
 Conflicts:      fedora-release
 Conflicts:      fedora-release-common

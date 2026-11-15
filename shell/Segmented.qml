@@ -21,20 +21,20 @@ Rectangle {
             delegate: Rectangle {
                 required property var modelData
                 required property int index
-                readonly property bool on: root.currentIndex === index
+                readonly property bool isOn: root.currentIndex === index
                 width: label.implicitWidth + 30
                 height: 36
                 radius: 10
-                color: on ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
+                color: isOn ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
                 Accessible.role: Accessible.RadioButton
-                Accessible.checked: on
+                Accessible.checked: isOn
                 Accessible.name: modelData
                 Text {
                     id: label
                     anchors.centerIn: parent
                     text: parent.modelData
-                    color: parent.on ? Theme.accentInk : Theme.soft
+                    color: parent.isOn ? Theme.accentInk : Theme.soft
                     font.family: root.mono ? Theme.mono : Theme.sans
                     font.pixelSize: root.mono ? 12 : 13
                 }

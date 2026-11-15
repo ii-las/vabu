@@ -64,20 +64,35 @@ PanelWindow {
                     id: btn
                     required property var modelData
                     required property int index
-                    readonly property bool on: root.selected === index
+                    readonly property bool isOn: root.selected === index
                     implicitWidth: 156
                     implicitHeight: 156
                     radius: 28
-                    color: on ? (modelData.danger ? Theme.coral : Theme.accent) : Theme.glassStrong
+                    color: isOn ? (modelData.danger ? Theme.coral : Theme.accent) : Theme.glassStrong
                     border.color: Theme.line
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
                     Accessible.role: Accessible.Button
                     Accessible.name: modelData.label
 
+                    scale: 0.9
+                    opacity: 0
+                    Connections {
+                        target: root
+                        function onVisibleChanged() { if (root.visible) popIn.restart(); else { btn.opacity = 0; btn.scale = 0.9 } }
+                    }
+                    SequentialAnimation {
+                        id: popIn
+                        PauseAnimation { duration: btn.index * 40 }
+                        ParallelAnimation {
+                            NumberAnimation { target: btn; property: "opacity"; to: 1; duration: 220 }
+                            NumberAnimation { target: btn; property: "scale"; to: 1; duration: 320; easing.type: Easing.OutBack }
+                        }
+                    }
+
                     Text {
                         anchors { left: parent.left; top: parent.top; margins: 16 }
                         text: "0" + (btn.index + 1)
-                        color: btn.on ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.muted
+                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.muted
                         font.family: Theme.mono
                         font.pixelSize: 11
                     }
@@ -86,12 +101,12 @@ PanelWindow {
                         anchors.verticalCenterOffset: -12
                         name: btn.modelData.icon
                         size: 30
-                        color: btn.on ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
+                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
                     }
                     Text {
                         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 20 }
                         text: btn.modelData.label
-                        color: btn.on ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
+                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
                         font.family: Theme.serif
                         font.pixelSize: 20
                     }

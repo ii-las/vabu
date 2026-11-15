@@ -33,12 +33,12 @@ ColumnLayout {
     }
     Process { id: changer; onExited: page.refresh() }
 
-    function setRepos(ids, on) {
-        changer.command = ["pkexec", "dnf", "config-manager", "setopt"].concat(ids.map(id => id + ".enabled=" + (on ? 1 : 0)))
+    function setRepos(ids, isOn) {
+        changer.command = ["pkexec", "dnf", "config-manager", "setopt"].concat(ids.map(id => id + ".enabled=" + (isOn ? 1 : 0)))
         changer.running = true
     }
-    function setFlathub(on) {
-        changer.command = on
+    function setFlathub(isOn) {
+        changer.command = isOn
             ? ["sh", "-c", "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; flatpak remote-modify --user --enable flathub 2>/dev/null; true"]
             : ["flatpak", "remote-modify", "--user", "--disable", "flathub"]
         changer.running = true

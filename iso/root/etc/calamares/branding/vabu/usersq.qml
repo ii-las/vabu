@@ -17,7 +17,7 @@ Rectangle {
         property bool secret: false
         property bool monoFont: false
         signal edited(string text)
-        readonly property bool on: page.focusRow === rowIndex
+        readonly property bool isOn: page.focusRow === rowIndex
         Layout.fillWidth: true
         spacing: 8
 
@@ -25,22 +25,22 @@ Rectangle {
             Layout.preferredWidth: 250
             implicitHeight: 70
             radius: 20
-            color: row.on ? "#A9C7F7" : "#26242C"
+            color: row.isOn ? "#A9C7F7" : "#26242C"
             Behavior on color { ColorAnimation { duration: 160 } }
-            Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: row.label; color: row.on ? "#14243F" : "#F3F1EC"; font.family: "Instrument Serif"; font.pixelSize: 24 }
+            Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: row.label; color: row.isOn ? "#14243F" : "#F3F1EC"; font.family: "Instrument Serif"; font.pixelSize: 24 }
             MouseArea { anchors.fill: parent; onClicked: input.forceActiveFocus() }
         }
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 70
             radius: 20
-            color: row.on ? "#A9C7F7" : "#26242C"
+            color: row.isOn ? "#A9C7F7" : "#26242C"
             Behavior on color { ColorAnimation { duration: 160 } }
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 8
                 radius: 13
-                color: row.on ? "#1B2433" : "#34313B"
+                color: row.isOn ? "#1B2433" : "#34313B"
                 TextInput {
                     id: input
                     anchors.fill: parent

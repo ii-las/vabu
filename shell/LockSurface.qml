@@ -24,9 +24,9 @@ Item {
         }
         onCompleted: result => {
             if (result === PamResult.Success) {
-                root.password = ""
                 root.error = false
-                root.unlocked()
+                if (rings.visible) rings.burstIt()
+                else root.unlocked()
             } else {
                 root.password = ""
                 root.error = true
@@ -54,6 +54,9 @@ Item {
     // Saat
     ColumnLayout {
         anchors { left: parent.left; top: parent.top; leftMargin: 56; topMargin: 44 }
+        opacity: 0
+        Component.onCompleted: opacity = 1
+        Behavior on opacity { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
         spacing: 2
         Text {
             text: Qt.formatTime(clock.date, "HH:mm")
@@ -80,6 +83,7 @@ Item {
         count: root.password.length
         error: root.error
         busy: root.busy
+        onBurstDone: { root.password = ""; root.unlocked() }
     }
 
     ColumnLayout {

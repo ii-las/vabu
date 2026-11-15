@@ -31,13 +31,13 @@ Card {
             delegate: Rectangle {
                 id: row
                 required property var modelData
-                readonly property bool on: modelData.is_active
+                readonly property bool isOn: modelData.is_active
                 readonly property var cols: Niri.columnsFor(modelData.id)
 
                 Layout.fillWidth: true
                 implicitHeight: 38
                 radius: Theme.radiusRow
-                color: on ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
+                color: isOn ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
                 Behavior on color { ColorAnimation { duration: Theme.normal } }
 
                 RowLayout {
@@ -49,7 +49,7 @@ Card {
                     Text {
                         Layout.preferredWidth: 22
                         text: row.modelData.idx
-                        color: row.on ? Theme.accentInk : Theme.paper
+                        color: row.isOn ? Theme.accentInk : Theme.paper
                         font.family: Theme.serif
                         font.pixelSize: 20
                     }
@@ -64,16 +64,16 @@ Card {
                                 width: Math.max(8, Math.min(40, modelData.width / root.screenWidth * 64))
                                 height: 14
                                 radius: 4
-                                color: modelData.focused ? (row.on ? Theme.accentInk : Theme.paper) : "transparent"
+                                color: modelData.focused ? (row.isOn ? Theme.accentInk : Theme.paper) : "transparent"
                                 border.width: 1
-                                border.color: row.on ? Qt.rgba(20 / 255, 36 / 255, 63 / 255, 0.55) : Qt.rgba(1, 1, 1, 0.32)
+                                border.color: row.isOn ? Qt.rgba(20 / 255, 36 / 255, 63 / 255, 0.55) : Qt.rgba(1, 1, 1, 0.32)
                                 Behavior on width { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } }
                             }
                         }
                         Text {
                             visible: row.cols.length === 0
                             text: "boş"
-                            color: row.on ? Theme.accentInk : Theme.faint
+                            color: row.isOn ? Theme.accentInk : Theme.faint
                             font.family: Theme.mono
                             font.pixelSize: 10
                         }
@@ -81,7 +81,7 @@ Card {
 
                     Text {
                         text: row.modelData.name || (row.cols.length ? row.cols.length + " kolon" : "")
-                        color: row.on ? Theme.accentInk : Theme.muted
+                        color: row.isOn ? Theme.accentInk : Theme.muted
                         font.family: Theme.mono
                         font.pixelSize: 10
                     }

@@ -5,8 +5,8 @@ welcomeExpandingLogo: true
 windowExpanding: fullscreen
 windowSize: 1200px,760px
 windowPlacement: center
-sidebar: qml,north
-navigation: qml,south
+sidebar: qml,top
+navigation: qml,bottom
 
 strings:
   productName: Vabu

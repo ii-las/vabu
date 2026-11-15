@@ -12,6 +12,7 @@ Rectangle {
     property bool highlight: false
     property bool selected: false
     signal activated()
+    property int order: 0          // sıralı giriş animasyonu için
 
     implicitHeight: 112
     radius: 18
@@ -70,5 +71,18 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.activated()
+    }
+
+    opacity: 0
+    transform: Translate { id: shift; y: 8 }
+    // order < 0: animasyonsuz (yazarken sonuçlar her tuşta yeniden kurulur)
+    Component.onCompleted: { if (order < 0) { opacity = 1; shift.y = 0 } else appear.start() }
+    SequentialAnimation {
+        id: appear
+        PauseAnimation { duration: Math.min(root.order, 8) * 28 }
+        ParallelAnimation {
+            NumberAnimation { target: root; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation { target: shift; property: "y"; to: 0; duration: 240; easing.type: Easing.OutCubic }
+        }
     }
 }

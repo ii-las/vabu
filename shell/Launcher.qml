@@ -16,6 +16,9 @@ PanelWindow {
     WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     property int selected: 0
+    // Açılıştan hemen sonra sonuçlar sırayla belirir; yazarken anında gelir
+    property bool fresh: false
+    Timer { id: freshTimer; interval: 450; onTriggered: root.fresh = false }
 
     // Kip: "kur:", ">" ya da "=" yazılınca öneki metinden alıp kipe çeviririz;
     // önek ekranda soluk renkle ayrı gösterilir. Boşken geri silme kipten çıkar.
@@ -71,6 +74,8 @@ PanelWindow {
     }
     onVisibleChanged: {
         if (visible) {
+            fresh = true
+            freshTimer.restart()
             input.text = ""
             mode = Ui.launcherMode
             Ui.launcherMode = "search"
@@ -214,6 +219,7 @@ PanelWindow {
                         title: modelData.name
                         subtitle: modelData.genericName || ""
                         selected: root.selected === index
+                        order: root.fresh ? index + 1 : -1
                         onActivated: { Apps.launch(modelData); Ui.launcherOpen = false }
                     }
                 }
@@ -266,6 +272,7 @@ PanelWindow {
                         Layout.fillWidth: true
                         mode: root.mode
                         item: modelData
+                        order: root.fresh ? index : -1
                         selected: root.selected === index
                         onHovered: root.selected = index
                         onActivated: root.activate(index)
@@ -289,17 +296,17 @@ PanelWindow {
                     ]
                     delegate: Rectangle {
                         required property var modelData
-                        readonly property bool on: root.mode === modelData.k
+                        readonly property bool isOn: root.mode === modelData.k
                         implicitHeight: 32
                         implicitWidth: chip.implicitWidth + 24
                         radius: 16
-                        color: on ? Theme.paper : "transparent"
-                        border.color: on ? Theme.paper : Qt.rgba(1, 1, 1, 0.16)
+                        color: isOn ? Theme.paper : "transparent"
+                        border.color: isOn ? Theme.paper : Qt.rgba(1, 1, 1, 0.16)
                         Text {
                             id: chip
                             anchors.centerIn: parent
                             text: parent.modelData.label
-                            color: parent.on ? "#16161B" : Theme.soft
+                            color: parent.isOn ? "#16161B" : Theme.soft
                             font.family: Theme.mono
                             font.pixelSize: 11
                         }

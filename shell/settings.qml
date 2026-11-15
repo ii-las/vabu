@@ -90,13 +90,13 @@ ShellRoot {
                                 id: navItem
                                 required property var modelData
                                 required property int index
-                                readonly property bool on: root.page === modelData.key
+                                readonly property bool isOn: root.page === modelData.key
                                 readonly property bool match: !root.search || modelData.title.toLowerCase().includes(root.search)
                                 Layout.fillWidth: true
                                 implicitHeight: 44
                                 visible: match
                                 radius: Theme.radiusRow
-                                color: on ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
+                                color: isOn ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
                                 Behavior on color { ColorAnimation { duration: Theme.fast } }
                                 Accessible.role: Accessible.PageTab
                                 Accessible.name: modelData.title
@@ -109,11 +109,11 @@ ShellRoot {
                                     Rectangle {
                                         implicitWidth: 26; implicitHeight: 20; radius: 6
                                         color: "transparent"
-                                        border.color: navItem.on ? Qt.rgba(20 / 255, 36 / 255, 63 / 255, 0.5) : Qt.rgba(1, 1, 1, 0.2)
+                                        border.color: navItem.isOn ? Qt.rgba(20 / 255, 36 / 255, 63 / 255, 0.5) : Qt.rgba(1, 1, 1, 0.2)
                                         Text {
                                             anchors.centerIn: parent
                                             text: String(navItem.index + 1).padStart(2, "0")
-                                            color: navItem.on ? Theme.accentInk : Theme.paper
+                                            color: navItem.isOn ? Theme.accentInk : Theme.paper
                                             font.family: Theme.mono
                                             font.pixelSize: 10
                                         }
@@ -121,7 +121,7 @@ ShellRoot {
                                     Text {
                                         Layout.fillWidth: true
                                         text: navItem.modelData.title
-                                        color: navItem.on ? Theme.accentInk : Theme.paper
+                                        color: navItem.isOn ? Theme.accentInk : Theme.paper
                                         font.family: Theme.sans
                                         font.pixelSize: 14
                                         elide: Text.ElideRight
@@ -191,9 +191,13 @@ ShellRoot {
                         id: loader
                         Layout.fillWidth: true
                         source: root.pages[root.pageIndex].file
-                        onSourceChanged: flick.contentY = 0
-                        opacity: status === Loader.Ready ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: Theme.normal } }
+                        onSourceChanged: { flick.contentY = 0; pageIn.restart() }
+                        transform: Translate { id: pageShift; y: 0 }
+                        ParallelAnimation {
+                            id: pageIn
+                            NumberAnimation { target: loader; property: "opacity"; from: 0; to: 1; duration: 240; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: pageShift; property: "y"; from: 10; to: 0; duration: 280; easing.type: Easing.OutCubic }
+                        }
                     }
                 }
             }

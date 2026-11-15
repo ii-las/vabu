@@ -145,16 +145,16 @@ ShellRoot {
                             delegate: Rectangle {
                                 required property var modelData
                                 required property int index
-                                readonly property bool on: root.userIndex === index
+                                readonly property bool isOn: root.userIndex === index
                                 height: 34
                                 width: uname.implicitWidth + 30
                                 radius: 17
-                                color: on ? Theme.sky : Qt.rgba(243 / 255, 241 / 255, 236 / 255, 0.12)
+                                color: isOn ? Theme.sky : Qt.rgba(243 / 255, 241 / 255, 236 / 255, 0.12)
                                 Text {
                                     id: uname
                                     anchors.centerIn: parent
                                     text: parent.modelData.full
-                                    color: parent.on ? Theme.skyInk : Theme.paper
+                                    color: parent.isOn ? Theme.skyInk : Theme.paper
                                     font.family: Theme.serif
                                     font.pixelSize: 20
                                 }
@@ -179,10 +179,10 @@ ShellRoot {
                             delegate: Rectangle {
                                 required property var modelData
                                 required property int index
-                                readonly property bool on: root.sessionIndex === index
+                                readonly property bool isOn: root.sessionIndex === index
                                 width: 180; height: 56; radius: 16
-                                color: on ? Qt.rgba(142 / 255, 240 / 255, 198 / 255, 0.1) : "transparent"
-                                border.color: on ? Theme.mint : Qt.rgba(1, 1, 1, 0.16)
+                                color: isOn ? Qt.rgba(142 / 255, 240 / 255, 198 / 255, 0.1) : "transparent"
+                                border.color: isOn ? Theme.mint : Qt.rgba(1, 1, 1, 0.16)
                                 Column {
                                     anchors.verticalCenter: parent.verticalCenter
                                     x: 14

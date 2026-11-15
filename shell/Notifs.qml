@@ -8,6 +8,7 @@ Singleton {
 
     property bool dnd: false                      // rahatsız etme
     property var popups: []                       // ekranda gösterilenler
+    readonly property var visiblePopups: popups.filter(p => p)   // kapatılıp silinmişleri atla
     readonly property var all: server.trackedNotifications.values
     readonly property int count: all.length
 
@@ -31,6 +32,8 @@ Singleton {
 
         onNotification: n => {
             n.tracked = true
+            // Uygulama kapatınca ya da merkezden silinince nesne yok edilir; listeden de çıkar
+            n.closed.connect(() => root.dismissPopup(n))
             const critical = n.urgency === NotificationUrgency.Critical
             if (root.dnd && !critical) return
             root.popups = [n].concat(root.popups).slice(0, 4)

@@ -8,8 +8,20 @@ Item {
     implicitWidth: 500
     implicitHeight: 500
 
+    signal burstDone()
+
     onCountChanged: canvas.requestPaint()
     onErrorChanged: canvas.requestPaint()
+
+    // Açılışta haritanın belirmesi: soluk halkalar dışa doğru çizilip geri çekilir
+    property real intro: 0
+    onIntroChanged: canvas.requestPaint()
+    SequentialAnimation on intro {
+        running: true
+        NumberAnimation { from: 0; to: 6; duration: 900; easing.type: Easing.OutCubic }
+        PauseAnimation { duration: 250 }
+        NumberAnimation { to: 0; duration: 700; easing.type: Easing.InOutCubic }
+    }
 
     // Doğrulanırken halkalar hafifçe nefes alır
     property real pulse: 0
@@ -45,6 +57,15 @@ Item {
             const n = Math.min(14, root.count)
             const warm = root.error ? "rgba(247,168,168,0.55)" : "rgba(246,220,196,0.55)"
             const head = root.error ? "#F7A8A8" : "#8EF0C6"
+            if (n === 0 && root.intro > 0) {
+                const full = Math.floor(root.intro)
+                for (let i = 0; i <= full && i < 6; i++) {
+                    const a = i < full ? 0.28 : (root.intro - full) * 0.28
+                    ctx.lineWidth = 1.2
+                    ctx.strokeStyle = "rgba(246,220,196," + (a * (1 - i / 7)).toFixed(3) + ")"
+                    ring(ctx, i)
+                }
+            }
             ctx.lineWidth = 1.4
             ctx.strokeStyle = warm
             for (let i = 0; i < n - 1; i++) ring(ctx, i)
@@ -80,4 +101,13 @@ Item {
         NumberAnimation { target: root; property: "x"; by: 8; duration: 60 }
     }
     function shakeIt() { shake.start() }
+
+    // Doğru şifre: halkalar dışa açılıp kaybolur, sonra kilit kalkar
+    ParallelAnimation {
+        id: burst
+        NumberAnimation { target: root; property: "scale"; to: 1.7; duration: 460; easing.type: Easing.OutCubic }
+        NumberAnimation { target: root; property: "opacity"; to: 0; duration: 460; easing.type: Easing.OutCubic }
+        onFinished: root.burstDone()
+    }
+    function burstIt() { burst.start() }
 }

@@ -122,21 +122,21 @@ ColumnLayout {
                 required property int index
                 readonly property var st: page.draft[modelData.name] ?? { mode: "", scale: 1, x: 0, y: 0 }
                 readonly property var dims: { const m = st.mode.match(/^(\d+)x(\d+)/); return m ? [m[1] / st.scale, m[2] / st.scale] : [1920, 1080] }
-                readonly property bool on: page.selected === modelData.name
+                readonly property bool isOn: page.selected === modelData.name
                 visible: !st.off
                 x: 40 + (st.x - canvasBox.bounds.minX) * canvasBox.k
                 y: 30 + (st.y - canvasBox.bounds.minY) * canvasBox.k
                 width: dims[0] * canvasBox.k
                 height: dims[1] * canvasBox.k
                 radius: 12
-                color: on ? Theme.accent : Qt.rgba(1, 1, 1, 0.06)
+                color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.06)
                 border.width: 2
-                border.color: on ? Theme.accent : Qt.rgba(1, 1, 1, 0.2)
+                border.color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.2)
                 Column {
                     anchors.centerIn: parent
                     spacing: 2
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.on ? Theme.accentInk : Theme.paper; font.family: Theme.serif; font.pixelSize: 34 }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.on ? Theme.accentInk : Theme.paper; font.family: Theme.mono; font.pixelSize: 10 }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.serif; font.pixelSize: 34 }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.mono; font.pixelSize: 10 }
                 }
                 MouseArea {
                     anchors.fill: parent

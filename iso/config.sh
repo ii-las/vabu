@@ -20,7 +20,7 @@ command = "niri-session"
 user = "liveuser"
 TOML
 
-install -d -o liveuser -g liveuser /home/liveuser/.config/niri
+install -d -o liveuser -g liveuser /home/liveuser/.config /home/liveuser/.config/niri
 cp /etc/niri/config.kdl /home/liveuser/.config/niri/config.kdl
 cat >> /home/liveuser/.config/niri/config.kdl <<'KDL'
 
@@ -40,6 +40,11 @@ for m in welcomeq usersq summaryq finishedq; do
         sed -i "s/- ${m}\$/- ${m%q}/" /etc/calamares/settings.conf
     fi
 done
+
+# aarch64: sb-shim yalnızca x86_64 shim dosyalarını tanır; orada düz grub kullanılır.
+if [ "$(uname -m)" = "aarch64" ]; then
+    sed -i 's/^efiBootLoader: .*/efiBootLoader: "grub"/' /etc/calamares/modules/bootloader.conf
+fi
 
 # Yerel ayar
 echo 'LANG=tr_TR.UTF-8' > /etc/locale.conf

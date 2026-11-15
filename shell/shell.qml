@@ -75,7 +75,7 @@ ShellRoot {
     IpcHandler {
         target: "notifications"
         function toggle(): void { Ui.notifCenterOpen = !Ui.notifCenterOpen }
-        function dnd(on: bool): void { Notifs.dnd = on }
+        function dnd(isOn: bool): void { Notifs.dnd = isOn }
         function clear(): void { Notifs.clearAll() }
     }
     IpcHandler {

@@ -13,16 +13,19 @@
 
   <preferences>
     <version>0.1.0</version>
+    <release-version>@FEDORA@</release-version>
     <packagemanager>dnf5</packagemanager>
     <locale>tr_TR</locale>
     <keytable>trq</keytable>
     <timezone>Europe/Istanbul</timezone>
     <rpm-check-signatures>false</rpm-check-signatures>
     <bootsplash-theme>vabu</bootsplash-theme>
-    <type image="iso" primary="true" flags="dmsquash" firmware="uefi" mediacheck="false"
-          publisher="Vabu" volid="VABU_LIVE"
-          kernelcmdline="rhgb quiet rd.live.image">
-      <bootloader name="grub2" console="gfxterm" timeout="5"/>
+    <!-- filesystem="erofs": dracut canlı kökü overlayfs ile /run/rootfsbase altına bağlar;
+         Calamares unpackfs sistemi oradan kopyalar. Fedora'nın kendi canlı ISO'ları da böyle. -->
+    <type image="iso" primary="true" flags="dmsquash" filesystem="erofs" firmware="uefi"
+          mediacheck="false" efifatimagesize="30" publisher="Vabu" volid="VABU_LIVE"
+          kernelcmdline="rhgb quiet">
+      <bootloader name="grub2" console="console" timeout="5"/>
     </type>
   </preferences>
 
@@ -50,14 +53,14 @@
 
   <packages type="bootstrap">
     <package name="filesystem"/>
-    <package name="basesystem"/>
     <package name="fedora-gpg-keys"/>
     <package name="fedora-repos"/>
     <package name="vabu-release"/>
     <package name="dnf5"/>
   </packages>
 
-  <packages type="image">
+  <!-- plusRecommended: linux-firmware gibi paketlerin önerdiği GPU/Wi-Fi firmware'leri de gelsin -->
+  <packages type="image" patternType="plusRecommended">
     <!-- Temel sistem ve açılış -->
     <package name="kernel"/>
     <package name="kernel-modules-extra"/>
@@ -70,12 +73,14 @@
     <package name="grub2-efi-aa64" arch="aarch64"/>
     <package name="grub2-efi-aa64-cdboot" arch="aarch64"/>
     <package name="shim-aa64" arch="aarch64"/>
+    <package name="grub2-efi-aa64-modules" arch="aarch64"/>
     <package name="efibootmgr"/>
     <package name="plymouth"/>
     <package name="btrfs-progs"/>
     <package name="cryptsetup"/>
     <package name="NetworkManager-wifi"/>
     <package name="sudo"/>
+    <package name="generic-logos"/>
     <package name="glibc-langpack-tr"/>
     <package name="glibc-langpack-en"/>
 

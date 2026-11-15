@@ -1,4 +1,4 @@
-// Vabu giriş ekranı için en küçük niri ayarı (greetd'nin "greeter" kullanıcısıyla çalışır).
+// Vabu giriş ekranı için en küçük niri ayarı (greetd kullanıcısıyla çalışır).
 input {
     keyboard {
         xkb {

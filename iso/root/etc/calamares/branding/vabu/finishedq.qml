@@ -1,4 +1,4 @@
-// Vabu kurulum · Tamamlandı: eş yükselti adaları, logo, "Yeniden başlat".
+// Kurulum tamamlandı ekranı
 import io.calamares.core 1.0
 import io.calamares.ui 1.0
 import QtQuick 2.15
@@ -9,10 +9,14 @@ Rectangle {
     color: "#121216"
     readonly property bool failed: (config.failureMessage || "") !== ""
 
-    // Eş yükselti adaları
+    // Eş yükselti adaları: sayfa açılınca halka halka çizilir
     Canvas {
+        id: islands
         anchors.fill: parent
+        property real grow: 0
+        onGrowChanged: requestPaint()
         onWidthChanged: requestPaint()
+        NumberAnimation on grow { running: page.visible; from: 0; to: 1; duration: 2400; easing.type: Easing.OutCubic }
         onPaint: {
             const ctx = getContext("2d")
             ctx.reset()
@@ -20,7 +24,9 @@ Rectangle {
             function island(cx, cy, n, base, gap, seed, color) {
                 ctx.strokeStyle = color
                 ctx.lineWidth = 1.2
-                for (let k = 0; k < n; k++) {
+                const shown = n * islands.grow
+                for (let k = 0; k < Math.ceil(shown); k++) {
+                    ctx.globalAlpha = Math.min(1, shown - k)
                     const r0 = base + k * gap
                     ctx.beginPath()
                     for (let i = 0; i <= 80; i++) {
@@ -41,12 +47,26 @@ Rectangle {
     Rectangle {
         x: page.width * 0.23; y: page.height * 0.32
         width: 112; height: 112; radius: 30
+        scale: 0.6
+        opacity: 0
+        SequentialAnimation on scale {
+            running: page.visible
+            PauseAnimation { duration: 250 }
+            NumberAnimation { to: 1; duration: 520; easing.type: Easing.OutBack }
+        }
+        NumberAnimation on opacity { running: page.visible; to: 1; duration: 500 }
         color: page.failed ? "#F7A8A8" : "#8EF0C6"
         Text { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; text: "v"; color: "#0E3B2C"; font.family: "Instrument Serif"; font.italic: true; font.pixelSize: 96 }
     }
     Rectangle { x: page.width * 0.23 + 112; y: page.height * 0.32 + 112; width: 30; height: 30; color: "#F2B48A" }
 
     ColumnLayout {
+        opacity: 0
+        SequentialAnimation on opacity {
+            running: page.visible
+            PauseAnimation { duration: 500 }
+            NumberAnimation { to: 1; duration: 600; easing.type: Easing.OutCubic }
+        }
         x: page.width * 0.5
         y: page.height * 0.3
         width: Math.min(460, page.width * 0.42)
