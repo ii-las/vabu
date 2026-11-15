@@ -36,12 +36,8 @@ Requires:       switcheroo-control
 # Giriş ekranı (Vabu greeter, Vabu Shell ile birlikte gelir)
 Requires:       greetd
 Requires:       tuigreet
-# Vabu Shell hazır olana kadar yedek kabuk
-Requires:       waybar
-Requires:       fuzzel
-Requires:       mako
-Requires:       swaybg
 Requires:       swayidle
+# Vabu Shell açılamazsa kilit için yedek
 Requires:       swaylock
 # Uygulamalar
 Requires:       alacritty
@@ -105,6 +101,9 @@ if [ $1 -eq 1 ]; then
     systemctl --global enable vabu-user-update.timer >/dev/null 2>&1 || :
     plymouth-set-default-theme vabu >/dev/null 2>&1 || :
 fi
+# niri'nin önerdiği waybar ve mako kurulu olabilir; kendiliğinden başlayıp Vabu Shell'in
+# barıyla ve bildirim sunucusuyla çakışmasınlar
+systemctl --global mask waybar.service mako.service >/dev/null 2>&1 || :
 glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 
 %preun

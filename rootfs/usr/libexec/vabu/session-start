@@ -12,10 +12,11 @@ start gnome-keyring-daemon --start --components=secrets
 if command -v qs >/dev/null && [[ -e "$VABU_SHARE/shell/shell.qml" ]]; then
     start qs -p "$VABU_SHARE/shell"
 else
-    start nm-applet --indicator
-    start swaybg -m fill -i "$VABU_SHARE/assets/wallpaper.png"
-    start waybar -c "$VABU_SHARE/waybar/config.jsonc" -s "$VABU_SHARE/waybar/style.css"
-    start mako --config "$VABU_SHARE/mako/config"
+    # Kabuk yoksa elde ne varsa onunla idare et
+    command -v nm-applet >/dev/null && start nm-applet --indicator
+    command -v swaybg >/dev/null && start swaybg -m fill -i "$VABU_SHARE/assets/wallpaper.png"
+    command -v waybar >/dev/null && start waybar -c "$VABU_SHARE/waybar/config.jsonc" -s "$VABU_SHARE/waybar/style.css"
+    command -v mako >/dev/null && start mako --config "$VABU_SHARE/mako/config"
 fi
 
 # Boşta: 5 dk kilit, 10 dk ekranı kapat; uykudan önce kilit

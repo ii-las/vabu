@@ -46,5 +46,11 @@ if [ "$(uname -m)" = "aarch64" ]; then
     sed -i 's/^efiBootLoader: .*/efiBootLoader: "grub"/' /etc/calamares/modules/bootloader.conf
 fi
 
+# Başlatıcıda Calamares'in kendi girişi yerine "Vabu'yu kur" görünsün
+if [ -f /usr/share/applications/calamares.desktop ]; then echo 'NoDisplay=true' >> /usr/share/applications/calamares.desktop; fi
+
+# Fedora'nın waybar ve mako servisleri Vabu Shell ile çakışmasın
+systemctl --global mask waybar.service mako.service || true
+
 # Yerel ayar
 echo 'LANG=tr_TR.UTF-8' > /etc/locale.conf

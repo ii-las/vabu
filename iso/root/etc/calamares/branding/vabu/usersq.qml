@@ -1,7 +1,8 @@
-// Vabu kurulum · Seni tanıyalım: ad, kullanıcı adı, şifre, bilgisayar adı (iki parçalı satırlar).
+// Kurulum: kullanıcı bilgileri
 import io.calamares.core 1.0
 import io.calamares.ui 1.0
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
 Rectangle {
@@ -17,6 +18,7 @@ Rectangle {
         property bool secret: false
         property bool monoFont: false
         signal edited(string text)
+        function focusField() { input.forceActiveFocus() }
         readonly property bool isOn: page.focusRow === rowIndex
         Layout.fillWidth: true
         spacing: 8
@@ -41,11 +43,13 @@ Rectangle {
                 anchors.margins: 8
                 radius: 13
                 color: row.isOn ? "#1B2433" : "#34313B"
-                TextInput {
+                // Calamares'in kendi QML sayfaları gibi Controls.TextField: klavye odağı
+                // QQuickWidget içinde güvenilir şekilde buraya gelir
+                TextField {
                     id: input
                     anchors.fill: parent
-                    anchors.leftMargin: 18
-                    anchors.rightMargin: 18
+                    leftPadding: 18
+                    rightPadding: 18
                     verticalAlignment: TextInput.AlignVCenter
                     color: "#F3F1EC"
                     font.family: row.monoFont ? "Geist Mono" : "Geist"
@@ -53,10 +57,11 @@ Rectangle {
                     font.letterSpacing: row.secret ? 3 : 0
                     echoMode: row.secret ? TextInput.Password : TextInput.Normal
                     passwordCharacter: "●"
+                    selectByMouse: true
                     selectionColor: "#A9C7F7"
+                    background: Item {}
                     onActiveFocusChanged: if (activeFocus) page.focusRow = row.rowIndex
                     onTextEdited: row.edited(text)
-                    KeyNavigation.tab: null
                 }
             }
         }
@@ -81,7 +86,7 @@ Rectangle {
             lineHeight: 0.95
         }
 
-        PairRow { rowIndex: 0; label: "Adın"; text: config.fullName; onEdited: t => config.fullName = t }
+        PairRow { id: first; rowIndex: 0; label: "Adın"; text: config.fullName; onEdited: t => config.fullName = t }
         PairRow { rowIndex: 1; label: "Kullanıcı adı"; monoFont: true; text: config.loginName; onEdited: t => config.loginName = t }
         PairRow { id: pass1; rowIndex: 2; label: "Şifre"; secret: true; onEdited: t => config.userPassword = t }
         PairRow { id: pass2; rowIndex: 3; label: "Şifre tekrar"; secret: true; onEdited: t => config.userPasswordSecondary = t }
@@ -106,4 +111,8 @@ Rectangle {
             font.pixelSize: 13
         }
     }
+
+    // Sayfa açılınca ilk alana odaklan
+    Component.onCompleted: first.focusField()
+    onVisibleChanged: if (visible) first.focusField()
 }

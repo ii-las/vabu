@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Vabu'yu kur
+Comment=Vabu'yu bu bilgisayara kur
+Exec=sh -c "sudo -E calamares"
+Icon=vabu-logo
+Terminal=false
+Type=Application
+Categories=System;
+Keywords=kur;install;calamares;kurulum;

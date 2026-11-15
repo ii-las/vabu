@@ -6,7 +6,8 @@ import QtQuick 2.15
 Rectangle {
     id: root
     color: "#121216"
-    height: 84
+    implicitHeight: 76
+    height: implicitHeight
 
     Row {
         anchors.centerIn: parent

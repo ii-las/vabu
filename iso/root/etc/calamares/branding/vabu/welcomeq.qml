@@ -1,4 +1,4 @@
-// Vabu kurulum · 01 Hoş geldin: dil seçimi ve gereksinim denetimi.
+// Kurulum: hoş geldin, dil seçimi, gereksinimler
 import io.calamares.core 1.0
 import io.calamares.ui 1.0
 import QtQuick 2.15
@@ -98,9 +98,28 @@ Rectangle {
             }
         }
 
+        // Kurmadan dene: kurulumu kapatıp canlı masaüstüne geçer.
+        // Kurulum daha sonra başlatıcıdan "Vabu'yu kur" ile açılabilir.
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            implicitWidth: tryRow.implicitWidth + 44
+            implicitHeight: 52
+            radius: 26
+            color: tryMouse.containsMouse ? "#34313B" : "#26242C"
+            Row {
+                id: tryRow
+                anchors.centerIn: parent
+                spacing: 10
+                Text { text: "Kurmadan dene"; color: "#F3F1EC"; font.family: "Geist"; font.pixelSize: 15 }
+                Text { text: "→"; color: "#A3A1A8"; font.pixelSize: 15 }
+            }
+            MouseArea { id: tryMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.quit() }
+            Accessible.role: Accessible.Button
+            Accessible.name: "Kurmadan dene"
+        }
         Text {
             Layout.alignment: Qt.AlignHCenter
-            text: "KURMADAN ÖNCE DENEMEK İÇİN BU PENCEREYİ KAPATABİLİRSİN"
+            text: "KURULUMU SONRA BAŞLATICIDAN “VABU’YU KUR” İLE AÇABİLİRSİN"
             color: "#8E8B93"
             font.family: "Geist Mono"
             font.pixelSize: 11
