@@ -108,6 +108,27 @@ jobs:
             fc-list : family | grep -q "$f" || { echo "::error::yazı tipi eksik: $f"; exit 1; }
           done
 
+      - name: QML denetimi (qmllint)
+        # Static lint runs before the longer runtime scenarios; both remain mandatory.
+        run: |
+          dnf -y install qt6-qtdeclarative-devel
+          QMLLINT=$(command -v qmllint-qt6 || echo /usr/lib64/qt6/bin/qmllint)
+          # Quickshell qmldir'i çalışırken üretir; qmllint singleton'ları tanısın diye burada üret
+          cp -r shell /tmp/lint && cd /tmp/lint
+          for f in *.qml; do
+            n="${f%.qml}"
+            case "$n" in [A-Z]*) ;; *) continue ;; esac
+            if grep -q "^pragma Singleton" "$f"; then echo "singleton $n 1.0 $f"; else echo "$n 1.0 $f"; fi
+          done > qmldir
+          set +e
+          "$QMLLINT" --unqualified disable -I /usr/lib64/qt6/qml -I . *.qml > /tmp/qmllint.txt 2>&1
+          lint_status=$?
+          set -e
+          mkdir -p /tmp/ekran
+          cp /tmp/qmllint.txt /tmp/ekran/qmllint.log
+          cat /tmp/qmllint.txt
+          exit "$lint_status"
+
       - name: Kabuğu çalıştır ve ekran görüntülerini al
         timeout-minutes: 15
         run: |
@@ -142,25 +163,6 @@ jobs:
           niri validate -c /tmp/h/niri/config.kdl
           niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
           niri validate -c rootfs/usr/share/vabu/recovery/niri.kdl
-
-      - name: QML denetimi (qmllint)
-        # Runtime loading above is mandatory; static lint also rejects unresolved types/properties.
-        run: |
-          dnf -y install qt6-qtdeclarative-devel
-          QMLLINT=$(command -v qmllint-qt6 || echo /usr/lib64/qt6/bin/qmllint)
-          # Quickshell qmldir'i çalışırken üretir; qmllint singleton'ları tanısın diye burada üret
-          cp -r shell /tmp/lint && cd /tmp/lint
-          for f in *.qml; do
-            n="${f%.qml}"
-            case "$n" in [A-Z]*) ;; *) continue ;; esac
-            if grep -q "^pragma Singleton" "$f"; then echo "singleton $n 1.0 $f"; else echo "$n 1.0 $f"; fi
-          done > qmldir
-          set +e
-          "$QMLLINT" --unqualified disable -I /usr/lib64/qt6/qml -I . *.qml > /tmp/qmllint.txt 2>&1
-          lint_status=$?
-          set -e
-          cat /tmp/qmllint.txt
-          exit "$lint_status"
 
       - uses: actions/upload-artifact@v4
         with:

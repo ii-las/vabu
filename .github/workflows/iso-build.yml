@@ -63,7 +63,7 @@ jobs:
         env:
           COPR_KEY_SHA256: ${{ vars.COPR_KEY_SHA256 || secrets.COPR_KEY_SHA256 }}
         run: |
-          sudo podman run --rm --privileged \
+          sudo --preserve-env=COPR_KEY_SHA256,FEDORA podman run --rm --privileged \
             -v "$PWD":/work:Z -v /dev:/dev -w /work -e COPR_KEY_SHA256 -e FEDORA \
             registry.fedoraproject.org/fedora:${FEDORA} \
             bash -euxc '
