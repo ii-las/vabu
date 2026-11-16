@@ -42,5 +42,9 @@ ColumnLayout {
         PillButton { label: Lang.t("Kapak ayarını uygula"); enabled: !lid.running; onClicked: { lid.command = ["pkexec", "/usr/libexec/vabu/desktop-tools", "lid", page.batteryLid, page.acLid]; lid.running = true } }
         Text { textFormat: Text.PlainText; text: page.message; color: Theme.soft; wrapMode: Text.Wrap; Layout.fillWidth: true }
     }
-    Process { id: lid; stderr: StdioCollector { id: err }; onExited: code => page.message = code === 0 ? Lang.t("Kaydedildi. Yeniden başlatınca uygulanır.") : (err.text.trim() || Lang.t("Ayar kaydedilemedi.")) }
+    Process {
+        id: lid
+        stderr: StdioCollector { id: err }
+        onExited: code => page.message = code === 0 ? Lang.t("Kaydedildi. Yeniden başlatınca uygulanır.") : (err.text.trim() || Lang.t("Ayar kaydedilemedi."))
+    }
 }

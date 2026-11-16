@@ -15,6 +15,8 @@ ShellRoot {
             }
         }
         console.warn("DERLEME-BITTI " + (files.length + count) + " dosya, " + bad + " hatalı")
-        Qt.exit(bad ? 1 : 0)
+        // Quickshell handles quit(), not QQmlEngine::exit(). The caller rejects
+        // any nonzero error count in DERLEME-BITTI even when quit returns zero.
+        Qt.callLater(Qt.quit)
     }
 }

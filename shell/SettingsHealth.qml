@@ -12,7 +12,16 @@ ColumnLayout {
     property bool resetConfirmed: false
     property var boot: ({})
     property var measurements: []
-    Process { id: sampleProbe; command: ["/usr/libexec/vabu/desktop-measures","sample"]; stdout: StdioCollector {}; stderr: StdioCollector {}; onExited: code => { if (code !== 0) page.error=Lang.t("Ölçüm tamamlanamadı."); measureHistory.running=true } }
+    Process {
+        id: sampleProbe
+        command: ["/usr/libexec/vabu/desktop-measures","sample"]
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+        onExited: code => {
+            if (code !== 0) page.error = Lang.t("Ölçüm tamamlanamadı.")
+            measureHistory.running = true
+        }
+    }
     Process { id: measureHistory; running: true; command: ["/usr/libexec/vabu/desktop-measures","records"]; stdout: StdioCollector { onStreamFinished: { try { page.measurements=JSON.parse(text).records } catch(e) {} } } }
     Process { id: bootProbe; command: ["/usr/libexec/vabu/system-check","recovery"]; stdout: StdioCollector { onStreamFinished: { try { page.boot = JSON.parse(text) } catch(e) { page.error = "Önyükleme envanteri okunamadı." } } } }
 
