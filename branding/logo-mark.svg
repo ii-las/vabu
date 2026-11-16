@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Zeminsiz işaret: koyu arka planların üstünde (açılış ekranı, önyükleme menüsü) kullanılır. -->
+  <path d="M68 78 L120 186" stroke="#EFECE6" stroke-width="35" stroke-linecap="round" fill="none"/>
+  <path d="M128 184 L164 108" stroke="#EFECE6" stroke-width="15" stroke-linecap="round" fill="none"/>
+  <circle cx="184" cy="72" r="16.5" fill="#E8A066"/>
+</svg>

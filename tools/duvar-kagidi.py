@@ -93,7 +93,11 @@ def scene(name, sky, sun, layers, star_count=0, grain=0.06, seed=3):
         body.append(stars(seed + 11, star_count, H * 0.55))
     body.append(f'<rect width="{W}" height="{H}" fill="url(#glow)"/>')
     if sr:
-        body.append(f'<circle cx="{sx}" cy="{sy}" r="{sr}" fill="{sc}"/>')
+        # disk: kenarı havada erir, keskin bir daire gibi durmaz
+        defs.append(f'<radialGradient id="disc" cx="{sx}" cy="{sy}" r="{sr * 1.5}" gradientUnits="userSpaceOnUse">'
+                    f'<stop offset="0" stop-color="{sc}"/><stop offset="0.6" stop-color="{sc}"/>'
+                    f'<stop offset="0.72" stop-color="{sc}" stop-opacity="0.55"/><stop offset="1" stop-color="{sc}" stop-opacity="0"/></radialGradient>')
+        body.append(f'<circle cx="{sx}" cy="{sy}" r="{sr * 1.5}" fill="url(#disc)"/>')
     for i, (base, height, scale, octaves, top, bottom, sharp) in enumerate(layers):
         # her sırt yukarıda kendi rengi, aşağıda bir arkadakine karışan sis
         defs.append(f'<linearGradient id="r{i}" x1="0" y1="{base - height * 1.4:.0f}" x2="0" y2="{min(H, base + height * 2.2):.0f}" gradientUnits="userSpaceOnUse">'
@@ -111,8 +115,8 @@ scene("wallpaper.svg",
       sky=[(0, "#11131E"), (0.28, "#1F2134"), (0.48, "#3D3550"), (0.62, "#7A5670"), (0.73, "#C07E78"), (0.82, "#E6A985"), (0.9, "#F2C79E"), (1, "#F5D3AC")],
       sun=(2540, 1395, 54, "#FCE9CF", "#F8CFA4", 1500),
       layers=[
-          (1470, 60, 3.2, 5, "#B58A8C", "#D2A493", 0.55),
-          (1530, 80, 3.8, 5, "#9A7482", "#B58E8C", 0.6),
+          (1465, 85, 3.4, 5, "#B58A8C", "#CFA192", 0.6),
+          (1535, 95, 4.0, 6, "#9A7482", "#B58E8C", 0.62),
           (1600, 95, 4.4, 6, "#7D5E70", "#977681", 0.62),
           (1680, 110, 5.0, 6, "#614859", "#7A5F6E", 0.65),
           (1770, 120, 5.6, 6, "#48353F", "#5E4856", 0.66),
@@ -127,7 +131,7 @@ scene("wallpaper-gece.svg",
       sky=[(0, "#06070C"), (0.4, "#0B0E17"), (0.68, "#141A29"), (0.86, "#202A40"), (1, "#2B3854")],
       sun=(1240, 640, 44, "#EEF1F7", "#A9BAD9", 1150),
       layers=[
-          (1500, 70, 3.3, 5, "#2B3854", "#394868", 0.55),
+          (1495, 90, 3.5, 5, "#2B3854", "#394868", 0.6),
           (1570, 90, 3.9, 5, "#243048", "#2F3C59", 0.6),
           (1650, 105, 4.6, 6, "#1D273B", "#27324A", 0.63),
           (1740, 115, 5.3, 6, "#171F30", "#1F293D", 0.66),
@@ -142,7 +146,7 @@ scene("wallpaper-sis.svg",
       sky=[(0, "#8597AC"), (0.35, "#A3B0C0"), (0.6, "#C2C9D2"), (0.8, "#DAD9DA"), (1, "#E7E2DC")],
       sun=(2700, 900, 0, "#fff", "#FFFFFF", 1700),
       layers=[
-          (1450, 60, 3.1, 5, "#BCC4CE", "#D2D5D9", 0.5),
+          (1445, 85, 3.3, 5, "#BCC4CE", "#D2D5D9", 0.58),
           (1520, 80, 3.7, 5, "#A5B0BD", "#C0C7CF", 0.55),
           (1600, 95, 4.3, 6, "#8D9AAA", "#ABB5C1", 0.6),
           (1690, 110, 5.0, 6, "#748395", "#939FAE", 0.63),

@@ -148,7 +148,7 @@ ColumnLayout {
 
             Column {
                 spacing: 1
-                Text { text: "Gün doğumu"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 11.5 }
+                Text { text: "Gün doğumu"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12 }
                 Text { text: Sun.sunriseText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
             // gündüzün neresindeyiz
@@ -172,7 +172,7 @@ ColumnLayout {
             }
             Column {
                 spacing: 1
-                Text { anchors.right: parent.right; text: "Gün batımı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 11.5 }
+                Text { anchors.right: parent.right; text: "Gün batımı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12 }
                 Text { anchors.right: parent.right; text: Sun.sunsetText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
         }

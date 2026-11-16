@@ -252,7 +252,7 @@ OverlayWindow {
                             text: "Sık kullanılanlar"
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: 12.5
+                            font.pixelSize: 12
                             font.weight: Font.Medium
                         }
                     }
@@ -289,7 +289,7 @@ OverlayWindow {
                                 : "Bir şey bulunamadı"
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: 13.5
+                            font.pixelSize: 13
                         }
                     }
                 }
@@ -320,7 +320,7 @@ OverlayWindow {
                                 text: tab.modelData.label
                                 color: tab.isOn ? Theme.paper : Theme.muted
                                 font.family: Theme.sans
-                                font.pixelSize: 12.5
+                                font.pixelSize: 12
                                 font.weight: tab.isOn ? Font.DemiBold : Font.Medium
                             }
                             MouseArea {

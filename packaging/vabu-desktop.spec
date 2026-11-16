@@ -11,6 +11,7 @@ Source0:        vabu-%{version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  librsvg2-tools
+BuildRequires:  ImageMagick
 BuildRequires:  jq
 BuildRequires:  perl-interpreter
 BuildRequires:  systemd-rpm-macros
@@ -73,21 +74,25 @@ masaüstünü oluşturan paketler.
 %autosetup -n vabu-%{version}
 
 %build
-rsvg-convert -w 3840 -h 2160 branding/wallpaper.svg -o wallpaper.png
+# Duvar kağıtları: gren yüzünden PNG çok büyür, JPEG olarak paketlenir
+for n in wallpaper wallpaper-gece wallpaper-sis; do
+    rsvg-convert -w 3840 -h 2160 branding/$n.svg -o $n.png
+    magick $n.png -quality 92 -sampling-factor 4:4:4 -interlace none $n.jpg
+done
 rsvg-convert -w 256  -h 256  branding/logo.svg      -o logo-256.png
 rsvg-convert -w 128  -h 128  branding/logo.svg      -o logo-128.png
-rsvg-convert -w 3840 -h 2160 branding/wallpaper-gece.svg -o wallpaper-gece.png
 # niri varsayılan ayarı şablondan (Vabu Ayarlar da aynı üreticiyi kullanır)
 VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in \
     bash rootfs/usr/libexec/vabu/niri-config --defaults -o niri-default.kdl
 
 %install
 cp -a rootfs/. %{buildroot}/
-install -Dm0644 wallpaper.png  %{buildroot}%{_datadir}/vabu/assets/wallpaper.png
+for n in wallpaper wallpaper-gece wallpaper-sis; do
+    install -Dm0644 $n.jpg %{buildroot}%{_datadir}/vabu/assets/$n.jpg
+done
 install -Dm0644 logo-128.png   %{buildroot}%{_datadir}/plymouth/themes/vabu/logo.png
 install -Dm0644 logo-256.png   %{buildroot}%{_datadir}/pixmaps/vabu-logo.png
 install -Dm0644 branding/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/vabu-logo.svg
-install -Dm0644 wallpaper-gece.png %{buildroot}%{_datadir}/vabu/assets/wallpaper-gece.png
 install -Dm0644 niri-default.kdl %{buildroot}%{_sysconfdir}/niri/config.kdl
 install -Dm0644 niri-default.kdl %{buildroot}%{_datadir}/vabu/niri/config.kdl
 

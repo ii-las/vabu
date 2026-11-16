@@ -53,14 +53,14 @@ Card {
                 text: root.days[clock.date.getDay()]
                 color: Theme.soft
                 font.family: Theme.sans
-                font.pixelSize: 13.5
+                font.pixelSize: 13
                 font.weight: Font.Medium
             }
             Text {
                 text: clock.date.getDate() + " " + root.months[clock.date.getMonth()]
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 13.5
+                font.pixelSize: 13
             }
         }
     }

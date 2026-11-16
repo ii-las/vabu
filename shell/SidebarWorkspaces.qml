@@ -197,7 +197,7 @@ Card {
                         color: row.fg
                         opacity: row.isOn ? 0.72 : 0.6
                         font.family: Theme.sans
-                        font.pixelSize: 12.5
+                        font.pixelSize: 12
                         elide: Text.ElideRight
                         Behavior on color { ColorAnimation { duration: Theme.state } }
                     }

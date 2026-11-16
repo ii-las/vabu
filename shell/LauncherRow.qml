@@ -94,7 +94,7 @@ Item {
                         text: src.info.label
                         color: Theme.soft
                         font.family: Theme.sans
-                        font.pixelSize: 11.5
+                        font.pixelSize: 12
                         font.weight: Font.Medium
                     }
                 }
@@ -115,7 +115,7 @@ Item {
             text: ({ "installed": "Kurulu", "done": "Kuruldu", "installing": "Kuruluyor", "error": "Kurulamadı" })[root.state_] ?? ""
             color: root.state_ === "error" ? Theme.danger : root.state_ === "done" ? Theme.ok : Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 12.5
+            font.pixelSize: 12
             font.weight: Font.Medium
         }
 

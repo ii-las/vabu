@@ -14,8 +14,9 @@ Singleton {
         "gul":     { color: "#EBB4C8", ink: "#3A1428", name: "Gül" }
     })
     readonly property var wallpapers: [
-        { name: "Alacakaranlık", path: "/usr/share/vabu/assets/wallpaper.png" },
-        { name: "Gece", path: "/usr/share/vabu/assets/wallpaper-gece.png" }
+        { name: "Alacakaranlık", path: "/usr/share/vabu/assets/wallpaper.jpg" },
+        { name: "Gece", path: "/usr/share/vabu/assets/wallpaper-gece.jpg" },
+        { name: "Sis", path: "/usr/share/vabu/assets/wallpaper-sis.jpg" }
     ]
 
     property var values: ({})
@@ -24,7 +25,9 @@ Singleton {
     readonly property string accentName: values.accent ?? "kagit"
     readonly property color accent: (accents[accentName] ?? accents.kagit).color
     readonly property color accentInk: (accents[accentName] ?? accents.kagit).ink
-    readonly property string wallpaper: values.wallpaper ?? wallpapers[0].path
+    // Eski sürümler hazır duvar kağıtlarını .png olarak kaydetmişti
+    readonly property string wallpaper: (values.wallpaper ?? wallpapers[0].path)
+        .replace(/^\/usr\/share\/vabu\/assets\/(wallpaper[a-z-]*)\.png$/, "/usr/share/vabu/assets/$1.jpg")
     readonly property string sidebarSide: values.sidebarSide ?? "left"
     readonly property bool showSeconds: values.showSeconds ?? false
     readonly property bool showMedia: values.showMedia ?? true

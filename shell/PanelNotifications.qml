@@ -70,7 +70,7 @@ ColumnLayout {
             text: "Yeni bildirim yok"
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 13.5
+            font.pixelSize: 13
         }
     }
 }

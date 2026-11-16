@@ -80,7 +80,7 @@ ColumnLayout {
                 text: tile.name
                 color: tile.fg
                 font.family: Theme.sans
-                font.pixelSize: 14.5
+                font.pixelSize: 14
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -90,7 +90,7 @@ ColumnLayout {
                 color: tile.fg
                 opacity: 0.66
                 font.family: Theme.sans
-                font.pixelSize: 12.5
+                font.pixelSize: 12
                 elide: Text.ElideRight
             }
         }
@@ -145,7 +145,7 @@ ColumnLayout {
                 text: Math.round(level.value * 100)
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12.5
+                font.pixelSize: 12
                 font.features: ({ "tnum": 1 })
             }
         }

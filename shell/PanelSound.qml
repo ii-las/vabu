@@ -59,7 +59,7 @@ ColumnLayout {
                 text: level.muted ? "0" : Math.round(level.value * 100)
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12.5
+                font.pixelSize: 12
                 font.features: ({ "tnum": 1 })
             }
         }
@@ -86,7 +86,7 @@ ColumnLayout {
         text: "Mikrofon"
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 12.5
+        font.pixelSize: 12
         font.weight: Font.Medium
     }
     Level { node: root.source; icon: "mic"; mutedIcon: "mic_off" }

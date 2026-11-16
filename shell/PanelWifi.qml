@@ -114,7 +114,7 @@ ColumnLayout {
                                 text: Net.error
                                 color: Theme.danger
                                 font.family: Theme.sans
-                                font.pixelSize: 12.5
+                                font.pixelSize: 12
                             }
                         }
                     }
@@ -133,7 +133,7 @@ ColumnLayout {
         text: Net.scanning ? "Ağlar aranıyor…" : "Yakında ağ bulunamadı"
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 13.5
+        font.pixelSize: 13
     }
 
     DashLine { Layout.fillWidth: true; Layout.topMargin: 4; Layout.bottomMargin: 4 }

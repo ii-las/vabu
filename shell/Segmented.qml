@@ -50,7 +50,7 @@ Rectangle {
                     text: parent.modelData
                     color: parent.isOn ? Theme.accentInk : Theme.soft
                     font.family: Theme.sans
-                    font.pixelSize: 13.5
+                    font.pixelSize: 13
                     font.weight: parent.isOn ? Font.DemiBold : Font.Normal
                     font.features: root.mono ? { "tnum": 1 } : {}
                     Behavior on color { ColorAnimation { duration: Theme.state } }

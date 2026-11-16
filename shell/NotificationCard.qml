@@ -109,7 +109,7 @@ Item {
                 text: root.notif?.summary ?? ""
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 14.5
+                font.pixelSize: 14
                 font.weight: Font.DemiBold
                 wrapMode: Text.Wrap
                 maximumLineCount: 2

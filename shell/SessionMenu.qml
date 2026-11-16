@@ -102,7 +102,7 @@ OverlayWindow {
                         text: btn.modelData.label
                         color: btn.fg
                         font.family: Theme.sans
-                        font.pixelSize: 13.5
+                        font.pixelSize: 13
                         font.weight: Font.DemiBold
                     }
                     MouseArea {

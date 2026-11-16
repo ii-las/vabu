@@ -60,7 +60,7 @@ Card {
                     text: "Super  Boşluk"
                     color: Theme.faint
                     font.family: Theme.sans
-                    font.pixelSize: 11.5
+                    font.pixelSize: 12
                 }
             }
             MouseArea {

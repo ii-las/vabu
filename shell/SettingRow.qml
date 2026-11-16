@@ -23,7 +23,7 @@ Item {
                 text: root.label
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 14.5
+                font.pixelSize: 14
                 font.weight: Font.Medium
                 wrapMode: Text.Wrap
             }
@@ -33,7 +33,7 @@ Item {
                 text: root.sub
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12.5
+                font.pixelSize: 12
                 lineHeight: 1.15
                 wrapMode: Text.Wrap
             }

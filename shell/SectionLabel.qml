@@ -8,7 +8,7 @@ Text {
     Layout.bottomMargin: 2
     color: Theme.muted
     font.family: Theme.sans
-    font.pixelSize: 12.5
+    font.pixelSize: 12
     font.weight: Font.Medium
     font.letterSpacing: 0.1
 }

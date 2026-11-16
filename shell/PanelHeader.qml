@@ -33,7 +33,7 @@ RowLayout {
             text: root.sub
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 12.5
+            font.pixelSize: 12
             elide: Text.ElideRight
         }
     }

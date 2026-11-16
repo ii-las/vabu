@@ -49,7 +49,7 @@ Card {
                 text: root.player?.trackTitle || "Bilinmeyen parça"
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 13.5
+                font.pixelSize: 13
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -58,7 +58,7 @@ Card {
                 text: root.player?.trackArtist || root.player?.identity || ""
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12.5
+                font.pixelSize: 12
                 elide: Text.ElideRight
             }
         }

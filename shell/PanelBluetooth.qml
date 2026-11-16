@@ -72,7 +72,7 @@ ColumnLayout {
         text: "Cihazını eşleştirme kipine al;\nburada görünecek."
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 13.5
+        font.pixelSize: 13
         lineHeight: 1.2
     }
 
