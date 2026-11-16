@@ -1,4 +1,4 @@
-// Vabu kurulum · Özet: kurulumdan önce yapılacakların listesi.
+// Kurulum özeti: kurulumdan önce yapılacakların listesi
 import io.calamares.core 1.0
 import io.calamares.ui 1.0
 import QtQuick 2.15
@@ -6,81 +6,137 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#151318"
+    color: "#F4F5F7"
+
+    // Adımın simgesi başlığından seçilir; tanınmayan adımlar genel simgeyi alır
+    function iconFor(title) {
+        const t = (title || "").toLowerCase()
+        if (/klavye|keyboard/.test(t)) return "keyboard"
+        if (/bölüm|disk|partition/.test(t)) return "hard_drive"
+        if (/kullanıcı|hesap|user/.test(t)) return "person"
+        if (/konum|bölge|dil|saat|location|locale|language/.test(t)) return "language"
+        if (/paket|uygulama|package/.test(t)) return "apps"
+        return "tune"
+    }
 
     Flickable {
+        id: flick
         anchors.fill: parent
-        contentHeight: col.implicitHeight + 60
+        contentWidth: width
+        contentHeight: column.y + column.height + 32
+        interactive: contentHeight > height
+        boundsBehavior: Flickable.StopAtBounds
         clip: true
 
         ColumnLayout {
-            id: col
-            x: (parent.width - width) / 2
-            y: 30
-            width: Math.min(820, page.width - 80)
-            spacing: 12
+            id: column
+            x: Math.round((flick.width - width) / 2)
+            y: 32
+            width: Math.min(640, flick.width - 48)
+            spacing: 0
+            transform: Translate { id: shift }
 
             Text {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.bottomMargin: 20
-                horizontalAlignment: Text.AlignHCenter
-                textFormat: Text.StyledText
-                text: "Her şey<br><i>hazır mı?</i>"
-                color: "#EFECE6"
-                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
-                font.pixelSize: 56
-                lineHeight: 0.95
+                Layout.fillWidth: true
+                text: "Özet"
+                color: "#15181E"
+                font.family: "Hanken Grotesk"
+                font.pixelSize: 26
+                font.weight: Font.DemiBold
+                font.letterSpacing: -0.4
             }
 
-            Repeater {
-                model: config.summaryModel
-                delegate: Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: item.implicitHeight + 36
-                    radius: 22
-                    color: "#1B191E"
-                    border.color: Qt.rgba(1, 1, 1, 0.08)
-                    RowLayout {
-                        id: item
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 16
-                        Rectangle {
-                            Layout.alignment: Qt.AlignTop
-                            implicitWidth: 36; implicitHeight: 36; radius: 18
-                            color: "transparent"
-                            border.color: Qt.rgba(1, 1, 1, 0.3)
-                            Text { anchors.centerIn: parent; text: index + 1; color: "#CDC8C0"; font.family: "Hanken Grotesk"; font.pixelSize: 13 }
-                        }
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 4
-                            Text { Layout.fillWidth: true; text: title; color: "#EFECE6"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.pixelSize: 24; wrapMode: Text.Wrap }
+            // Her adım bir satır: simge, başlık, açıklama
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.topMargin: 20
+                visible: steps.count > 0
+                implicitHeight: rows.implicitHeight
+                radius: 14
+                color: "#FFFFFF"
+                border.width: 1
+                border.color: Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.07)
+
+                Column {
+                    id: rows
+                    width: parent.width
+
+                    Repeater {
+                        id: steps
+                        model: config.summaryModel
+                        delegate: Item {
+                            width: rows.width
+                            height: Math.max(60, texts.implicitHeight + 24)
+
+                            Rectangle {
+                                visible: index > 0
+                                x: 16
+                                width: parent.width - 32
+                                height: 1
+                                color: Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.08)
+                            }
                             Text {
-                                Layout.fillWidth: true
-                                text: message
-                                textFormat: Text.RichText
-                                color: "#CDC8C0"
-                                linkColor: "#EFECE6"
-                                font.family: "Hanken Grotesk"
-                                font.pixelSize: 13
-                                wrapMode: Text.Wrap
+                                id: stepIcon
+                                x: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 20
+                                height: 20
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                text: page.iconFor(model.title)
+                                color: "#3B4250"
+                                font.family: "Material Symbols Rounded"
+                                font.weight: Font.Light
+                                font.pixelSize: 20
+                            }
+                            Column {
+                                id: texts
+                                anchors.left: stepIcon.right
+                                anchors.leftMargin: 14
+                                anchors.right: parent.right
+                                anchors.rightMargin: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
+                                Text {
+                                    width: parent.width
+                                    wrapMode: Text.Wrap
+                                    text: model.title
+                                    color: "#15181E"
+                                    font.family: "Hanken Grotesk"
+                                    font.pixelSize: 14
+                                    font.weight: Font.Medium
+                                }
+                                Text {
+                                    width: parent.width
+                                    visible: text !== ""
+                                    wrapMode: Text.Wrap
+                                    text: model.message
+                                    textFormat: Text.RichText
+                                    color: "#566070"
+                                    linkColor: "#2C56CC"
+                                    font.family: "Hanken Grotesk"
+                                    font.pixelSize: 13
+                                }
                             }
                         }
                     }
                 }
             }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.topMargin: 8
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.Wrap
-                text: "“Kurulumu başlat”a bastığında disk değişiklikleri uygulanır; bu adım geri alınamaz."
-                color: "#E8B07A"
-                font.family: "Hanken Grotesk"
-                font.pixelSize: 13
-            }
         }
+    }
+
+    // Sayfa açılırken hafifçe belirip yükselir
+    ParallelAnimation {
+        id: enter
+        NumberAnimation { target: column; property: "opacity"; from: 0; to: 1; duration: 300; easing.type: Easing.OutCubic }
+        NumberAnimation {
+            target: shift; property: "y"; from: 12; to: 0; duration: 400
+            easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1]
+        }
+    }
+    // Calamares sayfa her açıldığında çağırır
+    function onActivate() {
+        flick.contentY = 0
+        enter.restart()
     }
 }

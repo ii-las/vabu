@@ -1,88 +1,127 @@
-// Kurulum sürerken gösterilen sayfa: eş yükselti haritası yavaşça büyür, ipuçları döner.
+// Kurulum sürerken gösterilen sayfa: yumuşatılmış duvar kağıdı ve ortada Vabu işareti.
+// İlerleme çubuğu ve o anki iş Calamares'in kendi alanında, bu sayfanın altında görünür.
 import QtQuick 2.15
+import QtQuick.Shapes 1.15
 import calamares.slideshow 1.0
 
 Presentation {
     id: presentation
 
-    readonly property var tips: [
-        "Super + Space ile her şeyi bulursun.",
-        "“kur:” yazıp Fedora, RPM Fusion ya da Flathub’dan uygulama kurarsın.",
-        "Her güncellemeden önce bir geri alma noktası alınır.",
-        "Ayarlar › Sürücüler ekran kartın için doğru sürücüyü kurar.",
-        "Super + Shift + / bütün kısayolları gösterir."
-    ]
-    property int tip: 0
+    // Uyuyan kedi: tek siluet, gözler ve burun oyuk (oyuk rengi altındaki zeminin rengi)
+    component CatMark: Item {
+        id: mark
+        property color tint: "#FFFFFF"
+        property color cutout: "#2C56CC"
+        implicitWidth: 48
+        implicitHeight: 48
+        // kenarlar yumuşak çıksın diye çoklu örnekleme
+        layer.enabled: true
+        layer.samples: 4
+        layer.smooth: true
 
-    Timer {
-        interval: 6000
-        running: presentation.activatedInCalamares
-        repeat: true
-        onTriggered: { tipText.opacity = 0; swap.start() }
-    }
-    Timer { id: swap; interval: 300; onTriggered: { presentation.tip = (presentation.tip + 1) % presentation.tips.length; tipText.opacity = 1 } }
-
-    Slide {
-        Rectangle {
-            anchors.fill: parent
-            color: "#151318"
-
-            Canvas {
-                id: map
-                anchors.fill: parent
-                property real t: 0
-                NumberAnimation on t { from: 0; to: 1; duration: 90000; loops: Animation.Infinite }
-                onTChanged: requestPaint()
-                onPaint: {
-                    const ctx = getContext("2d")
-                    ctx.reset()
-                    const cx = width * 0.5, cy = height * 0.42
-                    const rings = 3 + map.t * 14
-                    for (let k = 0; k < Math.ceil(rings); k++) {
-                        const r0 = 30 + k * 22
-                        ctx.globalAlpha = Math.min(1, rings - k) * (0.55 - k * 0.025)
-                        ctx.strokeStyle = k % 4 === 3 ? "#E8B07A" : "#EFECE6"
-                        ctx.lineWidth = k % 4 === 3 ? 1.6 : 1.1
-                        ctx.beginPath()
-                        for (let i = 0; i <= 120; i++) {
-                            const a = (i / 120) * Math.PI * 2
-                            const r = r0 * (1 + 0.1 * Math.sin(3 * a + 0.6 + k * 0.22) + 0.06 * Math.sin(5 * a - 1.2 + k * 0.37))
-                            const x = cx + r * Math.cos(a) * 1.5, y = cy + r * Math.sin(a)
-                            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)
-                        }
-                        ctx.stroke()
-                    }
-                }
+        Shape {
+            width: 256
+            height: 256
+            scale: mark.width / 256
+            transformOrigin: Item.TopLeft
+            ShapePath {
+                fillColor: mark.tint
+                strokeColor: "transparent"
+                PathSvg { path: "M128 232 C62 232 22 202 22 156 C22 136 28 120 36 106 L50 52 Q55 36 69 45 L108 80 Q128 74 148 80 L187 45 Q201 36 206 52 L220 106 C228 120 234 136 234 156 C234 202 194 232 128 232 Z" }
             }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: parent.height * 0.42 - height / 2
-                text: "<i>kuruluyor</i>"
-                textFormat: Text.StyledText
-                color: "#EFECE6"
-                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
-                font.pixelSize: 56
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: mark.cutout
+                strokeWidth: 13
+                capStyle: ShapePath.RoundCap
+                PathSvg { path: "M76 150 Q94 168 112 150 M144 150 Q162 168 180 150" }
             }
-
-            Text {
-                id: tipText
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 40
-                width: parent.width - 120
-                horizontalAlignment: Text.AlignHCenter
-                wrapMode: Text.Wrap
-                text: presentation.tips[presentation.tip]
-                color: "#CDC8C0"
-                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
-                font.italic: true
-                font.pixelSize: 24
-                Behavior on opacity { NumberAnimation { duration: 280 } }
+            ShapePath {
+                fillColor: mark.cutout
+                strokeColor: mark.cutout
+                strokeWidth: 6
+                joinStyle: ShapePath.RoundJoin
+                PathSvg { path: "M120 180 h16 l-8 9 z" }
             }
         }
     }
 
-    function onActivate() { }
+    // Slayt alanının dışı da pencereyle aynı zeminde kalsın
+    Rectangle { anchors.fill: parent; color: "#F4F5F7" }
+
+    Slide {
+        // Calamares'in Slide'ı kenar boşluğuyla gelir; bütün alanı kullan
+        x: 0
+        y: 0
+        width: presentation.width
+        height: presentation.height
+
+        Item {
+            id: card
+            width: Math.min(parent.width - 48, 880)
+            height: Math.min(parent.height - 24, Math.round(width * 0.5))
+            x: Math.round((parent.width - width) / 2)
+            y: Math.round((parent.height - height) / 2)
+
+            Rectangle { anchors.fill: parent; color: "#FFFFFF" }
+            // Küçük çözülüp büyütülen resim kendiliğinden bulanık görünür
+            Image {
+                anchors.fill: parent
+                source: "file:///usr/share/vabu/assets/wallpaper.jpg"
+                sourceSize: Qt.size(160, 90)
+                fillMode: Image.PreserveAspectCrop
+                smooth: true
+                asynchronous: true
+                clip: true
+                opacity: status === Image.Ready ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 800 } }
+            }
+            // Açık bir tül: renkler sakinleşir
+            Rectangle { anchors.fill: parent; color: Qt.rgba(1, 1, 1, 0.22) }
+            // Köşeleri yuvarlatan çerçeve: zemin renginde kalın kenarlık, iç köşesi 14 px kalır
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -24
+                radius: 38
+                color: "transparent"
+                border.width: 24
+                border.color: "#F4F5F7"
+            }
+            Rectangle {
+                anchors.fill: parent
+                radius: 14
+                color: "transparent"
+                border.width: 1
+                border.color: Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.07)
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: 72
+                height: 72
+                radius: 24
+                color: "#2C56CC"
+                CatMark {
+                    anchors.centerIn: parent
+                    width: 48
+                    height: 48
+                }
+            }
+        }
+    }
+
+    // Belirme: kurulum başlayınca bir kez. Çağrı gelmezse kart zaten görünür durur.
+    NumberAnimation {
+        id: enter
+        target: card
+        property: "opacity"
+        from: 0
+        to: 1
+        duration: 600
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1]
+    }
+
+    function onActivate() { enter.restart() }
     function onLeave() { }
 }

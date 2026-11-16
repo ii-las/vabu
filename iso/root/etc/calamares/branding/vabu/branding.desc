@@ -26,10 +26,10 @@ images:
   productWelcome: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
 
 style:
-  SidebarBackground: "#121216"
-  SidebarText: "#F3F1EC"
-  SidebarTextCurrent: "#14243F"
-  SidebarBackgroundCurrent: "#A9C7F7"
+  SidebarBackground: "#F4F5F7"
+  SidebarText: "#15181E"
+  SidebarTextCurrent: "#FFFFFF"
+  SidebarBackgroundCurrent: "#2C56CC"
 
 slideshowAPI: 2
 slideshow: "show.qml"
