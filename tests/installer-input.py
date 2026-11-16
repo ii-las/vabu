@@ -60,6 +60,7 @@ def main():
 
     def click(widget):
         rect = widget.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
+        print('Click geometry:', widget.name, rect.x, rect.y, rect.width, rect.height, flush=True)
         if rect.width <= 0 or rect.height <= 0:
             raise RuntimeError('Widget has no clickable rectangle: ' + widget.name)
         run('swaymsg', 'seat', 'seat0', 'cursor', 'set',
@@ -119,7 +120,9 @@ requirements:
         with (out / 'calamares-input.log').open('w') as log:
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
-                start = wait_for(lambda: next((b for b in buttons() if b.name == 'Vabu’yu kur'), None), 'welcome install button', 25)
+                start = wait_for(lambda: next((b for b in buttons() if b.name == 'Vabu’yu kur' and b.getState().contains(pyatspi.STATE_ENABLED)), None), 'welcome install button', 25)
+                # Let the welcome page's 400 ms entry animation finish.
+                time.sleep(.6)
                 shot('50-kurulum-hosgeldin.png')
                 click(start)
                 fields = wait_for(lambda: entries() if len(entries()) >= 5 else None, 'native account fields')
