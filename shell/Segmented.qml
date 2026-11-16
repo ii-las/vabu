@@ -22,8 +22,10 @@ Rectangle {
         width: target ? target.width : 0
         y: 4
         height: root.height - 8
-        radius: Theme.radiusRow - 2
-        color: Theme.accent
+        radius: Theme.radiusRow - 3
+        color: Theme.segOn
+        border.width: Theme.dark ? 0 : 1
+        border.color: Theme.alpha("#16202C", 0.08)
         Behavior on x { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }
@@ -48,7 +50,7 @@ Rectangle {
                     id: label
                     anchors.centerIn: parent
                     text: parent.modelData
-                    color: parent.isOn ? Theme.accentInk : Theme.soft
+                    color: parent.isOn ? Theme.paper : Theme.soft
                     font.family: Theme.sans
                     font.pixelSize: 13
                     font.weight: parent.isOn ? Font.DemiBold : Font.Normal

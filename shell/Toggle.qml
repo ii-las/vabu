@@ -8,7 +8,7 @@ Rectangle {
     implicitWidth: 44
     implicitHeight: 26
     radius: 13
-    color: checked ? Theme.accent : Qt.rgba(1, 1, 1, 0.13)
+    color: checked ? Theme.accent : Theme.track
     Behavior on color { ColorAnimation { duration: Theme.state } }
 
     Accessible.role: Accessible.CheckBox
@@ -18,7 +18,7 @@ Rectangle {
         width: 20; height: 20; radius: 10
         y: 3
         x: root.checked ? root.width - width - 3 : 3
-        color: root.checked ? Theme.accentInk : Theme.muted
+        color: root.checked ? Theme.accentInk : Theme.knob
         Behavior on x { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on color { ColorAnimation { duration: Theme.state } }
     }

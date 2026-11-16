@@ -69,7 +69,7 @@ ColumnLayout {
         Layout.bottomMargin: 18
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
-        text: "Cihazını eşleştirme kipine al;\nburada görünecek."
+        text: "Yakında cihaz yok"
         color: Theme.muted
         font.family: Theme.sans
         font.pixelSize: 13

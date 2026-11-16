@@ -60,7 +60,7 @@ ShellRoot {
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 264
-                color: Qt.rgba(1, 1, 1, 0.028)
+                color: Theme.nav
 
                 Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: Theme.line }
 
@@ -84,7 +84,7 @@ ShellRoot {
                         Layout.fillWidth: true
                         implicitHeight: 38
                         radius: Theme.radiusRow
-                        color: searchInput.activeFocus ? Qt.rgba(1, 1, 1, 0.08) : Theme.well
+                        color: searchInput.activeFocus ? Theme.hover : Theme.well
                         Behavior on color { ColorAnimation { duration: Theme.fast } }
                         Icon { x: 11; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: 18; color: Theme.muted }
                         TextInput {
@@ -121,7 +121,7 @@ ShellRoot {
                             width: parent.width
                             height: 40
                             radius: Theme.radiusRow
-                            color: Theme.accent
+                            color: Theme.well
                             Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                         }
 
@@ -137,7 +137,7 @@ ShellRoot {
                                     required property int index
                                     readonly property bool isOn: root.page === modelData.key
                                     readonly property bool match: !root.search || modelData.title.toLowerCase().includes(root.search)
-                                    readonly property color fg: isOn ? Theme.accentInk : Theme.paper
+                                    readonly property color fg: Theme.paper
                                     width: nav.width
                                     height: 40
                                     visible: match
@@ -148,7 +148,7 @@ ShellRoot {
                                         anchors.fill: parent
                                         radius: Theme.radiusRow
                                         // arama sırasında kayan zemin gizlidir; seçili satır kendi zeminini çizer
-                                        color: navItem.isOn ? (root.search ? Theme.accent : "transparent")
+                                        color: navItem.isOn ? (root.search ? Theme.well : "transparent")
                                             : mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : "transparent"
                                         Behavior on color { ColorAnimation { duration: Theme.fast } }
                                     }
@@ -157,7 +157,7 @@ ShellRoot {
                                         anchors.leftMargin: 12
                                         anchors.rightMargin: 10
                                         spacing: 12
-                                        Icon { name: navItem.modelData.icon; size: 19; color: navItem.fg; filled: navItem.isOn }
+                                        Icon { name: navItem.modelData.icon; size: 19; color: navItem.isOn ? Theme.accent : Theme.soft; filled: navItem.isOn }
                                         Text {
                                             Layout.fillWidth: true
                                             text: navItem.modelData.title
@@ -170,12 +170,12 @@ ShellRoot {
                                         Rectangle {
                                             visible: navItem.modelData.key === "updates" && root.updateCount > 0
                                             implicitWidth: Math.max(20, badge.implicitWidth + 12); implicitHeight: 20; radius: 10
-                                            color: navItem.isOn ? Theme.accentInk : Theme.well
+                                            color: Theme.accent
                                             Text {
                                                 id: badge
                                                 anchors.centerIn: parent
                                                 text: root.updateCount
-                                                color: navItem.isOn ? Theme.accent : Theme.paper
+                                                color: Theme.accentInk
                                                 font.family: Theme.sans
                                                 font.pixelSize: 11
                                                 font.weight: Font.DemiBold

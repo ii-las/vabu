@@ -63,9 +63,9 @@ ColumnLayout {
         Layout.fillWidth: true
         implicitHeight: 92
         radius: Theme.radiusTile
-        color: Qt.rgba(1, 1, 1, 0.035)
+        color: Theme.group
         border.width: 1
-        border.color: page.total > 0 ? Theme.alpha(Theme.accent, 0.45) : Qt.rgba(1, 1, 1, 0.05)
+        border.color: page.total > 0 ? Theme.alpha(Theme.accent, 0.45) : Theme.groupEdge
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 18
@@ -99,7 +99,8 @@ ColumnLayout {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: page.total > 0 ? "Kurulumdan önce geri alma noktası alınır." : "Vabu her gün arka planda denetler."
+                    visible: false
+                    text: ""
                     color: Theme.muted
                     font.family: Theme.sans
                     font.pixelSize: 13
@@ -164,7 +165,6 @@ ColumnLayout {
 
     Group {
         title: "Geri alma noktaları"
-        note: "Her paket işleminden önce sistemin bir kopyası alınır. Bir güncelleme sorun çıkarırsa buradan önceki hâline dönebilirsin."
         Repeater {
             model: page.snapshots
             delegate: SettingRow {
@@ -182,14 +182,12 @@ ColumnLayout {
         SettingRow {
             visible: page.snapshots.length === 0
             label: "Henüz geri alma noktası yok"
-            sub: "İlk paket işleminde kendiliğinden oluşur"
         }
     }
 
     Group {
         SettingRow {
             label: "Güncellemeleri arka planda indir"
-            sub: "Her gün indirilir; kurulum senin onayınla yapılır. Flatpak uygulamaları kendiliğinden güncellenir."
             Toggle {
                 checked: page.autoDownload
                 onToggled: {

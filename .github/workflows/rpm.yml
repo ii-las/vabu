@@ -56,7 +56,7 @@ jobs:
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/settings.qml
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/theme.txt
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/vabu-22.pf2
-          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-sis.jpg
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-gunduz.jpg
 
       - name: Paketleri gerçekten kur (dosya çakışması, eksik bağımlılık)
         run: |
@@ -69,7 +69,7 @@ jobs:
           rpm -q vabu-release vabu-desktop vabu-shell vabu-fonts quickshell
           niri validate -c /etc/niri/config.kdl
           foot -c /usr/share/vabu/xdg/foot/foot.ini --check-config
-          for f in "Newsreader" "Hanken Grotesk" "Material Symbols Rounded" "JetBrains Mono"; do
+          for f in "Hanken Grotesk" "Material Symbols Rounded" "JetBrains Mono"; do
             fc-list : family | grep -q "$f" || { echo "::error::yazı tipi eksik: $f"; exit 1; }
           done
 

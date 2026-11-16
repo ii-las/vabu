@@ -62,12 +62,6 @@ Card {
                             out.push({ win: c.windows[i], first: i === 0 })
                     return out
                 }
-                readonly property string label: {
-                    if (ws.name) return ws.name
-                    if (modelData.count === 0) return "Boş"
-                    const act = wins.find(x => x.win.id === ws.active_window_id) ?? wins[0]
-                    return act ? Apps.nameFor(act.win.app_id) : ""
-                }
 
                 Layout.fillWidth: true
                 implicitHeight: spare ? 34 : 42
@@ -190,17 +184,7 @@ Card {
                         }
                     }
 
-                    Text {
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignRight
-                        text: row.label
-                        color: row.fg
-                        opacity: row.isOn ? 0.72 : 0.6
-                        font.family: Theme.sans
-                        font.pixelSize: 12
-                        elide: Text.ElideRight
-                        Behavior on color { ColorAnimation { duration: Theme.state } }
-                    }
+                    Item { Layout.fillWidth: true }
                 }
             }
         }

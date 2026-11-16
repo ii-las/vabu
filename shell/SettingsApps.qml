@@ -48,12 +48,10 @@ ColumnLayout {
         title: "Uygulama kaynakları"
         SettingRow {
             label: "Fedora"
-            sub: "Temel sistem ve on binlerce açık kaynak uygulama"
             Chip { text: "Her zaman açık"; kind: "ok" }
         }
         SettingRow {
             label: "RPM Fusion (özgür)"
-            sub: "Fedora'nın patent nedeniyle dağıtamadığı açık kaynak yazılımlar (codec'ler, ffmpeg)"
             Toggle {
                 checked: page.repoOn["rpmfusion-free"] ?? false
                 onToggled: page.setRepos(["rpmfusion-free", "rpmfusion-free-updates"], !checked)
@@ -61,7 +59,6 @@ ColumnLayout {
         }
         SettingRow {
             label: "RPM Fusion (özgür olmayan)"
-            sub: "NVIDIA sürücüsü, Steam ve kapalı kaynak yazılımlar"
             Toggle {
                 checked: page.repoOn["rpmfusion-nonfree"] ?? false
                 onToggled: page.setRepos(["rpmfusion-nonfree", "rpmfusion-nonfree-updates"], !checked)
@@ -69,12 +66,10 @@ ColumnLayout {
         }
         SettingRow {
             label: "Vabu"
-            sub: "Vabu Shell, Ayarlar ve Vabu'ya özel paketler · güncellemeler için açık kalmalı"
             Toggle { checked: page.repoOn["vabu"] ?? false; onToggled: page.setRepos(["vabu"], !checked) }
         }
         SettingRow {
             label: "Flathub"
-            sub: "Yalıtılmış (sandbox) çalışan, sistemden bağımsız güncellenen uygulamalar"
             Toggle { checked: page.flathub; onToggled: page.setFlathub(!page.flathub) }
         }
     }

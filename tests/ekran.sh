@@ -68,6 +68,10 @@ VABU_QML_DOSYALARI="$(cd "$KOPYA" && ls *.qml | grep -v '^derle.qml$' | paste -s
 echo "=== derleme"
 sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/derle.log"
 
+# Görünüm: önce açık, sonra koyu. Kabuk ayar dosyasını izler, değişince yeniden boyanır.
+gorunum() { mkdir -p "$HOME/.config/vabu"; printf '{"theme":"%s"}\n' "$1" > "$HOME/.config/vabu/shell.json"; sleep 1.5; }
+gorunum acik
+
 qs -p "$SHELL_DIR" >"$OUT/shell.log" 2>&1 &
 sleep 10
 shot 01-masaustu 0
@@ -100,6 +104,16 @@ call session toggle;             sleep 0.4
 call shortcuts toggle;           shot 15-kisayollar
 call shortcuts toggle;           sleep 0.4
 
+# Koyu görünüm
+gorunum koyu
+shot 17-koyu-masaustu 0.5
+call panel toggle control;       shot 18-koyu-kontrol
+call panel toggle notifications; shot 19-koyu-bildirimler
+call panel close;                sleep 0.5
+call launcher open search;       shot 19b-koyu-baslatici
+call launcher close;             sleep 0.4
+gorunum acik
+
 # Pencerelerle birlikte
 (foot -e sh -c 'fastfetch 2>/dev/null; sleep 120' >/dev/null 2>&1 &)
 shot 16-terminal 3
@@ -113,6 +127,9 @@ for page in display network sound drivers apps updates keyboard users about; do
     shot "$n-ayarlar-$page" 1.5
     n=$((n + 1))
 done
+gorunum koyu
+shot 29b-ayarlar-koyu 1
+gorunum acik
 swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6

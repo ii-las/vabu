@@ -9,19 +9,6 @@ ColumnLayout {
     id: page
     spacing: 24
 
-    property string gtkScheme: "prefer-dark"
-    Process {
-        running: true
-        command: ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"]
-        stdout: StdioCollector { onStreamFinished: page.gtkScheme = text.trim().replace(/'/g, "") }
-    }
-    function setScheme(dark) {
-        gtkScheme = dark ? "prefer-dark" : "default"
-        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", gtkScheme])
-        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", dark ? "adw-gtk3-dark" : "adw-gtk3"])
-        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", dark ? "Papirus-Dark" : "Papirus"])
-    }
-
     // Duvar kağıdı
     ColumnLayout {
         Layout.fillWidth: true
@@ -96,25 +83,33 @@ ColumnLayout {
     }
 
     Group {
-        title: "Renk ve tema"
+        title: "Tema"
+        SettingRow {
+            label: "Görünüm"
+            Segmented {
+                options: ["Açık", "Koyu", "Otomatik"]
+                currentIndex: ["acik", "koyu", "otomatik"].indexOf(Config.theme)
+                onPicked: i => Config.set("theme", ["acik", "koyu", "otomatik"][i])
+            }
+        }
         SettingRow {
             label: "Vurgu rengi"
-            sub: "Seçili öğeler, odak halkası ve ana düğmeler"
             Repeater {
                 model: Object.keys(Config.accents)
                 delegate: Item {
                     id: swatch
                     required property var modelData
                     readonly property bool isOn: Config.accentName === modelData
-                    width: 34; height: 34
+                    readonly property color tone: Theme.dark ? Config.accents[modelData].dark : Config.accents[modelData].light
+                    width: 32; height: 32
                     Accessible.role: Accessible.RadioButton
                     Accessible.name: Config.accents[modelData].name
                     Rectangle {
                         anchors.fill: parent
-                        radius: 17
+                        radius: 16
                         color: "transparent"
                         border.width: 2
-                        border.color: Config.accents[swatch.modelData].color
+                        border.color: swatch.tone
                         opacity: swatch.isOn ? 1 : 0
                         Behavior on opacity { NumberAnimation { duration: Theme.state } }
                     }
@@ -123,7 +118,7 @@ ColumnLayout {
                         width: swatch.isOn ? 22 : 26
                         height: width
                         radius: width / 2
-                        color: Config.accents[swatch.modelData].color
+                        color: swatch.tone
                         Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                     }
                     MouseArea {
@@ -134,22 +129,12 @@ ColumnLayout {
                 }
             }
         }
-        SettingRow {
-            label: "Uygulama teması"
-            sub: "GTK ve Qt uygulamalarının rengi. Vabu'nun kendi panelleri hep koyudur."
-            Segmented {
-                options: ["Koyu", "Açık"]
-                currentIndex: page.gtkScheme === "prefer-dark" ? 0 : 1
-                onPicked: i => page.setScheme(i === 0)
-            }
-        }
     }
 
     Group {
         title: "Yan panel"
         SettingRow {
             label: "Konum"
-            sub: "Pencereler diğer taraftan dizilir"
             Segmented {
                 options: ["Sol", "Sağ"]
                 currentIndex: Config.sidebarSide === "right" ? 1 : 0
@@ -162,7 +147,6 @@ ColumnLayout {
         }
         SettingRow {
             label: "Çalan medya"
-            sub: "Bir şey çalarken parça ve denetimler görünür"
             Toggle { checked: Config.showMedia; onToggled: Config.set("showMedia", !Config.showMedia) }
         }
     }
@@ -170,13 +154,13 @@ ColumnLayout {
     Group {
         title: "Pencereler"
         SettingRow {
-            label: "Köşe yuvarlaklığı"
+            label: "Köşeler"
             sub: NiriConf.radius + " px"
             VSlider { implicitWidth: 260; from: 0; to: 24; stepSize: 1; value: NiriConf.radius; onMoved: v => NiriConf.set("radius", v) }
         }
         SettingRow {
             label: "Aralık"
-            sub: "Pencereler arasındaki boşluk · " + NiriConf.gaps + " px"
+            sub: NiriConf.gaps + " px"
             VSlider { implicitWidth: 260; from: 0; to: 32; stepSize: 2; value: NiriConf.gaps; onMoved: v => NiriConf.set("gaps", v) }
         }
         SettingRow {
@@ -190,7 +174,6 @@ ColumnLayout {
     // Sabitlenmiş uygulamalar
     Group {
         title: "Yan panelde sabitlenenler"
-        note: "En fazla altı uygulama. Sıra, eklenme sırasıdır."
         Flow {
             Layout.fillWidth: true
             Layout.margins: 12

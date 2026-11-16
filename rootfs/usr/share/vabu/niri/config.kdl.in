@@ -37,7 +37,7 @@ layout {
     focus-ring {
         width 2
         active-color "@@FOCUS_COLOR@@"
-        inactive-color "#1E1C21"
+        inactive-color "#7A8494"
     }
 
     border {

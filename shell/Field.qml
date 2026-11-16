@@ -11,9 +11,9 @@ Rectangle {
     implicitWidth: 260
     implicitHeight: 42
     radius: Theme.radiusRow
-    color: input.activeFocus ? Qt.rgba(1, 1, 1, 0.07) : Theme.well
+    color: input.activeFocus ? Theme.hover : Theme.well
     border.width: 1
-    border.color: input.activeFocus ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.55) : Theme.edge
+    border.color: input.activeFocus ? Theme.alpha(Theme.accent, 0.6) : "transparent"
     Behavior on color { ColorAnimation { duration: Theme.fast } }
     Behavior on border.color { ColorAnimation { duration: Theme.fast } }
 

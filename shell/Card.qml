@@ -57,16 +57,16 @@ Item {
         visible: root.shadow
         anchors.fill: parent
         radius: root.radius
-        blur: 56
-        spread: -4
-        offset: Qt.vector2d(0, 18)
-        color: Qt.rgba(0, 0, 0, 0.42)
+        blur: 64
+        spread: -6
+        offset: Qt.vector2d(0, 22)
+        color: Theme.shadow
     }
 
     ClippingRectangle {
         anchors.fill: parent
         radius: root.radius
-        color: root.frosted ? "#1B191E" : "transparent"
+        color: root.frosted ? (Theme.dark ? "#1B191E" : "#E6E9EF") : "transparent"
 
         Item {
             visible: root.frosted
@@ -86,30 +86,32 @@ Item {
                 asynchronous: true
                 visible: false
             }
+            // Gauss bulanıklığı küçük kopyada; büyütülünce yumuşak, pürüzsüz bir cam olur
             MultiEffect {
                 anchors.fill: parent
                 source: small
                 autoPaddingEnabled: false
                 blurEnabled: true
                 blur: 1
-                blurMax: 14
-                saturation: 0.28
+                blurMax: 20
+                blurMultiplier: 0.5
+                saturation: Theme.dark ? 0.5 : 0.7
             }
         }
 
         Rectangle { anchors.fill: parent; color: root.tint }
-
-        // üstten gelen hafif ışık
-        Rectangle {
-            width: parent.width
-            height: Math.min(parent.height, 120)
-            gradient: Gradient {
-                GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.045) }
-                GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0) }
-            }
-        }
     }
 
+    // dış çizgi
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -1
+        radius: root.radius + 1
+        color: "transparent"
+        border.width: 1
+        border.color: Theme.outline
+    }
+    // iç kenar ışığı
     Rectangle {
         anchors.fill: parent
         radius: root.radius

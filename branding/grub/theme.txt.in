@@ -26,8 +26,8 @@ terminal-border: "0"
     width = 580
     height = 42%
     item_font = "@FONT_L@"
-    item_color = "#CDC8C0"
-    selected_item_color = "#141316"
+    item_color = "#CFCBC4"
+    selected_item_color = "#0E1A33"
     item_height = 54
     item_padding = 22
     item_spacing = 6
@@ -38,23 +38,14 @@ terminal-border: "0"
     scrollbar = false
 }
 
-+ label {
++ progress_bar {
     id = "__timeout__"
-    left = 0
-    top = 100%-104
-    width = 100%
-    align = "center"
-    text = "%d saniye içinde açılacak"
-    font = "@FONT_S@"
-    color = "#A39E97"
-}
-
-+ label {
-    left = 0
-    top = 100%-64
-    width = 100%
-    align = "center"
-    text = "Ok tuşları: seç  ·  Enter: başlat  ·  E: düzenle  ·  C: komut satırı"
-    font = "@FONT_S@"
-    color = "#77736E"
+    left = 50%-80
+    top = 100%-84
+    width = 160
+    height = 4
+    fg_color = "#F0EEE9"
+    bg_color = "#3A3740"
+    border_color = "#3A3740"
+    show_text = false
 }

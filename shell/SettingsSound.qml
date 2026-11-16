@@ -105,7 +105,6 @@ ColumnLayout {
         SettingRow {
             visible: page.streams.length === 0
             label: "Şu an ses çalan bir uygulama yok"
-            sub: "Bir uygulama ses çalmaya başladığında düzeyi buradan ayarlanır"
         }
     }
 

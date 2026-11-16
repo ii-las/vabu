@@ -21,7 +21,7 @@ Vabu klasik bir Fedora sistemi: `dnf`, RPM dosyaları ve Flathub doğrudan çal�
 | `vabu-release` | os-release ve Vabu deposu (`fedora-release` yerine geçer) |
 | `vabu-desktop` | Masaüstü bileşenleri, varsayılan ayarlar, `vabu` ve `vabu-drivers` |
 | `vabu-shell` | Vabu Shell, Vabu Ayarlar, giriş ekranı |
-| `vabu-fonts` | Newsreader, Hanken Grotesk, Material Symbols; terminal için JetBrains Mono |
+| `vabu-fonts` | Hanken Grotesk, Material Symbols; terminal için JetBrains Mono |
 | `quickshell` | Fedora depolarında olmadığı için ayrıca paketleniyor |
 
 Paketler [COPR](https://copr.fedorainfracloud.org/coprs/ii-las/vabu/) üzerinde derleniyor.

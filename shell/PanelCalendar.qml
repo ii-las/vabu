@@ -48,19 +48,20 @@ ColumnLayout {
         Text {
             text: root.months[root.month]
             color: Theme.paper
-            font.family: Theme.serif
-            font.pixelSize: 28
-            font.letterSpacing: -0.4
+            font.family: Theme.sans
+            font.pixelSize: 20
+            font.weight: Font.DemiBold
+            font.letterSpacing: -0.3
         }
         Text {
             Layout.fillWidth: true
-            Layout.leftMargin: 8
+            Layout.leftMargin: 6
             Layout.alignment: Qt.AlignBaseline
             text: root.year
             color: Theme.muted
-            font.family: Theme.serif
-            font.pixelSize: 28
-            font.weight: Font.Light
+            font.family: Theme.sans
+            font.pixelSize: 20
+            font.weight: Font.Normal
             font.features: ({ "lnum": 1 })
         }
         IconButton {
@@ -155,7 +156,7 @@ ColumnLayout {
             Item {
                 Layout.fillWidth: true
                 implicitHeight: 14
-                Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 2; radius: 1; color: Qt.rgba(1, 1, 1, 0.14) }
+                Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 2; radius: 1; color: Theme.track }
                 Rectangle {
                     visible: !Sun.night
                     anchors.verticalCenter: parent.verticalCenter

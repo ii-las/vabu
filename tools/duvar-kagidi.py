@@ -141,17 +141,14 @@ scene("wallpaper-gece.svg",
       ],
       star_count=560, seed=12)
 
-# Sis: gündüz, soluk ve sakin
-scene("wallpaper-sis.svg",
-      sky=[(0, "#8597AC"), (0.35, "#A3B0C0"), (0.6, "#C2C9D2"), (0.8, "#DAD9DA"), (1, "#E7E2DC")],
-      sun=(2700, 900, 0, "#fff", "#FFFFFF", 1700),
+# Gündüz: açık görünümün duvar kağıdı. Soluk mavi sırtlar, ufukta sıcak bir ışık.
+scene("wallpaper-gunduz.svg",
+      sky=[(0, "#8EA8CB"), (0.34, "#B4C5DC"), (0.6, "#DDD9DC"), (0.8, "#F0E2D8"), (1, "#F6E9DC")],
+      sun=(2693, 1067, 0, "#FFFFFF", "#FFF6E8", 1707),
       layers=[
-          (1445, 85, 3.3, 5, "#BCC4CE", "#D2D5D9", 0.58),
-          (1520, 80, 3.7, 5, "#A5B0BD", "#C0C7CF", 0.55),
-          (1600, 95, 4.3, 6, "#8D9AAA", "#ABB5C1", 0.6),
-          (1690, 110, 5.0, 6, "#748395", "#939FAE", 0.63),
-          (1790, 120, 5.8, 6, "#5B6A7C", "#7B899A", 0.66),
-          (1900, 130, 6.7, 7, "#445263", "#5F6E80", 0.68),
-          (2030, 120, 7.8, 7, "#2F3A48", "#434F5F", 0.7),
+          (1469 + i * 99, 72 + i * 9, 3.3 + i * 0.75, 5 if i < 2 else 6, top, bottom, 0.58 + i * 0.02)
+          for i, (top, bottom) in enumerate([
+              ("#C5CEDB", "#DADEE4"), ("#AFBBCD", "#C6CEDA"), ("#98A7BD", "#B0BCCC"), ("#8193AC", "#9AA9BD"),
+              ("#6B7E99", "#8496AD"), ("#566A86", "#6E8099"), ("#43566F", "#586B84")])
       ],
       grain=0.05, seed=21)

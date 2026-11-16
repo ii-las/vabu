@@ -71,7 +71,7 @@ Item {
         blurMax: 56
         scale: 1 + 0.03 * root.t
     }
-    Rectangle { anchors.fill: parent; color: Qt.rgba(10 / 255, 9 / 255, 13 / 255, root.mix(0.14, 0.46)) }
+    Rectangle { anchors.fill: parent; color: Theme.dark ? Qt.rgba(10 / 255, 9 / 255, 13 / 255, root.mix(0.12, 0.44)) : Qt.rgba(244 / 255, 246 / 255, 250 / 255, root.mix(0.04, 0.36)) }
 
     MouseArea { anchors.fill: parent; onClicked: { root.wanted = !root.wanted || root.password.length > 0; keys.forceActiveFocus() } }
 
@@ -94,7 +94,7 @@ Item {
                 text: Qt.formatTime(clock.date, "HH:mm")
                 color: Theme.paper
                 font.family: Theme.serif
-                font.weight: Font.Light
+                font.weight: Font.Normal
                 font.pixelSize: Math.round(root.mix(clockBox.big, clockBox.big * 0.58))
                 font.letterSpacing: root.mix(-5, -3)
                 font.features: ({ "tnum": 1, "lnum": 1 })
@@ -108,18 +108,6 @@ Item {
                 font.pixelSize: Math.round(root.mix(21, 17))
                 font.weight: Font.Medium
             }
-        }
-
-        // Boştayken ipucu
-        Text {
-            visible: root.primary
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: root.height * 0.62
-            opacity: (1 - root.t) * 0.7
-            text: "Açmak için yazmaya başla"
-            color: Theme.paper
-            font.family: Theme.sans
-            font.pixelSize: 14
         }
 
         // Giriş
@@ -136,9 +124,9 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 76; height: 76
                 radius: 26
-                color: Qt.rgba(1, 1, 1, 0.14)
+                color: Theme.panel
                 border.width: 1
-                border.color: Qt.rgba(1, 1, 1, 0.16)
+                border.color: Theme.edge
                 Text {
                     anchors.centerIn: parent
                     text: (root.user.full || root.user.name || "?").charAt(0).toUpperCase()
@@ -184,10 +172,10 @@ Item {
                 width: parent.width
                 height: 54
                 radius: 18
-                color: Qt.rgba(18 / 255, 17 / 255, 22 / 255, 0.56)
+                color: Theme.panel
                 border.width: 1.5
                 border.color: root.error ? Theme.danger
-                    : root.password.length > 0 ? Theme.alpha(Theme.paper, 0.6) : Qt.rgba(1, 1, 1, 0.14)
+                    : root.password.length > 0 ? Theme.alpha(Theme.accent, 0.9) : Theme.edge
                 Behavior on border.color { ColorAnimation { duration: Theme.state } }
                 transform: Translate { id: nudge }
 
@@ -221,7 +209,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 42; height: 42
                     radius: 13
-                    color: root.password.length > 0 && !root.busy ? Theme.accent : Qt.rgba(1, 1, 1, 0.08)
+                    color: root.password.length > 0 && !root.busy ? Theme.accent : Theme.well
                     Behavior on color { ColorAnimation { duration: Theme.state } }
                     Icon {
                         visible: !root.busy
@@ -296,7 +284,7 @@ Item {
     component Round: IconButton {
         implicitWidth: 46; implicitHeight: 46
         radius: 16
-        idle: Qt.rgba(18 / 255, 17 / 255, 22 / 255, 0.46)
+        idle: Theme.panel
     }
 
     function send() {

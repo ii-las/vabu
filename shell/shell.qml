@@ -21,6 +21,22 @@ ShellRoot {
         // Arka plan servisleri ilk kullanımda değil, oturumla birlikte başlasın
         Net.refresh()
         NightLight.failed = false
+        root.applyScheme()
+    }
+
+    // Görünüm değişince (elle ya da gün batımında) uygulamalar ve odak halkası da değişir
+    function applyScheme(): void {
+        const d = Theme.dark
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", d ? "prefer-dark" : "prefer-light"])
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", d ? "adw-gtk3-dark" : "adw-gtk3"])
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", d ? "Papirus-Dark" : "Papirus"])
+    }
+    Connections {
+        target: Theme
+        function onDarkChanged() {
+            root.applyScheme()
+            if (NiriConf.ready) NiriConf.apply(false)
+        }
     }
 
     // Her ekran: duvar kağıdı, yan panel, yan panelden açılan paneller

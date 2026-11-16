@@ -33,7 +33,7 @@ OverlayWindow {
         radius: Theme.radiusPanel
         shadow: true
         width: row.implicitWidth + 28
-        height: row.implicitHeight + hint.implicitHeight + 52
+        height: row.implicitHeight + 28
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
 
@@ -73,7 +73,7 @@ OverlayWindow {
                     required property int index
                     readonly property bool isOn: root.selected === index
                     readonly property bool danger: modelData.danger === true
-                    readonly property color fg: isOn ? (danger ? "#3A1512" : Theme.accentInk) : Theme.paper
+                    readonly property color fg: isOn ? (danger ? (Theme.dark ? "#3A1512" : "#FFFFFF") : Theme.accentInk) : Theme.paper
                     // sırayla belirme: açılış ilerledikçe her düğme biraz gecikmeli gelir
                     readonly property real t: Math.max(0, Math.min(1, root.shown * 1.7 - index * 0.11))
 
@@ -116,15 +116,5 @@ OverlayWindow {
             }
         }
 
-        Text {
-            id: hint
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 14
-            text: "← →  seç     ⏎  onayla     Esc  vazgeç"
-            color: Theme.faint
-            font.family: Theme.sans
-            font.pixelSize: 12
-        }
     }
 }

@@ -80,7 +80,7 @@ masaüstünü oluşturan paketler.
 
 %build
 # Duvar kağıtları: gren yüzünden PNG çok büyür, JPEG olarak paketlenir
-for n in wallpaper wallpaper-gece wallpaper-sis; do
+for n in wallpaper wallpaper-gece wallpaper-gunduz; do
     rsvg-convert -w 3840 -h 2160 branding/$n.svg -o $n.png
     magick $n.png -quality 92 -sampling-factor 4:4:4 -interlace none $n.jpg
 done
@@ -97,7 +97,7 @@ magick wallpaper.png -resize '1920x1080^' -gravity center -extent 1920x1080 \
     -blur 0x22 -fill '#0C0B0F' -colorize 42 -depth 8 grub/background.png
 rsvg-convert -w 104 -h 104 branding/logo-mark.svg -o grub/logo.png
 # seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür
-magick -size 48x48 xc:none -fill '#EFECE6' -draw 'roundrectangle 0,0 47,47 16,16' pill.png
+magick -size 48x48 xc:none -fill '#8FB2FF' -draw 'roundrectangle 0,0 47,47 15,15' pill.png
 i=0
 for part in nw n ne w c e sw s se; do
     magick pill.png -crop "16x16+$(( (i % 3) * 16 ))+$(( (i / 3) * 16 ))" +repage grub/select_$part.png
@@ -118,7 +118,7 @@ VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in \
 
 %install
 cp -a rootfs/. %{buildroot}/
-for n in wallpaper wallpaper-gece wallpaper-sis; do
+for n in wallpaper wallpaper-gece wallpaper-gunduz; do
     install -Dm0644 $n.jpg %{buildroot}%{_datadir}/vabu/assets/$n.jpg
 done
 install -Dm0644 plymouth-logo.png %{buildroot}%{_datadir}/plymouth/themes/vabu/logo.png

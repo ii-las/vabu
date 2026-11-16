@@ -59,7 +59,6 @@ ColumnLayout {
 
     Group {
         title: "Yeni kullanıcı"
-        note: "Geçici şifre ilk girişte değiştirilir."
         GridLayout {
             Layout.fillWidth: true
             Layout.margins: 14

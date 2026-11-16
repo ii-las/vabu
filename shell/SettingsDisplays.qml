@@ -96,9 +96,9 @@ ColumnLayout {
         Layout.fillWidth: true
         implicitHeight: 240
         radius: Theme.radiusTile
-        color: Qt.rgba(1, 1, 1, 0.035)
+        color: Theme.group
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.05)
+        border.color: Theme.groupEdge
 
         // Tüm ekranları sığdıran ölçek
         readonly property var bounds: {
@@ -130,9 +130,9 @@ ColumnLayout {
                 width: dims[0] * canvasBox.k
                 height: dims[1] * canvasBox.k
                 radius: 12
-                color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.07)
+                color: isOn ? Theme.accent : Theme.well
                 border.width: 1
-                border.color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.16)
+                border.color: isOn ? Theme.accent : Theme.line
                 Column {
                     anchors.centerIn: parent
                     spacing: 2
@@ -227,7 +227,6 @@ ColumnLayout {
         SettingRow {
             id: scaleRow
             label: "Ölçek"
-            sub: "Yazılar ve pencereler bu oranda büyür"
             readonly property var scales: [1, 1.25, 1.5, 1.75, 2]
             Segmented {
                 mono: true
@@ -239,13 +238,21 @@ ColumnLayout {
         SettingRow {
             visible: page.sel?.vrr_supported ?? false
             label: "Değişken yenileme hızı (VRR)"
-            sub: "Oyunlarda yırtılmayı önler"
             Toggle { checked: page.cur?.vrr ?? false; onToggled: page.setDraft("vrr", !page.cur.vrr) }
         }
         SettingRow {
             visible: page.outputs.length > 1
             label: "Bu ekranı kullan"
             Toggle { checked: !(page.cur?.off ?? false); onToggled: page.setDraft("off", !page.cur.off) }
+        }
+    }
+
+    Group {
+        title: "Gece ışığı"
+        SettingRow {
+            label: "Gece ışığı"
+            sub: NightLight.isOn ? NightLight.label : ""
+            Toggle { checked: NightLight.isOn; onToggled: NightLight.toggle() }
         }
     }
 

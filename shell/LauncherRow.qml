@@ -119,12 +119,5 @@ Item {
             font.weight: Font.Medium
         }
 
-        Text {
-            visible: root.selected && !(root.isInstall && root.state_ !== "" && root.state_ !== "error")
-            text: root.isInstall ? "Kur  ⏎" : root.mode === "command" ? "Çalıştır  ⏎" : "Aç  ⏎"
-            color: Theme.muted
-            font.family: Theme.sans
-            font.pixelSize: 12
-        }
     }
 }

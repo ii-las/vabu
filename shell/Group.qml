@@ -24,9 +24,9 @@ ColumnLayout {
         Layout.fillWidth: true
         implicitHeight: inner.implicitHeight
         radius: Theme.radiusTile
-        color: Qt.rgba(1, 1, 1, 0.035)
+        color: Theme.group
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.05)
+        border.color: Theme.groupEdge
         ColumnLayout {
             id: inner
             anchors.left: parent.left

@@ -91,7 +91,6 @@ ColumnLayout {
 
     Group {
         title: "Bluetooth"
-        note: Bt.isOn ? "Yeni bir cihaz eklemek için onu eşleştirme kipine al; listede görününce tıkla." : ""
         SettingRow {
             label: "Bluetooth"
             sub: !Bt.available ? "Bu bilgisayarda Bluetooth yok"

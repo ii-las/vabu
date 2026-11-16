@@ -6,28 +6,35 @@ import Quickshell.Io
 Singleton {
     id: root
 
+    // Vurgu renkleri: açık görünümde koyu ton, koyu görünümde açık ton
     readonly property var accents: ({
-        "kagit":   { color: "#EDEAE3", ink: "#141316", name: "Kağıt" },
-        "nane":    { color: "#B9E3C6", ink: "#10301F", name: "Nane" },
-        "gok":     { color: "#B9CCF2", ink: "#14223D", name: "Gök" },
-        "seftali": { color: "#EBC09A", ink: "#3A2213", name: "Şeftali" },
-        "gul":     { color: "#EBB4C8", ink: "#3A1428", name: "Gül" }
+        "mavi":    { light: "#2C56CC", dark: "#8FB2FF", darkInk: "#0E1A33", name: "Mavi" },
+        "yesil":   { light: "#1F7F58", dark: "#86D4AC", darkInk: "#0B2A1C", name: "Yeşil" },
+        "turuncu": { light: "#B5601A", dark: "#EDB483", darkInk: "#3A1E07", name: "Turuncu" },
+        "pembe":   { light: "#B23A6E", dark: "#EFA9C6", darkInk: "#3A0F22", name: "Pembe" },
+        "grafit":  { light: "#3B4250", dark: "#C9CED8", darkInk: "#15181E", name: "Grafit" }
     })
     readonly property var wallpapers: [
+        { name: "Gündüz", path: "/usr/share/vabu/assets/wallpaper-gunduz.jpg" },
         { name: "Alacakaranlık", path: "/usr/share/vabu/assets/wallpaper.jpg" },
-        { name: "Gece", path: "/usr/share/vabu/assets/wallpaper-gece.jpg" },
-        { name: "Sis", path: "/usr/share/vabu/assets/wallpaper-sis.jpg" }
+        { name: "Gece", path: "/usr/share/vabu/assets/wallpaper-gece.jpg" }
     ]
 
     property var values: ({})
     readonly property string dir: Quickshell.env("HOME") + "/.config/vabu"
 
-    readonly property string accentName: values.accent ?? "kagit"
-    readonly property color accent: (accents[accentName] ?? accents.kagit).color
-    readonly property color accentInk: (accents[accentName] ?? accents.kagit).ink
-    // Eski sürümler hazır duvar kağıtlarını .png olarak kaydetmişti
-    readonly property string wallpaper: (values.wallpaper ?? wallpapers[0].path)
+    // acik | koyu | otomatik (gün batımında koyu)
+    readonly property string theme: values.theme ?? "otomatik"
+    readonly property string accentName: accents[values.accent] ? values.accent : "mavi"
+    readonly property color accentLight: accents[accentName].light
+    readonly property color accentDark: accents[accentName].dark
+    readonly property color accentDarkInk: accents[accentName].darkInk
+    // "auto": görünüme göre gündüz ya da alacakaranlık. Eski sürümler .png kaydetmişti.
+    readonly property string wallpaperChoice: (values.wallpaper ?? "auto")
         .replace(/^\/usr\/share\/vabu\/assets\/(wallpaper[a-z-]*)\.png$/, "/usr/share/vabu/assets/$1.jpg")
+        .replace(/wallpaper-sis\.jpg$/, "wallpaper-gunduz.jpg")
+    readonly property string wallpaper: wallpaperChoice !== "auto" ? wallpaperChoice
+        : Theme.dark ? wallpapers[1].path : wallpapers[0].path
     readonly property string sidebarSide: values.sidebarSide ?? "left"
     readonly property bool showSeconds: values.showSeconds ?? false
     readonly property bool showMedia: values.showMedia ?? true

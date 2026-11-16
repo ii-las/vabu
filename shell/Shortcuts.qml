@@ -14,32 +14,32 @@ OverlayWindow {
 
     readonly property var groups: [
         { title: "Gezinme", items: [
-            ["Kolonlar arasında", ["v", "←", "→"]],
-            ["Pencereler ve alanlar arasında", ["v", "↑", "↓"]],
-            ["Çalışma alanına git", ["v", "1…9"]],
+            ["Kolonlar arasında", ["Super", "←", "→"]],
+            ["Pencereler ve alanlar arasında", ["Super", "↑", "↓"]],
+            ["Çalışma alanına git", ["Super", "1…9"]],
             ["Pencere değiştir", ["Alt", "Tab"]],
-            ["Genel bakış", ["v", "O"]],
-            ["Ekranlar arasında", ["v", "Ctrl", "←", "→"]]
+            ["Genel bakış", ["Super", "O"]],
+            ["Ekranlar arasında", ["Super", "Ctrl", "←", "→"]]
         ]},
         { title: "Pencereler", items: [
-            ["Taşı", ["v", "Shift", "yön"]],
-            ["Başka alana taşı", ["v", "Shift", "1…9"]],
-            ["Genişliği değiştir", ["v", "R"]],
-            ["Kolonu büyüt", ["v", "F"]],
-            ["Tam ekran", ["v", "Shift", "F"]],
-            ["Yüzen pencere", ["v", "V"]],
-            ["Kolona al ya da çıkar", ["v", "[", "]"]],
-            ["Kapat", ["v", "Q"]]
+            ["Taşı", ["Super", "Shift", "yön"]],
+            ["Başka alana taşı", ["Super", "Shift", "1…9"]],
+            ["Genişliği değiştir", ["Super", "R"]],
+            ["Kolonu büyüt", ["Super", "F"]],
+            ["Tam ekran", ["Super", "Shift", "F"]],
+            ["Yüzen pencere", ["Super", "V"]],
+            ["Kolona al ya da çıkar", ["Super", "[", "]"]],
+            ["Kapat", ["Super", "Q"]]
         ]},
         { title: "Vabu", items: [
-            ["Ara ve başlat", ["v", "Boşluk"]],
-            ["Uygulama kur", ["v", "I"]],
-            ["Terminal", ["v", "⏎"]],
-            ["Dosyalar", ["v", "E"]],
-            ["Kontrol merkezi", ["v", "A"]],
-            ["Bildirimler", ["v", "N"]],
-            ["Ayarlar", ["v", ","]],
-            ["Ekranı kilitle", ["v", "Alt", "L"]],
+            ["Ara ve başlat", ["Super", "Boşluk"]],
+            ["Uygulama kur", ["Super", "I"]],
+            ["Terminal", ["Super", "⏎"]],
+            ["Dosyalar", ["Super", "E"]],
+            ["Kontrol merkezi", ["Super", "A"]],
+            ["Bildirimler", ["Super", "N"]],
+            ["Ayarlar", ["Super", ","]],
+            ["Ekranı kilitle", ["Super", "Alt", "L"]],
             ["Ekran görüntüsü", ["Print"]]
         ]}
     ]
@@ -88,8 +88,6 @@ OverlayWindow {
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.3
                 }
-                Keycap { label: "v" }
-                Text { text: "Super tuşu"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13 }
                 IconButton { Layout.leftMargin: 10; icon: "close"; tooltip: "Kapat"; onClicked: Ui.shortcutsOpen = false }
             }
 

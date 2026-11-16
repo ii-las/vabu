@@ -8,7 +8,7 @@ Card {
     property string screenName: ""
     readonly property bool active: Ui.popover === "calendar" && Ui.popoverScreen === screenName
     implicitHeight: col.implicitHeight + 38
-    edgeColor: active ? Qt.rgba(1, 1, 1, 0.22) : Theme.edge
+    edgeColor: active ? Theme.alpha(Theme.accent, 0.6) : Theme.edge
 
     readonly property var days: ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"]
     readonly property var months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -21,7 +21,7 @@ Card {
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        color: mouse.pressed ? Theme.pressed : mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
+        color: mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.alpha(Theme.paper, 0.03) : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
 
@@ -40,9 +40,9 @@ Card {
             text: Qt.formatTime(clock.date, Config.showSeconds ? "HH:mm:ss" : "HH:mm")
             color: Theme.paper
             font.family: Theme.serif
-            font.weight: Font.Light
-            font.pixelSize: Config.showSeconds ? 54 : 82
-            font.letterSpacing: Config.showSeconds ? -1 : -2
+            font.weight: Font.Normal
+            font.pixelSize: Config.showSeconds ? 50 : 66
+            font.letterSpacing: Config.showSeconds ? -1.5 : -2.5
             font.features: ({ "tnum": 1, "lnum": 1 })
             lineHeight: 0.92
         }

@@ -41,7 +41,6 @@ ColumnLayout {
 
     Group {
         title: "Klavye düzenleri"
-        note: "İlk sıradaki varsayılan düzendir."
         Repeater {
             model: page.current
             delegate: SettingRow {
@@ -92,7 +91,6 @@ ColumnLayout {
         }
         SettingRow {
             label: "Doğal kaydırma"
-            sub: "Dokunmatik yüzeyde içerik parmağınla aynı yöne kayar"
             Toggle { checked: NiriConf.naturalScroll; onToggled: NiriConf.set("naturalScroll", !NiriConf.naturalScroll) }
         }
     }
@@ -101,7 +99,6 @@ ColumnLayout {
 
     Group {
         title: "Kısayollar"
-        note: "Kendi kısayollarını ayar dosyasının en altındaki “Kendi eklemelerin” bölümüne yazabilirsin; Vabu Ayarlar o bölüme dokunmaz."
         SettingRow {
             label: "Kısayol tablosu"
             sub: "Super + Shift + /"

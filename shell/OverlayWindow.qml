@@ -29,7 +29,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(8 / 255, 7 / 255, 10 / 255, root.dim * Math.min(1, root.shown * 1.5))
+        color: Theme.dark ? Qt.rgba(0, 0, 0, root.dim * Math.min(1, root.shown * 1.5)) : Qt.rgba(30 / 255, 40 / 255, 60 / 255, 0.7 * root.dim * Math.min(1, root.shown * 1.5))
     }
     MouseArea {
         anchors.fill: parent

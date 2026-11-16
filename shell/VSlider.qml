@@ -34,7 +34,7 @@ Item {
         width: parent.width
         height: root.engaged ? 4 : 3
         radius: height / 2
-        color: Qt.rgba(1, 1, 1, 0.12)
+        color: Theme.track
         Behavior on height { NumberAnimation { duration: Theme.fast } }
         Rectangle {
             width: parent.width * root.ratio
@@ -48,7 +48,9 @@ Item {
         x: track.width * root.ratio - width / 2
         anchors.verticalCenter: parent.verticalCenter
         width: d; height: d; radius: d / 2
-        color: Theme.paper
+        color: Theme.knob
+        border.width: Theme.dark ? 0 : 1
+        border.color: Theme.alpha("#16202C", 0.12)
         Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on height { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }

@@ -88,7 +88,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 implicitHeight: 4
                 radius: 2
-                color: Qt.rgba(1, 1, 1, 0.14)
+                color: Theme.track
                 Rectangle {
                     width: parent.width * (root.muted ? 0 : root.value)
                     height: parent.height

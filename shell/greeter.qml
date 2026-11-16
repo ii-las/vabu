@@ -98,7 +98,6 @@ ShellRoot {
                     id: view
                     anchors.fill: parent
                     primary: win.primary
-                    wallpaper: "/usr/share/vabu/assets/wallpaper.jpg"
                     users: root.users
                     userIndex: root.userIndex
                     sessions: root.sessions

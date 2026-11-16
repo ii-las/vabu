@@ -46,9 +46,9 @@ ColumnLayout {
         visible: !page.loading && page.nv !== "none"
         implicitHeight: nvCol.implicitHeight + 36
         radius: Theme.radiusTile
-        color: Qt.rgba(1, 1, 1, 0.035)
+        color: Theme.group
         border.width: 1
-        border.color: page.nv === "active" ? Qt.rgba(1, 1, 1, 0.05) : Theme.alpha(Theme.warn, 0.5)
+        border.color: page.nv === "active" ? Theme.groupEdge : Theme.alpha(Theme.warn, 0.5)
 
         ColumnLayout {
             id: nvCol
@@ -100,34 +100,33 @@ ColumnLayout {
     Group {
         visible: !page.loading
         title: "Donanım"
-        note: "Kurulumdan önce geri alma noktası alınır; bir sorun olursa Güncellemeler sayfasından geri dönebilirsin."
 
         Repeater {
             model: (page.st?.gpus ?? []).filter(g => !/nvidia/i.test(g))
             delegate: SettingRow {
                 required property var modelData
                 label: modelData
-                sub: "Mesa: OpenGL, Vulkan ve donanım video hızlandırma"
+                sub: "Mesa"
                 Chip { text: "Hazır"; kind: "ok" }
             }
         }
         SettingRow {
             label: "Medya codec'leri"
-            sub: "H.264, HEVC, AAC ve diğerleri (RPM Fusion)"
+            sub: ""
             Chip { visible: page.st?.codecs ?? false; text: "Kurulu"; kind: "ok" }
             PillButton { visible: !(page.st?.codecs ?? true); implicitHeight: 36; primary: true; label: "Kur"; onClicked: page.run("codecs") }
         }
         SettingRow {
             visible: page.st?.amd ?? false
             label: "AMD donanım video hızlandırma"
-            sub: "VA-API ve VDPAU (RPM Fusion)"
-            PillButton { implicitHeight: 36; label: "Denetle ve kur"; onClicked: page.run("amd") }
+            sub: ""
+            PillButton { implicitHeight: 36; label: "Kur"; onClicked: page.run("amd") }
         }
         SettingRow {
             visible: page.st?.intel ?? false
             label: "Intel donanım video hızlandırma"
-            sub: "intel-media-driver (RPM Fusion)"
-            PillButton { implicitHeight: 36; label: "Denetle ve kur"; onClicked: page.run("intel") }
+            sub: ""
+            PillButton { implicitHeight: 36; label: "Kur"; onClicked: page.run("intel") }
         }
     }
 

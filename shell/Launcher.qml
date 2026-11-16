@@ -27,9 +27,9 @@ OverlayWindow {
     }
 
     readonly property var commands: [
-        { icon: "system_update_alt",  name: "Sistemi güncelle",    sub: "Öncesinde geri alma noktası alınır", run: () => Ui.terminal(["vabu", "update"]) },
-        { icon: "memory",             name: "Sürücüler",           sub: "Ekran kartı ve codec'ler",           run: () => Ui.settings("drivers") },
-        { icon: "history",            name: "Geri alma noktaları", sub: "Sistemi önceki haline döndür",       run: () => Ui.settings("updates") },
+        { icon: "system_update_alt",  name: "Sistemi güncelle",    sub: "",                                   run: () => Ui.terminal(["vabu", "update"]) },
+        { icon: "memory",             name: "Sürücüler",           sub: "",                                   run: () => Ui.settings("drivers") },
+        { icon: "history",            name: "Geri alma noktaları", sub: "",                                   run: () => Ui.settings("updates") },
         { icon: "screenshot_region",  name: "Ekran görüntüsü",     sub: "Print",                              run: () => Ui.screenshot() },
         { icon: "overview_key",       name: "Genel bakış",         sub: "Super + O",                          run: () => Niri.toggleOverview() },
         { icon: "keyboard",           name: "Kısayollar",          sub: "Super + Shift + /",                  run: () => { Ui.shortcutsOpen = true } },
@@ -236,7 +236,7 @@ OverlayWindow {
                         width: parent.width
                         height: 52
                         radius: Theme.radiusRow
-                        color: Qt.rgba(1, 1, 1, 0.09)
+                        color: Theme.well
                         Behavior on y { NumberAnimation { duration: 130; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
                     }
 
@@ -313,7 +313,7 @@ OverlayWindow {
                             implicitHeight: 28
                             implicitWidth: tabLabel.implicitWidth + 20
                             radius: 9
-                            color: isOn ? Theme.well : (tabMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent")
+                            color: isOn ? Theme.well : (tabMouse.containsMouse ? Theme.hover : "transparent")
                             Text {
                                 id: tabLabel
                                 anchors.centerIn: parent
@@ -331,13 +331,6 @@ OverlayWindow {
                                 onClicked: root.setMode(tab.modelData.k)
                             }
                         }
-                    }
-                    Item { Layout.fillWidth: true }
-                    Text {
-                        text: root.mode === "calc" ? "⏎  sonucu kopyala" : "↑↓  gez     Tab  kip     Esc  kapat"
-                        color: Theme.faint
-                        font.family: Theme.sans
-                        font.pixelSize: 12
                     }
                 }
             }

@@ -183,18 +183,18 @@ ColumnLayout {
                 onMore: Ui.togglePopover("bluetooth", Ui.popoverScreen)
             }
             Tile {
+                icon: "dark_mode"
+                name: "Koyu görünüm"
+                detail: Config.theme === "otomatik" ? "Otomatik" : Theme.dark ? "Açık" : "Kapalı"
+                isOn: Theme.dark
+                onToggled: Config.set("theme", Theme.dark ? "acik" : "koyu")
+            }
+            Tile {
                 icon: "do_not_disturb_on"
                 name: "Rahatsız etme"
                 detail: Notifs.dnd ? "Açık" : "Kapalı"
                 isOn: Notifs.dnd
                 onToggled: Notifs.dnd = !Notifs.dnd
-            }
-            Tile {
-                icon: "nightlight"
-                name: "Gece ışığı"
-                detail: NightLight.label
-                isOn: NightLight.isOn && !NightLight.failed
-                onToggled: NightLight.toggle()
             }
         }
 
