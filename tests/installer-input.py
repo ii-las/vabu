@@ -90,6 +90,12 @@ def main():
     with tempfile.TemporaryDirectory(prefix='vabu-installer-input-') as folder:
         fixture = Path(folder) / 'calamares'
         shutil.copytree(source, fixture)
+        # -c changes Calamares' entire data directory, not just settings.conf.
+        # Reuse the installed, read-only Qt imports without copying vendor files.
+        qml = Path('/usr/share/calamares/qml')
+        if not qml.is_dir():
+            raise RuntimeError('Installed Calamares QML imports are missing')
+        (fixture / 'qml').symlink_to(qml, target_is_directory=True)
         # These are view-only modules. No exec sequence exists, even if a test
         # accidentally activates Next. In particular no partition/mount/users job.
         (fixture / 'settings.conf').write_text('''modules-search: [ local, /usr/lib64/calamares/modules ]
@@ -99,6 +105,10 @@ branding: vabu
 prompt-install: true
 dont-chroot: false
 oem-setup: false
+disable-cancel: false
+disable-cancel-during-exec: true
+hide-back-and-next-during-exec: true
+quit-at-end: false
 ''')
         (fixture / 'modules/welcomeq.conf').write_text('''qmlSearch: both
 requirements:
@@ -144,6 +154,7 @@ requirements:
             except Exception:
                 try:
                     shot('failed-calamares-input.png')
+                    print((out / 'calamares-input.log').read_text()[-6000:])
                     print('Accessible controls:', [(n.getRoleName(), n.name) for n in nodes()
                            if n.getRole() in (pyatspi.ROLE_PUSH_BUTTON, pyatspi.ROLE_ENTRY)])
                 finally:
