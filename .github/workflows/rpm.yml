@@ -54,6 +54,8 @@ jobs:
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/greeter.qml
           rpm -qp --provides ~/rpmbuild/RPMS/noarch/vabu-release-*.rpm | grep -q system-release
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/settings.qml
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/installer.qml
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/bin/vabu-installer
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/theme.txt
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/vabu-22.pf2
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-gunduz.jpg
@@ -77,7 +79,7 @@ jobs:
       - name: Kabuğu çalıştır ve ekran görüntülerini al
         timeout-minutes: 15
         run: |
-          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils calamares
+          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils sudo jq
           bash tests/ekran.sh /tmp/ekran
 
       - name: Önyükleme menüsünün görüntüsünü al
@@ -107,6 +109,19 @@ jobs:
           XDG_CONFIG_HOME=/tmp/h bash rootfs/usr/libexec/vabu/niri-config
           niri validate -c /tmp/h/niri/config.kdl
           niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
+          # Canlı oturum (iso/config.sh): kurulumu açan satırlar geçerli olmalı ve
+          # klavye seçilince ayar yeniden üretildiğinde korunmalı
+          mkdir -p /tmp/canli/niri /tmp/canli/vabu
+          kdl=/tmp/canli/niri/config.kdl
+          cp /tmp/varsayilan.kdl "$kdl"
+          eval "$(sed -n "/^canli='/,/^}'/p" iso/config.sh)"
+          { sed '/^\/\/ VABU-KULLANICI-SON/,$d' "$kdl"; printf '%s\n' "$canli"; sed -n '/^\/\/ VABU-KULLANICI-SON/,$p' "$kdl"; } > "$kdl.yeni"
+          mv "$kdl.yeni" "$kdl"
+          niri validate -c "$kdl"
+          echo '{"xkbLayout":"tr","xkbVariant":"f"}' > /tmp/canli/vabu/niri.json
+          XDG_CONFIG_HOME=/tmp/canli bash rootfs/usr/libexec/vabu/niri-config
+          grep -q 'spawn-at-startup "vabu-installer"' "$kdl" && grep -q 'title="^Vabu.yu kur' "$kdl"
+          niri validate -c "$kdl"
 
       - name: QML denetimi (qmllint)
         # Bilgi amaçlı: yanlış alarm paket gönderimini engellemesin, bulgular özet olarak işaretlenir

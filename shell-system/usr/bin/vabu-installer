@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Vabu kurulumu. Zaten açıksa penceresi öne gelir.
+ENTRY=/usr/share/vabu/shell/installer.qml
+if qs -p "$ENTRY" ipc call installer state >/dev/null 2>&1; then
+    id="$(niri msg --json windows 2>/dev/null | jq -r --arg t "Vabu'yu kur" '.[] | select(.title == $t) | .id' | head -1)"
+    [[ -n "$id" ]] && niri msg action focus-window --id "$id" >/dev/null 2>&1
+    exit 0
+fi
+exec qs -p "$ENTRY"

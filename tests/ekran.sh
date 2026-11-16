@@ -10,6 +10,7 @@ set -uo pipefail
 
 OUT="${1:-/tmp/ekran}"
 SHELL_DIR=/usr/share/vabu/shell
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$OUT"
 
 if [[ -z "${VABU_EKRAN_ICERIDE:-}" ]]; then
@@ -31,6 +32,7 @@ output HEADLESS-1 bg #101012 solid_color
 default_border none
 focus_follows_mouse no
 for_window [title="Vabu Ayarlar"] floating enable
+for_window [title="^Vabu'yu kur$"] fullscreen enable
 SWAY
 
 # Fedora'nın sway'i dosya yetenekleriyle (cap_sys_nice) gelir; yetkisiz bir kapsayıcıda
@@ -63,7 +65,7 @@ yaz()  { sleep 0.6; command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/n
 # Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
 KOPYA="$HOME/kabuk"
 cp -r "$SHELL_DIR" "$KOPYA"
-cp "$(dirname "$0")/derle.qml" "$KOPYA/derle.qml"
+cp "$REPO/tests/derle.qml" "$KOPYA/derle.qml"
 VABU_QML_DOSYALARI="$(cd "$KOPYA" && ls *.qml | grep -v '^derle.qml$' | paste -sd, -)" \
     timeout 25 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1
 echo "=== derleme"
@@ -149,27 +151,82 @@ swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6
 
-# Kurulum uygulaması (Calamares): yalnızca görünüm, hiçbir şey kurulmaz.
-# Depodaki ayarlar /etc/calamares'e kopyalanır; düğmelere imleçle tıklanır.
-tikla() {
-    swaymsg seat seat0 cursor set "$1" "$2" >/dev/null 2>&1
-    swaymsg seat seat0 cursor press button1 >/dev/null 2>&1
-    swaymsg seat seat0 cursor release button1 >/dev/null 2>&1
-}
-REPO="$(cd "$(dirname "$0")/.." && pwd)"
-if command -v calamares >/dev/null && [[ -d "$REPO/iso/root/etc/calamares" ]]; then
-    mkdir -p /etc/calamares && cp -r "$REPO/iso/root/etc/calamares/." /etc/calamares/
-    # Kapsayıcıda disk yok; sayfalar arasında gezebilmek için koşullar yalnızca testte gevşetilir
-    sed -i 's/^  required: .*/  required: []/; s/^  check: .*/  check: [ ram ]/' /etc/calamares/modules/welcomeq.conf
-    (calamares -d >"$OUT/calamares.log" 2>&1 &)
-    shot 50-kurulum-hosgeldin 9
-    # "Vabu'yu kur" ilk sayfanın kendi düğmesi; sonraki sayfalarda alttaki "Devam et"
-    tikla "${VABU_KUR_X:-866}" "${VABU_KUR_Y:-560}";  shot 51-kurulum-2 2.5
-    for n in 52 53 54 55 56; do
-        tikla 758 848;                                shot "$n-kurulum" 2.5
+# Kurulum: taklit arka uçla (tests/kurulum-taklit.sh) bütün sayfalar, açık ve koyu.
+# Sayfalar yalnızca klavyeyle gezilir, alanlara wtype ile yazılır; arka uca giden
+# ayarlar sonda beklenenle karşılaştırılır. İlk kurulum hatayla biter, ikincisi tamamlanır.
+kurulum_hatasi=0
+KUR="$HOME/kurulum"
+mkdir -p "$KUR"
+install -m 0755 "$REPO/tests/kurulum-taklit.sh" "$KUR/install-system"
+export VABU_INSTALL_BACKEND="$KUR/install-system" VABU_INSTALL_DRYRUN=1
+durum() { timeout 5 qs -p "$SHELL_DIR/installer.qml" ipc call installer state 2>/dev/null; }
+kayit() { echo "$1 $(durum)" >> "$OUT/kurulum-durum.log"; }
+iki()   { shot "$1" "${2:-1.3}"; kayit "$1"; gorunum koyu; shot "$1-koyu" 1; gorunum acik; sleep 0.5; }
+# Başsız sway'de klavye yok: her wtype klavyeyi takıp çıkarır, pencere odağı gidip gelir ve
+# ilk tuş kaybolur. Kurulum boyunca bir sanal klavye takılı kalır; her yazışta kısa bir bekleme.
+(wtype -s 900000 -k F24 >/dev/null 2>&1 &)
+kyaz()  { sleep 0.3; timeout 8 wtype -s 150 "$@" 2>/dev/null; sleep 0.5; }
+tus()   { local a=(); for k in "$@"; do a+=(-k "$k"); done; kyaz "${a[@]}"; }
+geri_tab() { kyaz -M shift -k Tab -m shift; }
+bekle_sayfa() {   # bekle_sayfa <sayfa> [saniye]
+    for _ in $(seq $((${2:-10} * 4))); do
+        [[ "$(durum | jq -r .page 2>/dev/null)" == "$1" ]] && return 0
+        sleep 0.25
     done
-    pkill -x calamares; sleep 1
+    echo "::error::kurulum: '$1' sayfasına gelinmedi ($(durum))"; kurulum_hatasi=1
+}
+
+touch "$KUR/hata"
+(vabu-installer >"$OUT/installer.log" 2>&1 &)
+sleep 6
+iki 60-kurulum-hosgeldin 0
+tus Tab Right;                       shot 60b-kurulum-english 1
+tus Left Return;                     bekle_sayfa region
+iki 61-kurulum-bolge
+kyaz "Gökçe ğüşiöç İ";               shot 62-kurulum-bolge-yazi 0.8
+yazilan="$(durum | jq -r .typed 2>/dev/null)"
+if [[ "$yazilan" != "Gökçe ğüşiöç İ" ]]; then
+    echo "::error::kurulum: klavye deneme alanına yazılamadı ('$yazilan')"; kurulum_hatasi=1
 fi
+geri_tab; geri_tab; tus Return;      bekle_sayfa zone
+kyaz "ber";                          iki 63-kurulum-saat-dilimi 0.8
+tus BackSpace BackSpace BackSpace
+kyaz "istanbul"; tus Return;         bekle_sayfa region
+shot 64-kurulum-bolge-secili 0.8
+tus Return;                          bekle_sayfa disks
+iki 65-kurulum-disk
+tus Tab space;                       shot 66-kurulum-disk-secili 0.8
+tus Tab Tab space
+kyaz "gizli parola"; tus Tab; kyaz "gizli parola"
+iki 67-kurulum-disk-sifre 0.8
+tus Return;                          bekle_sayfa account
+kyaz "Salih Gökçe"; tus Tab Tab Tab; kyaz "parola1"; tus Tab; kyaz "parola"
+iki 68-kurulum-hesap-hata 0.8
+kyaz "1";                            iki 69-kurulum-hesap 0.8
+tus Return;                          bekle_sayfa summary
+iki 70-kurulum-ozet
+tus Return;                          iki 71-kurulum-onay
+tus Tab Return;                      bekle_sayfa run
+for _ in $(seq 40); do [[ "$(durum | jq -r .run 2>/dev/null)" == "error" ]] && break; sleep 0.25; done
+iki 72-kurulum-hata 1.2
+rm -f "$KUR/hata"
+tus Return;                          iki 73-kurulum-kuruluyor 3.5
+bekle_sayfa done 25
+iki 74-kurulum-bitti 1
+
+beklenen='{"disk":"/dev/nvme0n1","encrypt":true,"passphrase":12,"fullName":"Salih Gökçe","login":"salih",
+  "password":7,"hostname":"salih-vabu","autologin":false,"locale":"tr_TR.UTF-8","keymap":"tr",
+  "keymapVariant":"","timezone":"Europe/Istanbul"}'
+cp "$KUR/girdi.json" "$OUT/kurulum-girdi.json" 2>/dev/null
+if jq -e --argjson b "$beklenen" '. == $b' "$KUR/girdi.json" >/dev/null 2>&1; then
+    echo "=== kurulum: arka uca giden ayarlar doğru"
+else
+    echo "::error::kurulum: arka uca giden ayarlar beklenenden farklı"
+    cat "$KUR/girdi.json" 2>/dev/null
+    kurulum_hatasi=1
+fi
+grep -qx -- "--dry-run" "$KUR/argumanlar" 2>/dev/null || { echo "::error::kurulum: --dry-run geçmedi"; kurulum_hatasi=1; }
+pkill -f "qs -p $SHELL_DIR/installer.qml"; pkill -f "wtype -s 900000"; sleep 1
 
 pkill -x qs; sleep 1
 
@@ -186,6 +243,9 @@ if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
     sed -i "s#^spawn-at-startup .*#spawn-at-startup \"sh\" \"-c\" \"qs -p $SHELL_DIR > $OUT/shell-niri.log 2>\&1\"#" "$HOME/niri.kdl"
     # iç içe pencerede de ekranla aynı ölçek
     printf '\noutput "winit" {\n    scale 2\n}\n' >> "$HOME/niri.kdl"
+    # Canlı oturumun kurulum kuralı (iso/config.sh); açılışta başlatma satırı burada yok
+    eval "$(sed -n "/^canli='/,/^}'/p" "$REPO/iso/config.sh")"
+    printf '\n%s\n' "${canli:-}" | grep -v '^spawn-at-startup' >> "$HOME/niri.kdl"
     niri -c "$HOME/niri.kdl" >>"$OUT/niri.log" 2>&1 &
     sleep 14
     export NIRI_SOCKET; NIRI_SOCKET="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'niri.*.sock' | head -1)"
@@ -199,6 +259,22 @@ if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
         shot 41-niri-ikinci-alan 1
         nm toggle-overview
         shot 42-niri-genel-bakis 1.5
+        nm toggle-overview; sleep 0.8
+        # Kurulum, niri'de sıradan bir pencere olarak: tam ekran açılır, alanlara yazı girer
+        nm spawn -- sh -c "vabu-installer > $OUT/installer-niri.log 2>&1"
+        shot 43-niri-kurulum 7
+        nm spawn -- wtype -k Return; sleep 1.5
+        nm spawn -- wtype "niri içinde yazı"
+        shot 44-niri-kurulum-yazi 1.5
+        # qs ipc yalnızca aynı Wayland ekranındaki örnekleri görür: niri'ninkini ver
+        niri_ekran="$(cd "$XDG_RUNTIME_DIR" && ls wayland-* 2>/dev/null | grep -v '\.lock$' | grep -vx "$WAYLAND_DISPLAY" | head -1)"
+        yazilan="$(WAYLAND_DISPLAY="$niri_ekran" durum | jq -r .typed 2>/dev/null)"
+        if [[ "$yazilan" != "niri içinde yazı" ]]; then
+            echo "::error::kurulum: niri penceresinde alana yazılamadı ('$yazilan')"; kurulum_hatasi=1
+        fi
+        echo "niri $(WAYLAND_DISPLAY="$niri_ekran" durum)" >> "$OUT/kurulum-durum.log"
+        timeout 5 niri msg --json windows > "$OUT/niri-pencereler.json" 2>/dev/null
+        pkill -f "qs -p $SHELL_DIR/installer.qml"
     else
         echo "::warning::niri iç içe açılamadı"
         tail -20 "$OUT/niri.log"
@@ -221,19 +297,19 @@ fi
 
 echo "=== kabuk kaydı"
 cat "$OUT/shell.log"
-for f in settings greeter shell-niri; do
+for f in settings greeter shell-niri installer installer-niri kurulum-durum; do
     [[ -s "$OUT/$f.log" ]] && { echo "=== $f"; cat "$OUT/$f.log"; }
 done
 ls -la "$OUT"
 
 # Yüklenmeyi engelleyen hatalar derlemeyi durdurur; diğerleri uyarı olarak görünür
 fatal='Failed to load|is not a type|non-existent property|Cannot assign to|is not installed|unavailable|Unexpected token|Syntax error'
-status=0
+status=$kurulum_hatasi
 if grep -q "DERLEME-HATASI" "$OUT/derle.log" 2>/dev/null; then
     echo "::error::derlenmeyen QML dosyaları var"
     status=1
 fi
-for f in shell settings greeter shell-niri shell-kilit; do
+for f in shell settings greeter shell-niri shell-kilit installer installer-niri; do
     [[ -f "$OUT/$f.log" ]] || continue
     if grep -En "$fatal" "$OUT/$f.log"; then
         echo "::error::$f: QML yüklenirken hata"

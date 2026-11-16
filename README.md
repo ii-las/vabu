@@ -12,7 +12,7 @@ Vabu klasik bir Fedora sistemi: `dnf`, RPM dosyaları ve Flathub doğrudan çal�
 - **Vabu Ayarlar:** görünüm, ekranlar, ağ, Bluetooth, ses, sürücüler, depolar, güncellemeler, klavye, kullanıcılar
 - **Sürücüler:** `vabu-drivers` ekran kartını algılar. NVIDIA (RPM Fusion akmod, Secure Boot destekli), AMD ve Intel için video hızlandırma ve codec'leri kurar.
 - **Geri alma noktaları:** her dnf işleminden önce ve sonra btrfs anlık görüntüsü alınır (snapper). Geri dönmek için: `vabu rollback <numara>`.
-- **Kurulum:** Calamares, Vabu ekranlarıyla
+- **Kurulum:** Vabu'nun kendi kurulum aracı, kabukla aynı görünümde
 
 ## Paketler
 
@@ -39,12 +39,12 @@ Bir Fedora makinede yerel olarak derlemek için [docs/BUILDING.md](docs/BUILDING
 ## Dizinler
 
 ```
-shell/         Vabu Shell, Ayarlar ve giriş ekranı (QML)
+shell/         Vabu Shell, Ayarlar, kurulum ve giriş ekranı (QML)
 shell-system/  vabu-shell paketinin sistem dosyaları
 rootfs/        vabu-desktop paketinin dosyaları
 branding/      logo, duvar kağıtları, önyükleme menüsü teması
 packaging/     RPM spec dosyaları
-iso/           Kiwi ISO tanımı ve Calamares ayarları
+iso/           Kiwi ISO tanımı ve canlı oturum ayarları
 tests/         kabuğu başsız çalıştırıp ekran görüntüsü alan test
 tools/         duvar kağıdı üreticisi
 ```

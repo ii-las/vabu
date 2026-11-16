@@ -22,7 +22,7 @@
     <bootsplash-theme>vabu</bootsplash-theme>
     <bootloader-theme>vabu</bootloader-theme>
     <!-- filesystem="erofs": dracut canlı kökü overlayfs ile /run/rootfsbase altına bağlar;
-         Calamares unpackfs sistemi oradan kopyalar. Fedora'nın kendi canlı ISO'ları da böyle. -->
+         kurulum sistemi oradan kopyalar. Fedora'nın kendi canlı ISO'ları da böyle. -->
     <type image="iso" primary="true" flags="dmsquash" filesystem="erofs" firmware="uefi"
           mediacheck="false" efifatimagesize="30" publisher="Vabu" volid="VABU_LIVE"
           kernelcmdline="rhgb quiet">
@@ -100,7 +100,6 @@
     <!-- Vabu -->
     <package name="vabu-desktop"/>
     <package name="vabu-shell"/>
-    <package name="calamares"/>
     <!-- Sanal makinelerde ekran ve pano paylaşımı -->
     <package name="spice-vdagent"/>
     <package name="qemu-guest-agent"/>

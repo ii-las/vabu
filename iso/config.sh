@@ -6,7 +6,8 @@ set -euxo pipefail
 systemctl set-default graphical.target
 systemctl enable greetd.service NetworkManager.service
 
-# Canlı kullanıcı: şifresiz, sudo yetkili. Kurulumda Calamares 'removeuser' ile silinir.
+# Canlı kullanıcı: şifresiz, sudo yetkili. Kurulum bu kullanıcıyla açılır;
+# yalnızca arka ucu root olarak (sudo -n) çalışır.
 useradd -m -G wheel -c "Vabu Canlı" liveuser
 passwd -d liveuser
 echo 'liveuser ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/10-liveuser
@@ -22,12 +23,21 @@ TOML
 
 install -d -o liveuser -g liveuser /home/liveuser/.config /home/liveuser/.config/niri
 cp /etc/niri/config.kdl /home/liveuser/.config/niri/config.kdl
-# Canlı oturumda kurulum kendiliğinden açılsın. Satır "kendi eklemelerin" bölümüne yazılır;
-# Vabu Ayarlar dosyayı yeniden üretirken o bölümü korur.
-sed -i 's|^// VABU-KULLANICI-SON|// Canlı oturum: Vabu kurulumunu başlat.\nspawn-at-startup "sh" "-c" "sudo -E calamares"\n// VABU-KULLANICI-SON|' \
-    /home/liveuser/.config/niri/config.kdl
-grep -q 'sudo -E calamares' /home/liveuser/.config/niri/config.kdl || \
-    printf '\nspawn-at-startup "sh" "-c" "sudo -E calamares"\n' >> /home/liveuser/.config/niri/config.kdl
+# Canlı oturumda kurulum kendiliğinden, tam ekran açılsın. Satırlar "kendi eklemelerin"
+# bölümüne yazılır; Vabu Ayarlar dosyayı yeniden üretirken (klavye seçilince de) o bölümü korur.
+canli='// Canlı oturum: Vabu kurulumu açılışta tam ekran gelsin.
+spawn-at-startup "vabu-installer"
+window-rule {
+    match app-id=r#"^org\.quickshell$"# title="^Vabu'"'"'yu kur$"
+    open-fullscreen true
+}'
+kdl=/home/liveuser/.config/niri/config.kdl
+if grep -q '^// VABU-KULLANICI-SON' "$kdl"; then
+    { sed '/^\/\/ VABU-KULLANICI-SON/,$d' "$kdl"; printf '%s\n' "$canli"; sed -n '/^\/\/ VABU-KULLANICI-SON/,$p' "$kdl"; } > "$kdl.yeni"
+    mv "$kdl.yeni" "$kdl"
+else
+    printf '\n%s\n' "$canli" >> "$kdl"
+fi
 # Yan panelde ilk sırada "Vabu'yu kur": kurulum kapatılsa da bir tıkla yeniden açılır
 install -d -o liveuser -g liveuser /home/liveuser/.config/vabu
 cat > /home/liveuser/.config/vabu/shell.json <<'JSON'
@@ -39,23 +49,6 @@ chown -R liveuser:liveuser /home/liveuser/.config/niri /home/liveuser/.config/va
 
 # Flathub kurulum sonrası ilk açılışta eklenir (vabu-flatpak-setup); canlıda gerek yok.
 systemctl disable vabu-flatpak-setup.service vabu-update.timer vabu-snapper-setup.service || true
-
-# Calamares QML modülleri (welcomeq, usersq, summaryq, finishedq) bu Calamares
-# derlemesinde yoksa klasik karşılıklarını kullan; kurulum her durumda açılsın.
-for m in welcomeq usersq summaryq finishedq; do
-    if ! ls -d /usr/lib*/calamares/modules/"$m" >/dev/null 2>&1; then
-        echo "UYARI: Calamares '$m' modülü yok, '${m%q}' kullanılacak."
-        sed -i "s/- ${m}\$/- ${m%q}/" /etc/calamares/settings.conf
-    fi
-done
-
-# aarch64: sb-shim yalnızca x86_64 shim dosyalarını tanır; orada düz grub kullanılır.
-if [ "$(uname -m)" = "aarch64" ]; then
-    sed -i 's/^efiBootLoader: .*/efiBootLoader: "grub"/' /etc/calamares/modules/bootloader.conf
-fi
-
-# Başlatıcıda Calamares'in kendi girişi yerine "Vabu'yu kur" görünsün
-if [ -f /usr/share/applications/calamares.desktop ]; then echo 'NoDisplay=true' >> /usr/share/applications/calamares.desktop; fi
 
 # Fedora'nın waybar ve mako servisleri Vabu Shell ile çakışmasın
 systemctl --global mask waybar.service mako.service || true
