@@ -215,7 +215,7 @@ ColumnLayout {
                     id: pin
                     required property var modelData
                     width: Math.min(pinRow.implicitWidth + 18, parent.width)
-                    height: 40
+                    height: Math.max(40, pinRow.implicitHeight + 18)
                     radius: 12
                     color: Theme.well
                     RowLayout {
@@ -223,10 +223,10 @@ ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 9
                         spacing: 8
-                        IconImage { anchors.verticalCenter: parent.verticalCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
+                        IconImage { Layout.alignment: Qt.AlignVCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
                         Text { textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
                         IconButton {
-                            anchors.verticalCenter: parent.verticalCenter
+                            Layout.alignment: Qt.AlignVCenter
                             implicitWidth: 24; implicitHeight: 24
                             radius: 8
                             icon: "close"; iconSize: 15; iconColor: Theme.muted; tooltip: Lang.t("Kaldır")
