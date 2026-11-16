@@ -15,6 +15,9 @@ import Quickshell.Wayland
 ShellRoot {
     id: root
 
+    // Ekranları doğal çözünürlük + en yüksek yenileme hızında aç (ayarı olmayanlar için)
+    Component.onCompleted: DisplayAuto.run()
+
     // Her ekran: duvar kağıdı, yan çubuk, bildirim merkezi
     Variants {
         model: Quickshell.screens

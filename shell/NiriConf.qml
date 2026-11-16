@@ -10,6 +10,7 @@ Singleton {
     // ok | manual (dosya elle düzenlenmiş) | invalid | busy
     property string status: "ok"
     property string lastError: ""
+    property bool ready: false          // niri.json okundu (ya da yok)
 
     readonly property string xkbLayout: values.xkbLayout ?? "us,tr"
     readonly property string xkbVariant: values.xkbVariant ?? ""
@@ -53,7 +54,7 @@ Singleton {
         id: file
         path: Quickshell.env("HOME") + "/.config/vabu/niri.json"
         printErrors: false
-        onLoaded: { try { root.values = JSON.parse(text()) } catch (e) { root.values = {} } }
-        onLoadFailed: root.values = {}
+        onLoaded: { try { root.values = JSON.parse(text()) } catch (e) { root.values = {} } root.ready = true }
+        onLoadFailed: { root.values = {}; root.ready = true }
     }
 }
