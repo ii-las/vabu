@@ -53,6 +53,11 @@ jobs:
           python3 -B tests/recovery.py
           python3 -B tests/iso-setup.py
 
+      - name: ISO şemasını derleme yapmadan doğrula
+        run: |
+          dnf -y install kiwi-cli
+          VABU_TEST_ISOLATED=1 python3 -B tests/kiwi-schema.py
+
       - name: Kaynak arşivleri
         run: |
           git config --global --add safe.directory "$PWD"

@@ -8,7 +8,7 @@ Kiwi tanımında `rpm-check-signatures=true` kullanılır. Fedora ve RPM Fusion 
 
 İlk anahtarı kabul etmek operatörün güven kararıdır. Varsa daha önce güvenilir biçimde kaydedilmiş bağımsız parmak iziyle karşılaştırılır. Böyle bir kayıt yoksa doğru proje adresi ve resmi COPR HTTPS hizmeti başlangıç güvenidir; bağımsız anahtar doğrulaması yapıldığı iddia edilmez. Sabitleme sonraki anahtar değişimlerini yakalar; başlangıçta yanlış kabul edilmiş anahtarı kendiliğinden düzeltemez. Dosyanın SHA-256 değeri GitHub repository Variable veya Secret `COPR_KEY_SHA256` olarak verilir; ikisi varsa Variable önceliklidir. Bu değer özel anahtar değildir. Kullanıcı Secret değerini yapılandırdı; agent yalnızca adını okudu ve özeti uydurmadı.
 
-Yerel derlemede aynı değer ortam değişkeni olarak verilir. `tools/prepare-iso-keys.py`, yalnızca böyle bir derleme açıkça başlatıldığında anahtarı alır. Bu araç mevcut Mac üzerinde ağdan anahtar almak için çalıştırılmamıştır. Üretilen `iso/keys/` dosyaları Git'e alınmaz.
+Yerel derlemede aynı değer ortam değişkeni olarak verilir. `tools/prepare-iso-keys.py`, yalnızca böyle bir derleme açıkça başlatıldığında anahtarı alır. Bu araç mevcut Mac üzerinde ağdan anahtar almak için çalıştırılmamıştır. Hazırlayıcı doğrulanmış yerel anahtarların URI adreslerini mutlak `file:///…` biçimine çevirir; böylece Fedora'nın kurulu Kiwi şemasında henüz desteklenmeyen `this://` biçimine bağımlı kalınmaz. İmza denetimi kapatılmaz. Üretilen `iso/keys/` dosyaları Git'e alınmaz.
 
 ## İmzalı yayın kaydı
 
