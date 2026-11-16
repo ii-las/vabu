@@ -26,8 +26,10 @@ jobs:
           ver="$(cat VERSION)"
           rpmdev-setuptree
           git archive --format=tar.gz --prefix="vabu-${ver}/" -o ~/rpmbuild/SOURCES/vabu-${ver}.tar.gz HEAD rootfs branding shell shell-system
+          # Her derleme yeni bir Release alır (ör. 1.202611160012) ki kurulu sistemlere güncelleme olarak gitsin
+          rel="1.$(date -u +%Y%m%d%H%M)"
           for s in vabu-release vabu-desktop vabu-shell; do
-            sed -i "s/^Version:.*/Version:        ${ver}/" packaging/$s.spec
+            sed -i "s/^Version:.*/Version:        ${ver}/; s/^Release:.*/Release:        ${rel}%{?dist}/" packaging/$s.spec
           done
           sed -i "s/^%global copr_owner .*/%global copr_owner $(cat COPR_OWNER)/" packaging/vabu-release.spec
           # Dış kaynaklar (Quickshell, yazı tipleri)
