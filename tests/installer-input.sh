@@ -6,6 +6,9 @@ if [[ "${VABU_INSTALLER_DBUS:-}" != 1 ]]; then
     export VABU_INSTALLER_DBUS=1
     exec dbus-run-session -- bash "$0" "$@"
 fi
+# Match the packaged branding asset without installing Vabu or touching a host.
+repo="$(cd "$(dirname "$0")/.." && pwd)"
+install -Dm0644 "$repo/branding/logo.svg" /usr/share/icons/hicolor/scalable/apps/vabu-logo.svg
 OUT="${1:-/tmp/installer-input}"
 mkdir -p "$OUT"
 base="$(mktemp -d)"
