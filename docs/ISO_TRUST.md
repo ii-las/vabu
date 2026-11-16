@@ -4,7 +4,7 @@ Elle başlatılan geliştirme ISO derlemesi ile `v*` etiketli resmi sürüm yay�
 
 ## Paket imzaları
 
-Kiwi tanımında `rpm-check-signatures=true` kullanılır. Fedora ve RPM Fusion açık anahtarları derleme konteynerindeki `distribution-gpg-keys` paketinden alınır. Vabu COPR anahtarı yalnızca yapılandırılmış tam dosya SHA-256 özetiyle eşleşirse kabul edilir. Eksik, hatalı veya değişmiş özet derlemeyi durdurur. Anahtar hiçbir zaman indirildiği yerden elde edilen özetle kendiliğinden güvenilir sayılmaz.
+Kiwi tanımında `rpm-check-signatures=true` ve her depoda `package_gpgcheck=true` kullanılır. DNF5 depo ayarı genel ayarı geçersiz kılabildiğinden her ikisi de zorunludur; hazırlayıcı eksik/kapalı depo kontrolünde durur. Fedora ve RPM Fusion açık anahtarları derleme konteynerindeki `distribution-gpg-keys` paketinden alınır. Vabu COPR anahtarı yalnızca yapılandırılmış tam dosya SHA-256 özetiyle eşleşirse kabul edilir. Eksik, hatalı veya değişmiş özet derlemeyi durdurur. Anahtar hiçbir zaman indirildiği yerden elde edilen özetle kendiliğinden güvenilir sayılmaz.
 
 İlk anahtarı kabul etmek operatörün güven kararıdır. Varsa daha önce güvenilir biçimde kaydedilmiş bağımsız parmak iziyle karşılaştırılır. Böyle bir kayıt yoksa doğru proje adresi ve resmi COPR HTTPS hizmeti başlangıç güvenidir; bağımsız anahtar doğrulaması yapıldığı iddia edilmez. Sabitleme sonraki anahtar değişimlerini yakalar; başlangıçta yanlış kabul edilmiş anahtarı kendiliğinden düzeltemez. Dosyanın SHA-256 değeri GitHub repository Variable veya Secret `COPR_KEY_SHA256` olarak verilir; ikisi varsa Variable önceliklidir. Bu değer özel anahtar değildir. Kullanıcı Secret değerini yapılandırdı; agent yalnızca adını okudu ve özeti uydurmadı.
 

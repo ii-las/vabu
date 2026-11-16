@@ -52,8 +52,11 @@ def materialize_local_keys(description):
         raise ValueError('ISO paket imzası denetimi etkin olmalı.')
     names = {'fedora.asc', 'rpmfusion-free.asc', 'rpmfusion-nonfree.asc', 'vabu.asc'}
     expected = {name: (description / 'keys' / name).as_uri() for name in names}
+    repositories = image.findall('repository')
+    if any(repo.get('package_gpgcheck') != 'true' for repo in repositories):
+        raise ValueError('Her ISO deposunda paket imzası denetimi açıkça etkin olmalı.')
     nodes = image.findall('repository/source/signing')
-    if not nodes or len(nodes) != len(image.findall('repository')):
+    if not nodes or len(nodes) != len(repositories):
         raise ValueError('Her ISO deposu açık bir yerel anahtar belirtmeli.')
     used = set()
     for node in nodes:

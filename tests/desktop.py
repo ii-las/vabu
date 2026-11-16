@@ -164,6 +164,7 @@ class DesktopFeatures(unittest.TestCase):
         image=ET.parse(ROOT/'iso/config.kiwi').getroot()
         self.assertEqual(image.findtext('preferences/rpm-check-signatures'),'true')
         for repo in image.findall('repository'):
+            self.assertEqual(repo.get('package_gpgcheck'),'true')
             self.assertTrue(repo.find('source/signing').get('key').startswith('this://keys/'))
         source=(ROOT/'.github/workflows/iso-build.yml').read_text()
         self.assertIn('actions/attest@v4',source)

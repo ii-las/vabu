@@ -30,37 +30,37 @@
     </type>
   </preferences>
 
-  <repository type="rpm-md" alias="fedora" priority="10">
+  <repository package_gpgcheck="true" type="rpm-md" alias="fedora" priority="10">
     <source path="https://dl.fedoraproject.org/pub/fedora/linux/releases/@FEDORA@/Everything/@ARCH@/os/">
       <signing key="this://keys/fedora.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="fedora-updates" priority="10">
+  <repository package_gpgcheck="true" type="rpm-md" alias="fedora-updates" priority="10">
     <source path="https://dl.fedoraproject.org/pub/fedora/linux/updates/@FEDORA@/Everything/@ARCH@/">
       <signing key="this://keys/fedora.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="rpmfusion-free" priority="20">
+  <repository package_gpgcheck="true" type="rpm-md" alias="rpmfusion-free" priority="20">
     <source path="https://download1.rpmfusion.org/free/fedora/releases/@FEDORA@/Everything/@ARCH@/os/">
       <signing key="this://keys/rpmfusion-free.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="rpmfusion-free-updates" priority="20">
+  <repository package_gpgcheck="true" type="rpm-md" alias="rpmfusion-free-updates" priority="20">
     <source path="https://download1.rpmfusion.org/free/fedora/updates/@FEDORA@/@ARCH@/">
       <signing key="this://keys/rpmfusion-free.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="rpmfusion-nonfree" priority="20">
+  <repository package_gpgcheck="true" type="rpm-md" alias="rpmfusion-nonfree" priority="20">
     <source path="https://download1.rpmfusion.org/nonfree/fedora/releases/@FEDORA@/Everything/@ARCH@/os/">
       <signing key="this://keys/rpmfusion-nonfree.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="rpmfusion-nonfree-updates" priority="20">
+  <repository package_gpgcheck="true" type="rpm-md" alias="rpmfusion-nonfree-updates" priority="20">
     <source path="https://download1.rpmfusion.org/nonfree/fedora/updates/@FEDORA@/@ARCH@/">
       <signing key="this://keys/rpmfusion-nonfree.asc"/>
     </source>
   </repository>
-  <repository type="rpm-md" alias="vabu" priority="5">
+  <repository package_gpgcheck="true" type="rpm-md" alias="vabu" priority="5">
     <source path="https://download.copr.fedorainfracloud.org/results/ii-las/vabu/fedora-@FEDORA@-@ARCH@/">
       <signing key="this://keys/vabu.asc"/>
     </source>

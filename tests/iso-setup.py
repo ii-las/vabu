@@ -66,7 +66,7 @@ class KeySetup(unittest.TestCase):
    description=Path(folder);(description/'keys').mkdir();configuration=description/'config.kiwi'
    for name in ('fedora.asc','rpmfusion-free.asc','rpmfusion-nonfree.asc','vabu.asc'):(description/'keys'/name).write_text('schema fixture only')
    original=(ROOT/'iso/config.kiwi').read_text()
-   for text in (original.replace('this://keys/vabu.asc','https://untrusted.invalid/key'),original.replace('this://keys/vabu.asc','this://keys/../vabu.asc'),original.replace('<rpm-check-signatures>true','<rpm-check-signatures>false')):
+   for text in (original.replace('this://keys/vabu.asc','https://untrusted.invalid/key'),original.replace('this://keys/vabu.asc','this://keys/../vabu.asc'),original.replace('<rpm-check-signatures>true','<rpm-check-signatures>false'),original.replace('package_gpgcheck="true"','package_gpgcheck="false"',1)):
     configuration.write_text(text)
     with self.assertRaises(ValueError):PREPARE['materialize_local_keys'](description)
     self.assertEqual(configuration.read_text(),text)
