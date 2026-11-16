@@ -15,19 +15,29 @@ PanelWindow {
     implicitWidth: cardWidth + pad + Theme.gap + 4
     implicitHeight: Math.max(1, list.contentHeight + pad + Theme.gap + 4)
     exclusionMode: ExclusionMode.Ignore
-    mask: Region { item: list }
+    mask: Region { item: hit }
 
     WlrLayershell.namespace: "vabu-notifications"
     WlrLayershell.layer: WlrLayer.Overlay
 
     readonly property real originX: onRight ? 0 : (screen?.width ?? 0) - width
 
+    // Tıklamalar yalnızca bildirimlerin kapladığı alanda yakalanır
+    Item {
+        id: hit
+        x: list.x
+        y: list.y
+        width: list.width
+        height: list.contentHeight
+    }
+
+    // Yükseklik içeriğe bağlanmaz: liste, görüş alanı sıfırken hiç öğe oluşturmaz
     ListView {
         id: list
         x: root.onRight ? Theme.gap + 4 : root.pad
         y: Theme.gap + 4
         width: root.cardWidth
-        height: contentHeight
+        height: 1600
         spacing: 8
         interactive: false
         model: ScriptModel { values: Notifs.visiblePopups }
@@ -42,9 +52,9 @@ PanelWindow {
             onClosed: Notifs.dismissPopup(modelData)
 
             Timer {
-                // 0: uygulama "kendiliğinden kapanmasın" dedi; -1/eksik: varsayılan 6 sn (değer ms)
+                // Süre saniye gelir. 0: uygulama "kendiliğinden kapanmasın" dedi; eksi: varsayılan 6 sn
                 running: !card.critical && card.notif.expireTimeout !== 0
-                interval: card.notif.expireTimeout > 0 ? card.notif.expireTimeout : 6000
+                interval: card.notif.expireTimeout > 0 ? Math.max(2500, card.notif.expireTimeout * 1000) : 6000
                 onTriggered: Notifs.dismissPopup(card.modelData)
             }
         }

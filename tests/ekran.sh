@@ -127,6 +127,8 @@ tikla() {
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 if command -v calamares >/dev/null && [[ -d "$REPO/iso/root/etc/calamares" ]]; then
     mkdir -p /etc/calamares && cp -r "$REPO/iso/root/etc/calamares/." /etc/calamares/
+    # Kapsayıcıda disk yok; sayfalar arasında gezebilmek için koşullar yalnızca testte gevşetilir
+    sed -i 's/^  required: .*/  required: []/; s/^  check: .*/  check: [ ram ]/' /etc/calamares/modules/welcomeq.conf
     (calamares -d >"$OUT/calamares.log" 2>&1 &)
     shot 50-kurulum-hosgeldin 9
     # "Vabu'yu kur" ilk sayfanın kendi düğmesi; sonraki sayfalarda alttaki "Devam et"
@@ -150,6 +152,8 @@ fi
 if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
     /usr/libexec/vabu/niri-config --defaults -o "$HOME/niri.kdl" 2>>"$OUT/niri.log"
     sed -i "s#^spawn-at-startup .*#spawn-at-startup \"sh\" \"-c\" \"qs -p $SHELL_DIR > $OUT/shell-niri.log 2>\&1\"#" "$HOME/niri.kdl"
+    # iç içe pencerede de ekranla aynı ölçek
+    printf '\noutput "winit" {\n    scale 2\n}\n' >> "$HOME/niri.kdl"
     niri -c "$HOME/niri.kdl" >>"$OUT/niri.log" 2>&1 &
     sleep 14
     export NIRI_SOCKET; NIRI_SOCKET="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'niri.*.sock' | head -1)"

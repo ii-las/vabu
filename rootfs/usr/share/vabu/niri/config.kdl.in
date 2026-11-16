@@ -22,6 +22,8 @@ input {
 layout {
     gaps @@GAPS@@
     center-focused-column "on-overflow"
+    // Çalışma alanlarının kendi zemini yok: arkadaki duvar kağıdı görünür
+    background-color "transparent"
     // Tek pencere ekranın ortasında durur
     always-center-single-column
 
