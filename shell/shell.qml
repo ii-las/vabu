@@ -31,7 +31,14 @@ ShellRoot {
         Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", d ? "prefer-dark" : "prefer-light"])
         Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", d ? "adw-gtk3-dark" : "adw-gtk3"])
         Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", d ? "Papirus-Dark" : "Papirus"])
+        const accents = { mavi: "blue", yesil: "green", turuncu: "orange", pembe: "pink", grafit: "slate" }
+        Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "accent-color", accents[Config.accentName] || "blue"])
     }
+    Connections {
+        target: Config
+        function onAccentNameChanged() { root.applyScheme() }
+    }
+
     // Odak halkası rengi ilk açılışta da güncel görünüme uysun
     Connections {
         target: NiriConf
@@ -93,6 +100,7 @@ ShellRoot {
         target: "lock"
         function lock(): void { Ui.lock() }
         function isLocked(): bool { return Ui.locked }
+        function isSecure(): bool { return sessionLock.secure }
     }
     IpcHandler {
         target: "shortcuts"

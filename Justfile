@@ -8,7 +8,7 @@ arch    := `uname -m`
 # RPM paketlerini derle (~/rpmbuild)
 rpm:
     rpmdev-setuptree
-    git archive --format=tar.gz --prefix="vabu-{{version}}/" -o ~/rpmbuild/SOURCES/vabu-{{version}}.tar.gz HEAD rootfs branding shell shell-system
+    git archive --format=tar.gz --prefix="vabu-{{version}}/" -o ~/rpmbuild/SOURCES/vabu-{{version}}.tar.gz HEAD LICENSE rootfs branding shell shell-system
     for spec in packaging/*.spec; do spectool -g -R "$spec"; sudo dnf -y builddep "$spec"; rpmbuild -ba "$spec"; done
 
 # Vabu Shell'i kurmadan, çalışan bir niri oturumunda dene

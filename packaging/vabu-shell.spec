@@ -1,6 +1,9 @@
 # Vabu Shell: yan çubuk, başlatıcı, bildirimler, kilit ve giriş ekranı, göstergeler + Vabu Ayarlar.
 # Kaynak: repo kökündeki shell/ (QML) ve shell-system/ (sistem dosyaları).
 
+# CI injects the source commit; local builds explicitly identify as unknown.
+%{!?vabu_source_commit:%global vabu_source_commit unknown}
+
 Name:           vabu-shell
 Version:        0.1.0
 Release:        1%{?dist}
@@ -9,6 +12,7 @@ License:        MIT
 URL:            https://github.com/ii-las/vabu
 Source0:        vabu-%{version}.tar.gz
 BuildArch:      noarch
+Provides:       vabu-source-commit = %{vabu_source_commit}
 
 BuildRequires:  systemd-rpm-macros
 
@@ -55,6 +59,7 @@ cp -a shell-system/. %{buildroot}/
 %tmpfiles_create vabu-greeter.conf
 
 %files
+%license LICENSE
 %{_datadir}/vabu/shell/
 %{_datadir}/vabu/greeter/
 %{_bindir}/vabu-brightness

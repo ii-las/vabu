@@ -2,6 +2,17 @@
 # Kiwi: paketler kurulduktan sonra canlı sistemin içinde (chroot) çalışır.
 set -euxo pipefail
 
+# CI supplies the required Vabu commit. Reject stale or mixed COPR packages.
+if [[ -f /usr/share/vabu/expected-source-commit ]]; then
+    expected="$(cat /usr/share/vabu/expected-source-commit)"
+    [[ "$expected" =~ ^[0-9a-f]{40}$ ]]
+    for package in vabu-release vabu-desktop vabu-shell; do
+        rpm -q --provides "$package" | grep -Fx "vabu-source-commit = $expected"
+    done
+fi
+install -d /usr/share/vabu
+rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/vabu/build-packages.txt
+
 # Masaüstü ve giriş ekranı
 systemctl set-default graphical.target
 systemctl enable greetd.service NetworkManager.service

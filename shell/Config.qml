@@ -21,7 +21,7 @@ Singleton {
     ]
 
     property var values: ({})
-    readonly property string dir: Quickshell.env("HOME") + "/.config/vabu"
+    readonly property string dir: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/vabu"
 
     // acik | koyu | otomatik (gün batımında koyu)
     readonly property string theme: values.theme ?? "otomatik"

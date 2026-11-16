@@ -1,25 +1,15 @@
 #!/usr/bin/env bash
-# Vabu Shell'i başlatır ve çıktısını kaydeder. Kabuk açılışta çökerse (ilk 15 sn)
-# hata kaydını bir terminal penceresinde gösterir; böylece neyin bozulduğu hemen görünür.
+# Kabuk herhangi bir zamanda çökerse kaydı göster; otomatik çökme döngüsü oluşturma.
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/vabu"
 LOG="$STATE/shell.log"
 mkdir -p "$STATE" "${XDG_CONFIG_HOME:-$HOME/.config}/vabu"
 [[ -f "$LOG" ]] && mv -f "$LOG" "$LOG.1"
-
-start=$(date +%s)
 qs -p /usr/share/vabu/shell >"$LOG" 2>&1
 code=$?
-elapsed=$(( $(date +%s) - start ))
-
-# Normal kapanış ya da uzun süre çalıştıktan sonra çıkış: sessiz kal
-if (( code == 0 || elapsed > 15 )); then
-    exit "$code"
-fi
-
-exec foot --app-id vabu-shell-error --title "Vabu Shell açılamadı" sh -c "
-    printf '\033[1mVabu Shell açılamadı\033[0m (çıkış kodu $code)\n'
-    printf 'Kayıt: $LOG\n\n'
-    tail -n 60 '$LOG'
-    printf '\n\nYeniden denemek için Enter, kapatmak için Ctrl+D.\n'
+(( code == 0 )) && exit 0
+exec foot --app-id vabu-shell-error --title "Vabu Shell kapandı" bash -c '
+    printf "Vabu Shell kapandı (çıkış kodu %s)\nKayıt: %s\n\n" "$1" "$2"
+    tail -n 60 -- "$2"
+    printf "\nYeniden denemek için Enter, kapatmak için Ctrl+D.\n"
     read -r _ && exec /usr/libexec/vabu/shell-run
-"
+' vabu-shell-error "$code" "$LOG"

@@ -2,6 +2,10 @@ import QtQuick
 
 Rectangle {
     id: root
+    activeFocusOnTab: true
+    Keys.onSpacePressed: if (enabled) root.toggled()
+    Keys.onReturnPressed: if (enabled) root.toggled()
+    Keys.onEnterPressed: if (enabled) root.toggled()
     property bool checked: false
     signal toggled()
 
@@ -10,6 +14,16 @@ Rectangle {
     radius: 13
     color: checked ? Theme.accent : Theme.track
     Behavior on color { ColorAnimation { duration: Theme.state } }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: root.radius + 3
+        color: "transparent"
+        border.width: 2
+        border.color: Theme.accent
+        visible: root.activeFocus
+    }
 
     Accessible.role: Accessible.CheckBox
     Accessible.checked: checked

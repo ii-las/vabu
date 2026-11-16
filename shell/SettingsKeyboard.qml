@@ -107,7 +107,7 @@ ColumnLayout {
         SettingRow {
             label: "niri ayar dosyası"
             sub: "~/.config/niri/config.kdl"
-            PillButton { implicitHeight: 38; label: "Aç"; icon: "edit"; onClicked: Ui.run(["xdg-open", Quickshell.env("HOME") + "/.config/niri/config.kdl"]) }
+            PillButton { implicitHeight: 38; label: "Aç"; icon: "edit"; onClicked: Ui.run(["xdg-open", (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/niri/config.kdl"]) }
         }
     }
 }

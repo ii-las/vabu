@@ -21,9 +21,14 @@ jobs:
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 
       - name: Sürüm ve mimariyi yerleştir
+        env:
+          REQUESTED_FEDORA: ${{ inputs.fedora }}
         run: |
-          fedora="${{ inputs.fedora }}"
+          fedora="$REQUESTED_FEDORA"
           [[ -z "$fedora" ]] && fedora="$(cat FEDORA_VERSION)"
+          [[ "$fedora" =~ ^[0-9]+$ ]] || { echo "Geçersiz Fedora sürümü"; exit 1; }
+          mkdir -p iso/root/usr/share/vabu
+          git rev-parse HEAD > iso/root/usr/share/vabu/expected-source-commit
           echo "FEDORA=${fedora}" >> "$GITHUB_ENV"
           sed -i "s/@FEDORA@/${fedora}/g; s/@ARCH@/${{ inputs.arch }}/g" iso/config.kiwi
           grep -n "@" iso/config.kiwi | grep -v "xml\|@FEDORA\|@ARCH" || true

@@ -53,7 +53,7 @@ Singleton {
 
     FileView {
         id: file
-        path: Quickshell.env("HOME") + "/.config/vabu/niri.json"
+        path: Config.dir + "/niri.json"
         printErrors: false
         onLoaded: { try { root.values = JSON.parse(text()) } catch (e) { root.values = {} } root.ready = true }
         onLoadFailed: { root.values = {}; root.ready = true }

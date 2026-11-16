@@ -9,15 +9,21 @@ ColumnLayout {
 
     property var rpm: []              // [{name, version, repo}]
     property var flat: []             // [{id, version}]
-    property bool checking: false
+    readonly property bool checking: dnfCheck.running || flatCheck.running
+    property string rpmError: ""
+    property string flatError: ""
+    property string timerError: ""
+    readonly property bool checkFailed: rpmError !== "" || flatError !== ""
     property bool autoDownload: true
     property var snapshots: []
 
     readonly property int total: rpm.length + flat.length
 
     function check(refresh) {
-        checking = true
-        dnfCheck.command = ["sh", "-c", "dnf check-upgrade -q " + (refresh ? "--refresh" : "-C") + " 2>/dev/null; true"]
+        if (checking) return
+        rpmError = ""; flatError = ""
+        rpm = []; flat = []
+        dnfCheck.command = ["dnf", "check-upgrade", "-q", refresh ? "--refresh" : "-C"]
         dnfCheck.running = true
         flatCheck.running = true
     }
@@ -25,17 +31,32 @@ ColumnLayout {
 
     Process {
         id: dnfCheck
+        environment: ({ "LC_ALL": "C" })
+        stderr: StdioCollector { id: rpmErr }
+        onExited: code => {
+            if (code !== 0 && code !== 100) {
+                page.rpm = []
+                page.rpmError = rpmErr.text.trim() || "Sistem güncellemeleri denetlenemedi."
+            }
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 page.rpm = text.split("\n").map(l => l.trim().split(/\s+/)).filter(p => p.length >= 3 && /\.(x86_64|aarch64|noarch|i686)$/.test(p[0]))
                     .map(p => ({ name: p[0].replace(/\.[^.]+$/, ""), version: p[1], repo: p[2] }))
                     .sort((a, b) => (b.repo.includes("vabu") - a.repo.includes("vabu")) || a.name.localeCompare(b.name))
-                page.checking = false
             }
         }
     }
     Process {
         id: flatCheck
+        environment: ({ "LC_ALL": "C" })
+        stderr: StdioCollector { id: flatErr }
+        onExited: code => {
+            if (code !== 0) {
+                page.flat = []
+                page.flatError = flatErr.text.trim() || "Flatpak güncellemeleri denetlenemedi."
+            }
+        }
         command: ["flatpak", "remote-ls", "--updates", "--app", "--columns=application,version"]
         stdout: StdioCollector {
             onStreamFinished: page.flat = text.split("\n").filter(l => l.trim()).map(l => { const [id, version] = l.split("\t"); return { id, version: version || "" } })
@@ -55,6 +76,15 @@ ColumnLayout {
                 try { list = JSON.parse(text).root || [] } catch (e) { list = [] }
                 page.snapshots = list.filter(s => s.number > 0 && s.type !== "post").reverse().slice(0, 6)
             }
+        }
+    }
+
+    Process {
+        id: timerChange
+        stderr: StdioCollector { id: timerErr }
+        onExited: code => {
+            page.timerError = code === 0 ? "" : (timerErr.text.trim() || "Zamanlayıcı değiştirilemedi.")
+            timer.running = true
         }
     }
 
@@ -79,9 +109,9 @@ ColumnLayout {
                 Icon {
                     visible: !page.checking
                     anchors.centerIn: parent
-                    name: page.total > 0 ? "system_update_alt" : "check_circle"
+                    name: page.checkFailed ? "error" : page.total > 0 ? "system_update_alt" : "check_circle"
                     size: 24
-                    color: page.total > 0 ? Theme.paper : Theme.ok
+                    color: page.checkFailed ? Theme.danger : page.total > 0 ? Theme.paper : Theme.ok
                 }
             }
             ColumnLayout {
@@ -89,7 +119,7 @@ ColumnLayout {
                 spacing: 3
                 Text {
                     Layout.fillWidth: true
-                    text: page.checking ? "Denetleniyor" : page.total > 0 ? page.total + " güncelleme hazır" : "Her şey güncel"
+                    text: page.checking ? "Denetleniyor" : page.checkFailed ? "Denetim tamamlanamadı" : page.total > 0 ? page.total + " güncelleme hazır" : "Her şey güncel"
                     color: Theme.paper
                     font.family: Theme.sans
                     font.pixelSize: 18
@@ -107,7 +137,7 @@ ColumnLayout {
                     elide: Text.ElideRight
                 }
             }
-            PillButton { label: "Denetle"; icon: "refresh"; onClicked: page.check(true) }
+            PillButton { label: "Denetle"; icon: "refresh"; enabled: !page.checking; onClicked: page.check(true) }
             PillButton {
                 visible: page.total > 0
                 primary: true
@@ -115,6 +145,17 @@ ColumnLayout {
                 onClicked: Ui.terminal(["sh", "-c", "vabu update; echo; read -p 'Kapatmak için Enter…' _"])
             }
         }
+    }
+
+    Text {
+        Layout.fillWidth: true
+        visible: text !== ""
+        text: [page.rpmError, page.flatError, page.timerError].filter(x => x).join("\n")
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Theme.danger
+        font.family: Theme.sans
+        font.pixelSize: 13
     }
 
     // Paket satırı: ad solda, sürüm sağda
@@ -164,19 +205,15 @@ ColumnLayout {
     }
 
     Group {
-        title: "Geri alma noktaları"
+        title: "Anlık görüntüler"
+        note: "Anlık görüntüler ayrı /boot bölümünü kapsamaz. Otomatik tam sistem geri alma henüz desteklenmiyor."
         Repeater {
             model: page.snapshots
             delegate: SettingRow {
                 required property var modelData
                 label: modelData.description || ("Nokta " + modelData.number)
                 sub: (modelData.date || "") + " · #" + modelData.number
-                PillButton {
-                    implicitHeight: 36
-                    label: "Geri dön"
-                    icon: "history"
-                    onClicked: Ui.terminal(["sh", "-c", "vabu rollback " + modelData.number + "; echo; read -p 'Kapatmak için Enter…' _"])
-                }
+
             }
         }
         SettingRow {
@@ -187,12 +224,15 @@ ColumnLayout {
 
     Group {
         SettingRow {
-            label: "Güncellemeleri arka planda indir"
+            label: "Sistem paketlerini arka planda indir"
+            sub: "RPM paketlerini indirir. Kullanıcı Flatpak güncellemelerinin ayrı zamanlayıcısı vardır."
             Toggle {
+                enabled: !timerChange.running
                 checked: page.autoDownload
                 onToggled: {
-                    Quickshell.execDetached(["pkexec", "systemctl", page.autoDownload ? "disable" : "enable", "--now", "vabu-update.timer"])
-                    page.autoDownload = !page.autoDownload
+                    page.timerError = ""
+                    timerChange.command = ["pkexec", "systemctl", page.autoDownload ? "disable" : "enable", "--now", "vabu-update.timer"]
+                    timerChange.running = true
                 }
             }
         }

@@ -10,6 +10,7 @@
 # Secure Boot açıksa akmods imza anahtarı oluşturulur ve bir kerelik MOK onayı istenir.
 # Vabu Ayarlar > Sürücüler sayfası bu aracı --json ile kullanır.
 set -euo pipefail
+export LC_ALL=C
 
 say()  { printf '› %s\n' "$*"; }
 warn() { printf '! %s\n' "$*" >&2; }
@@ -42,7 +43,7 @@ codecs_ok() { pkg_installed ffmpeg && ! pkg_installed ffmpeg-free; }
 nvidia_state() {
     if ! has_nvidia; then echo "none"
     elif nvidia_loaded; then echo "active"
-    elif pkg_installed akmod-nvidia; then echo "pending-reboot"
+    elif pkg_installed akmod-nvidia; then echo "installed-inactive"
     else echo "missing"
     fi
 }
@@ -59,7 +60,7 @@ cmd_status() {
     local codecs=false; codecs_ok && codecs=true
 
     if ((quiet)); then
-        [[ "$nv" == "missing" || "$nv" == "pending-reboot" ]] && exit 1
+        [[ "$nv" == "missing" || "$nv" == "installed-inactive" ]] && exit 1
         exit 0
     fi
 
@@ -83,7 +84,7 @@ cmd_status() {
     gpus | sed -E 's/^[^ ]+ [^:]+: /    /'
     case "$nv" in
         active)          say "NVIDIA sürücüsü etkin." ;;
-        pending-reboot)  say "NVIDIA sürücüsü kurulu, yeniden başlatma bekliyor." ;;
+        installed-inactive) say "NVIDIA paketi kurulu fakat modül etkin değil. Derleme, Secure Boot/MOK ve yeniden başlatma durumunu denetle." ;;
         missing)         say "NVIDIA kartı var ama önerilen sürücü kurulu değil:  vabu-drivers install nvidia" ;;
     esac
     has_amd   && say "AMD: Mesa (Vulkan, OpenGL) hazır."
@@ -97,7 +98,9 @@ cmd_status() {
 require_rpmfusion() {
     rpmfusion_on && return 0
     say "RPM Fusion depoları ekleniyor…"
-    local v; v="$(rpm -E %fedora)"
+    local v
+    v="$(. /etc/os-release; printf '%s' "${VERSION_ID:-}")"
+    [[ "$v" =~ ^[0-9]+$ ]] || die "Fedora taban sürümü belirlenemedi."
     as_root dnf install -y \
         "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${v}.noarch.rpm" \
         "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${v}.noarch.rpm"
@@ -106,7 +109,11 @@ require_rpmfusion() {
 install_codecs() {
     require_rpmfusion
     say "Tam codec desteği kuruluyor (ffmpeg, GStreamer eklentileri)…"
-    as_root dnf swap -y ffmpeg-free ffmpeg --allowerasing
+    if pkg_installed ffmpeg-free; then
+        as_root dnf swap -y ffmpeg-free ffmpeg --allowerasing
+    else
+        as_root dnf install -y ffmpeg
+    fi
     as_root dnf update -y @multimedia --setopt=install_weak_deps=False --exclude=PackageKit-gstreamer-plugin
 }
 

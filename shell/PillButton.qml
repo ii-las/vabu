@@ -4,6 +4,10 @@ import QtQuick.Layouts
 // Metinli düğme. `primary`: kağıt zemin; değilse sakin yüzey.
 Rectangle {
     id: root
+    activeFocusOnTab: true
+    Keys.onSpacePressed: if (enabled) root.clicked()
+    Keys.onReturnPressed: if (enabled) root.clicked()
+    Keys.onEnterPressed: if (enabled) root.clicked()
     property string icon: ""
     property string label: ""
     property bool primary: false
@@ -18,6 +22,16 @@ Rectangle {
     Behavior on color { ColorAnimation { duration: Theme.fast } }
     scale: mouse.pressed ? 0.97 : 1
     Behavior on scale { NumberAnimation { duration: Theme.fast } }
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: root.radius + 3
+        color: "transparent"
+        border.width: 2
+        border.color: Theme.accent
+        visible: root.activeFocus
+    }
+
     Accessible.role: Accessible.Button
     Accessible.name: label
 

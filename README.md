@@ -10,8 +10,8 @@ Vabu klasik bir Fedora sistemi: `dnf`, RPM dosyaları ve Flathub doğrudan çal�
 - **Çalışma alanları:** yan panelde her alan, içindeki pencerelerin simgeleriyle görünür. Yön tuşları kolonlar, pencereler ve alanlar arasında tek bir haritada gezer; `Super + O` genel bakışı açar.
 - **Başlatıcıdan uygulama kurma:** `kur:` yazınca Fedora, RPM Fusion ve Flathub'da arar
 - **Vabu Ayarlar:** görünüm, ekranlar, ağ, Bluetooth, ses, sürücüler, depolar, güncellemeler, klavye, kullanıcılar
-- **Sürücüler:** `vabu-drivers` ekran kartını algılar. NVIDIA (RPM Fusion akmod, Secure Boot destekli), AMD ve Intel için video hızlandırma ve codec'leri kurar.
-- **Geri alma noktaları:** her dnf işleminden önce ve sonra btrfs anlık görüntüsü alınır (snapper). Geri dönmek için: `vabu rollback <numara>`.
+- **Sürücüler:** `vabu-drivers` ekran kartını algılar. NVIDIA (RPM Fusion akmod ve MOK anahtar hazırlığı), AMD ve Intel için video hızlandırma ve codec'leri kurar.
+- **Anlık görüntüler:** Snapper yapılandırılmış Btrfs kökte dnf işlemlerine anlık görüntü kancaları eklenir. Ayrı `/boot` bölümü kapsam dışındadır; otomatik tam sistem geri alma henüz desteklenmez. `vabu snapshots` ile listeleyebilirsin.
 - **Kurulum:** Calamares, Vabu ekranlarıyla
 
 ## Paketler
@@ -56,6 +56,10 @@ tools/         duvar kağıdı üreticisi
 - Üretilen dosya kaydedilmeden önce `niri validate` ile denetlenir.
 - Dosyanın sonundaki "Kendi eklemelerin" bölümü korunur.
 - İlk satırdaki `VABU-AYARLAR-YÖNETİR` işaretini silersen Vabu Ayarlar o dosyaya bir daha dokunmaz.
+
+## Güvenilirlik ve doğrulama
+
+Çevrimdışı regresyon testleri, yapılan güvenilirlik düzeltmeleri ve Fedora üzerinde doğrulanmayı bekleyen alanlar için [docs/RELIABILITY.md](docs/RELIABILITY.md) dosyasına bak. Firefox RPM olarak gelir; diğer varsayılan Flatpak uygulamaları ilk açılışta internet bağlantısıyla kurulur.
 
 ## Lisans
 

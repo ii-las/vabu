@@ -10,7 +10,9 @@ ColumnLayout {
     property var outputs: []          // niri msg -j outputs
     property string selected: ""
     property var draft: ({})          // name -> {mode, scale, x, y, vrr, off}
-    property var before: ({})         // onay bekleyen değişiklikten önceki hâl
+    property string previewToken: ""
+    property string previewError: ""
+    readonly property bool previewBusy: preview.running || finishPreview.running
     property int countdown: 0
 
     readonly property var sel: outputs.find(o => o.name === selected) ?? null
@@ -53,41 +55,60 @@ ColumnLayout {
         draft = d
     }
 
-    function applyLive(state) {
-        for (const name in state) {
-            const s = state[name]
-            const base = ["niri", "msg", "output", name]
-            if (s.off) { Quickshell.execDetached(base.concat(["off"])); continue }
-            Quickshell.execDetached(base.concat(["on"]))
-            if (s.mode) Quickshell.execDetached(base.concat(["mode", s.mode]))
-            Quickshell.execDetached(base.concat(["scale", String(s.scale)]))
-            Quickshell.execDetached(base.concat(["position", "set", "--", String(Math.round(s.x)), String(Math.round(s.y))]))
-            Quickshell.execDetached(base.concat(["vrr", s.vrr ? "on" : "off"]))
+    function apply() {
+        if (previewBusy || previewToken !== "") return
+        previewError = ""
+        preview.command = ["/usr/libexec/vabu/display-preview", "preview", JSON.stringify(draft)]
+        preview.running = true
+    }
+    function keep() { finish("keep") }
+    function revert() { finish("revert") }
+    function finish(action) {
+        if (!previewToken || previewBusy) return
+        finishPreview.action = action
+        finishPreview.command = ["/usr/libexec/vabu/display-preview", action, previewToken]
+        finishPreview.running = true
+    }
+    Process {
+        id: preview
+        stdout: StdioCollector { id: previewOut }
+        stderr: StdioCollector { id: previewErr }
+        onExited: code => {
+            if (code === 0) {
+                page.previewToken = previewOut.text.trim()
+                page.countdown = 15
+            } else page.previewError = previewErr.text.trim() || "Ekran ayarı uygulanamadı."
         }
     }
-
-    function apply() {
-        const prev = {}
-        for (const o of outputs) prev[o.name] = stateOf(o)
-        before = prev
-        applyLive(draft)
-        countdown = 15
+    Process {
+        id: finishPreview
+        property string action: ""
+        stderr: StdioCollector { id: finishErr }
+        onExited: code => {
+            if (code === 0 && action === "keep")
+                NiriConf.set("outputs", Object.keys(page.draft).map(n => Object.assign({ name: n }, page.draft[n])))
+            else if (code !== 0) page.previewError = finishErr.text.trim() || "Önizleme süresi dolmuş olabilir; ekranları yeniden denetle."
+            page.previewToken = ""
+            page.countdown = 0
+            page.load()
+        }
     }
-    function keep() {
-        countdown = 0
-        NiriConf.set("outputs", Object.keys(draft).map(n => Object.assign({ name: n }, draft[n])))
-        Qt.callLater(load)
-    }
-    function revert() {
-        countdown = 0
-        applyLive(before)
-        Qt.callLater(load)
-    }
+    // Bu sayaç yalnızca görseldir. Ayrı koruyucu süreç sayfa veya uygulama kapansa da geri alır.
     Timer {
         running: page.countdown > 0
         interval: 1000
         repeat: true
         onTriggered: { page.countdown -= 1; if (page.countdown === 0) page.revert() }
+    }
+    Text {
+        Layout.fillWidth: true
+        visible: page.previewError !== ""
+        text: page.previewError
+        textFormat: Text.PlainText
+        wrapMode: Text.Wrap
+        color: Theme.danger
+        font.family: Theme.sans
+        font.pixelSize: 13
     }
 
     // Yerleşim
@@ -142,6 +163,7 @@ ColumnLayout {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.OpenHandCursor
+                    enabled: !page.previewBusy && page.previewToken === ""
                     drag.target: page.outputs.length > 1 ? mon : null
                     onPressed: page.selected = mon.modelData.name
                     onReleased: {
@@ -175,6 +197,7 @@ ColumnLayout {
 
     // Seçili ekran
     Group {
+        enabled: !page.previewBusy && page.previewToken === ""
         visible: page.sel !== null && page.cur !== null
         title: page.sel ? (page.sel.make + " " + page.sel.model).trim() : ""
 
@@ -260,9 +283,9 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 14
-        visible: page.countdown === 0
-        PillButton { primary: true; label: "Uygula"; onClicked: page.apply() }
-        PillButton { label: "Yenile"; icon: "refresh"; onClicked: page.load() }
+        visible: page.previewToken === ""
+        PillButton { primary: true; label: "Uygula"; enabled: !page.previewBusy; onClicked: page.apply() }
+        PillButton { label: "Yenile"; icon: "refresh"; enabled: !page.previewBusy; onClicked: page.load() }
         Text {
             Layout.fillWidth: true
             text: "Onaylamazsan 15 saniye içinde eski ayara döner."
@@ -274,7 +297,7 @@ ColumnLayout {
     }
     Rectangle {
         Layout.fillWidth: true
-        visible: page.countdown > 0
+        visible: page.previewToken !== ""
         implicitHeight: 68
         radius: Theme.radiusTile
         color: Theme.well
@@ -292,8 +315,8 @@ ColumnLayout {
                 font.weight: Font.DemiBold
                 font.pixelSize: 15
             }
-            PillButton { label: "Geri al"; onClicked: page.revert() }
-            PillButton { primary: true; label: "Böyle kalsın"; onClicked: page.keep() }
+            PillButton { label: "Geri al"; enabled: !page.previewBusy; onClicked: page.revert() }
+            PillButton { primary: true; label: "Böyle kalsın"; enabled: !page.previewBusy; onClicked: page.keep() }
         }
     }
 

@@ -3,6 +3,10 @@ import QtQuick
 // İkon düğmesi. `active` iken kağıt zemin, koyu ikon.
 Rectangle {
     id: root
+    activeFocusOnTab: true
+    Keys.onSpacePressed: if (enabled) root.clicked()
+    Keys.onReturnPressed: if (enabled) root.clicked()
+    Keys.onEnterPressed: if (enabled) root.clicked()
     property string icon: ""
     property color iconColor: Theme.paper
     property real iconSize: 20
@@ -19,6 +23,16 @@ Rectangle {
     Behavior on color { ColorAnimation { duration: Theme.fast } }
     scale: mouse.pressed ? 0.94 : 1
     Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -3
+        radius: root.radius + 3
+        color: "transparent"
+        border.width: 2
+        border.color: Theme.accent
+        visible: root.activeFocus
+    }
 
     Accessible.role: Accessible.Button
     Accessible.name: tooltip

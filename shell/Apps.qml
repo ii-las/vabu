@@ -77,8 +77,9 @@ Singleton {
     function search(query) {
         const q = query.trim().toLowerCase()
         if (!q) return frequent
-        return all.map(e => ({ e, s: score(e, q) + Math.min(10, launches[e.id] ?? 0) }))
+        return all.map(e => ({ e, s: score(e, q) }))
             .filter(x => x.s > 0)
+            .map(x => ({ e: x.e, s: x.s + Math.min(10, launches[x.e.id] ?? 0) }))
             .sort((a, b) => b.s - a.s || a.e.name.localeCompare(b.e.name))
             .slice(0, 8)
             .map(x => x.e)
@@ -94,13 +95,13 @@ Singleton {
 
     FileView {
         id: store
-        path: Quickshell.env("HOME") + "/.local/state/vabu/launches.json"
+        path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/vabu/launches.json"
         printErrors: false
         onLoaded: { try { root.launches = JSON.parse(text()) } catch (e) { root.launches = {} } }
     }
 
     Process {
         running: true
-        command: ["mkdir", "-p", Quickshell.env("HOME") + "/.local/state/vabu"]
+        command: ["mkdir", "-p", (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/vabu"]
     }
 }

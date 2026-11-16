@@ -4,13 +4,18 @@
 # COPR_OWNER dosyasındaki kullanıcı adı CI'da buraya yazılır
 %global copr_owner ii-las
 
+# CI injects the source commit; local builds explicitly identify as unknown.
+%{!?vabu_source_commit:%global vabu_source_commit unknown}
+
 Name:           vabu-release
 Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Vabu sürüm ve depo dosyaları
 License:        MIT
 URL:            https://github.com/ii-las/vabu
+Source0:        vabu-%{version}.tar.gz
 BuildArch:      noarch
+Provides:       vabu-source-commit = %{vabu_source_commit}
 
 Provides:       system-release
 Provides:       system-release(%{fedora_ver})
@@ -25,6 +30,9 @@ Requires:       fedora-repos(%{fedora_ver})
 %description
 Vabu'yu tanımlayan dosyalar: /usr/lib/os-release, Vabu COPR deposu ve
 sistem sürümü bilgisi. Vabu, Fedora tabanlı bir remix'tir.
+
+%prep
+%autosetup -n vabu-%{version}
 
 %install
 install -d %{buildroot}%{_prefix}/lib %{buildroot}%{_sysconfdir}/yum.repos.d
@@ -52,6 +60,15 @@ ln -s vabu-release %{buildroot}%{_sysconfdir}/system-release
 ln -s vabu-release %{buildroot}%{_sysconfdir}/redhat-release
 echo "cpe:/o:vabu:vabu:%{fedora_ver}" > %{buildroot}%{_sysconfdir}/system-release-cpe
 
+install -d %{buildroot}%{_prefix}/lib/rpm/macros.d
+cat > %{buildroot}%{_prefix}/lib/rpm/macros.d/macros.dist <<'MACROS'
+%%fedora %{fedora_ver}
+%%dist .fc%{fedora_ver}
+%%fc%{fedora_ver} 1
+%%dist_vendor Vabu
+%%dist_name Vabu
+MACROS
+
 cat > %{buildroot}%{_sysconfdir}/yum.repos.d/vabu.repo <<REPO
 [vabu]
 name=Vabu – Fedora \$releasever
@@ -65,6 +82,8 @@ enabled_metadata=1
 REPO
 
 %files
+%license LICENSE
+%{_prefix}/lib/rpm/macros.d/macros.dist
 %{_prefix}/lib/os-release
 %{_sysconfdir}/os-release
 %{_sysconfdir}/vabu-release

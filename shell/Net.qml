@@ -107,6 +107,7 @@ Singleton {
 
     Process {
         id: status
+        environment: ({ "LC_ALL": "C" })
         command: ["sh", "-c", "nmcli radio wifi; echo ---; nmcli -t -f TYPE,STATE,CONNECTION device; echo ---; nmcli -t -f IN-USE,SIGNAL device wifi list --rescan no 2>/dev/null"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -165,6 +166,7 @@ Singleton {
     }
     Process {
         id: connector
+        environment: ({ "LC_ALL": "C" })
         property string pending: ""
         property var target: null
         property bool usedPassword: false

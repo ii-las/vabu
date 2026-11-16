@@ -1,6 +1,9 @@
 # Vabu masaüstü: varsayılan ayarlar, araçlar, tema ve tüm masaüstünü çeken meta paket.
 # Kaynak: repo kökünden üretilen vabu-<sürüm>.tar.gz (rootfs/, branding/).
 
+# CI injects the source commit; local builds explicitly identify as unknown.
+%{!?vabu_source_commit:%global vabu_source_commit unknown}
+
 Name:           vabu-desktop
 Version:        0.1.0
 Release:        1%{?dist}
@@ -11,6 +14,7 @@ Source0:        vabu-%{version}.tar.gz
 # Önyükleme menüsünün yazı tipi bundan üretilir (vabu-fonts ile aynı dosya)
 Source1:        https://github.com/google/fonts/raw/main/ofl/hankengrotesk/HankenGrotesk%5Bwght%5D.ttf#/HankenGrotesk-Variable.ttf
 BuildArch:      noarch
+Provides:       vabu-source-commit = %{vabu_source_commit}
 
 BuildRequires:  librsvg2-tools
 BuildRequires:  ImageMagick
@@ -23,7 +27,7 @@ BuildRequires:  jq
 BuildRequires:  perl-interpreter
 BuildRequires:  systemd-rpm-macros
 
-Requires:       vabu-release
+Requires:       vabu-release = %{version}-%{release}
 
 # Masaüstü çekirdeği
 Requires:       niri
@@ -50,6 +54,7 @@ Requires:       swaylock
 # Uygulamalar
 Requires:       foot
 Requires:       nautilus
+Requires:       firefox
 Requires:       flatpak
 Requires:       fastfetch
 # Geri alma noktaları
@@ -59,6 +64,11 @@ Requires:       libdnf5-plugin-actions
 Requires:       pciutils
 Requires:       mokutil
 Requires:       jq
+Requires:       perl-interpreter
+Requires:       fuzzel
+Requires:       waybar
+Requires:       mako
+Requires:       swaybg
 # Başlatıcıda uygulama kurma: AppStream kataloglarından yerel dizin
 Requires:       python3
 Requires:       appstream-data
@@ -75,7 +85,7 @@ Requires:       rsms-inter-fonts
 Requires:       jetbrains-mono-fonts-all
 Requires:       plymouth-plugin-script
 
-Requires:       vabu-shell
+Requires:       vabu-shell = %{version}-%{release}
 
 %description
 Vabu'yu Vabu yapan her şey: niri yapılandırması, vabu ve vabu-drivers araçları,
@@ -177,6 +187,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 
 %files
+%license LICENSE
 %config(noreplace) %{_sysconfdir}/niri/config.kdl
 %config(noreplace) %{_sysconfdir}/greetd/vabu.toml
 %config(noreplace) %{_sysconfdir}/dnf/libdnf5-plugins/actions.d/vabu-snapper.actions

@@ -26,13 +26,23 @@ while (($#)); do
     case "$1" in
         --defaults) defaults=1 ;;
         --force)    force=1 ;;
-        -o)         shift; OUT="$1" ;;
+        -o)         (($# >= 2)) || { echo "-o için dosya yolu gerekli." >&2; exit 1; }; shift; OUT="$1" ;;
         *) echo "Bilinmeyen seçenek: $1" >&2; exit 1 ;;
     esac
     shift
 done
 
 if ((defaults)); then SETTINGS=/dev/null; SHELL_SETTINGS=/dev/null; fi
+
+for tool in jq perl; do
+    command -v "$tool" >/dev/null || { echo "Gerekli araç eksik: $tool" >&2; exit 2; }
+done
+for settings_file in "$SETTINGS" "$SHELL_SETTINGS"; do
+    if [[ -f "$settings_file" ]] && ! jq -e 'type == "object"' "$settings_file" >/dev/null 2>&1; then
+        echo "Geçersiz ayar dosyası; mevcut niri ayarına dokunulmadı: $settings_file" >&2
+        exit 2
+    fi
+done
 
 j() {  # j <dosya> <jq ifadesi> <varsayılan>
     local v
@@ -111,4 +121,8 @@ if command -v niri >/dev/null && ! niri validate -c "$tmp" >/dev/null 2>&1; then
 fi
 
 mkdir -p "$(dirname "$OUT")"
-install -m0644 "$tmp" "$OUT"
+staged="$(mktemp "$(dirname "$OUT")/.vabu-config.XXXXXX")"
+trap 'rm -f "$tmp" "$staged"' EXIT
+install -m0644 "$tmp" "$staged"
+# niri yalnızca tamamlanmış dosyayı görsün; aynı dosya sisteminde atomik değiştir.
+mv -f "$staged" "$OUT"

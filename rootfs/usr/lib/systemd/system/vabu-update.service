@@ -8,7 +8,6 @@ ConditionACPower=true
 Type=oneshot
 # Sadece indirir; kurulum Vabu Ayarlar > Güncellemeler'den ya da `vabu update` ile yapılır.
 ExecStart=/usr/bin/dnf upgrade --refresh --downloadonly -y -q
-# Flatpak güncellemeleri uygulamaları birbirinden yalıtılmış güncellediği için doğrudan kurulur.
-ExecStart=/usr/bin/flatpak update --system --noninteractive -y
+# Flatpak kurulumu kullanıcının başlattığı vabu update işlemine bırakılır.
 Nice=19
 IOSchedulingClass=idle

@@ -12,9 +12,23 @@ on:
     - cron: "0 5 * * 1"
 
 jobs:
-  srpm:
+  target:
     runs-on: ubuntu-24.04
-    container: registry.fedoraproject.org/fedora:latest
+    outputs:
+      fedora: ${{ steps.version.outputs.fedora }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        shell: bash
+        run: |
+          fedora="$(cat FEDORA_VERSION)"
+          [[ "$fedora" =~ ^[0-9]+$ ]] || exit 1
+          echo "fedora=$fedora" >> "$GITHUB_OUTPUT"
+
+  srpm:
+    needs: target
+    runs-on: ubuntu-24.04
+    container: registry.fedoraproject.org/fedora:${{ needs.target.outputs.fedora }}
     steps:
       - name: Araçlar
         run: dnf -y install git rpm-build rpmdevtools copr-cli
@@ -32,4 +46,4 @@ jobs:
         run: |
           if [[ -z "${COPR_CONFIG}" ]]; then echo "::warning::COPR_CONFIG yok"; exit 0; fi
           mkdir -p ~/.config && printf '%s' "${COPR_CONFIG}" > ~/.config/copr
-          copr-cli build --nowait "$(cat COPR_OWNER)/vabu" ~/rpmbuild/SRPMS/quickshell-*.src.rpm
+          copr-cli build "$(cat COPR_OWNER)/vabu" ~/rpmbuild/SRPMS/quickshell-*.src.rpm

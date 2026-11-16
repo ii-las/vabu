@@ -11,6 +11,7 @@ set -uo pipefail
 OUT="${1:-/tmp/ekran}"
 SHELL_DIR=/usr/share/vabu/shell
 mkdir -p "$OUT"
+rm -f "$OUT/test-failed"
 
 if [[ -z "${VABU_EKRAN_ICERIDE:-}" ]]; then
     export VABU_EKRAN_ICERIDE=1
@@ -43,9 +44,9 @@ for _ in $(seq 50); do
     sleep 0.2
 done
 if [[ -z "${sock:-}" ]]; then
-    echo "::warning::başsız sway açılamadı, görsel test atlandı"
+    echo "::error::başsız sway açılamadı"
     cat "$OUT/sway.log"
-    exit 0
+    exit 1
 fi
 export WAYLAND_DISPLAY; WAYLAND_DISPLAY="$(basename "$sock")"
 export SWAYSOCK; SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'sway-ipc.*.sock' | head -1)"
@@ -55,8 +56,8 @@ export SWAYSOCK; SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'sway-ipc
 (wireplumber >/dev/null 2>&1 &)
 
 # Hiçbir adım testi kilitlemesin: her komutun bir süre sınırı var
-shot() { sleep "${2:-1.3}"; timeout 20 grim "$OUT/$1.png" 2>>"$OUT/grim.log" || echo "görüntü alınamadı: $1"; }
-call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || echo "ipc başarısız: $*"; }
+shot() { sleep "${2:-1.3}"; timeout 20 grim "$OUT/$1.png" 2>>"$OUT/grim.log" || { echo "::error::görüntü alınamadı: $1"; touch "$OUT/test-failed"; }; }
+call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || { echo "::error::ipc başarısız: $*"; touch "$OUT/test-failed"; }; }
 # Açılan yüzey klavye odağını alsın diye yazmadan önce kısa bir bekleme
 yaz()  { sleep 0.6; command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null; sleep 0.4; }
 
@@ -229,6 +230,7 @@ ls -la "$OUT"
 # Yüklenmeyi engelleyen hatalar derlemeyi durdurur; diğerleri uyarı olarak görünür
 fatal='Failed to load|is not a type|non-existent property|Cannot assign to|is not installed|unavailable|Unexpected token|Syntax error'
 status=0
+[[ -e "$OUT/test-failed" ]] && status=1
 if grep -q "DERLEME-HATASI" "$OUT/derle.log" 2>/dev/null; then
     echo "::error::derlenmeyen QML dosyaları var"
     status=1

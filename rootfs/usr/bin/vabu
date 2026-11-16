@@ -39,7 +39,7 @@ cmd_info() {
 }
 
 cmd_update() {
-    say "Paketler güncelleniyor (dnf). Öncesinde otomatik geri alma noktası alınır…"
+    say "Paketler güncelleniyor (dnf). Yapılandırılmışsa Snapper anlık görüntüsü alınır…"
     as_root dnf upgrade --refresh -y
     say "Flatpak uygulamaları güncelleniyor…"
     flatpak update -y --noninteractive || warn "Flatpak güncellemesi tamamlanamadı."
@@ -51,7 +51,13 @@ cmd_update() {
 
 needs_reboot() {
     command -v dnf >/dev/null || return 1
-    dnf needs-restarting -r >/dev/null 2>&1 && return 1 || return 0
+    local result=0
+    dnf needs-restarting -r >/dev/null 2>&1 || result=$?
+    case "$result" in
+        0) return 1 ;;
+        1) return 0 ;;
+        *) warn "Yeniden başlatma gereksinimi denetlenemedi."; return 1 ;;
+    esac
 }
 
 cmd_snapshots() {
@@ -60,16 +66,7 @@ cmd_snapshots() {
 }
 
 cmd_rollback() {
-    command -v snapper >/dev/null || die "snapper kurulu değil."
-    local n="${1:-}"
-    if [[ -z "$n" ]]; then
-        cmd_snapshots
-        echo
-        die "Kullanım: vabu rollback <numara>   (yukarıdaki listeden bir 'pre' numarası)"
-    fi
-    say "Sistem $n numaralı geri alma noktasına döndürülüyor (ev klasörüne dokunulmaz)…"
-    as_root snapper -c root undochange "${n}..0"
-    say "Tamam. Yeniden başlatman önerilir."
+    die "Otomatik tam sistem geri alma henüz desteklenmiyor. Kök anlık görüntüsü ayrı /boot bölümünü kapsamaz; çalışan sistem üzerinde geri yükleme durduruldu. Anlık görüntüleri 'vabu snapshots' ile listeleyebilirsin."
 }
 
 cmd_reset() {
@@ -93,7 +90,12 @@ cmd_doctor() {
     check "Flathub"                        "flatpak remotes | grep -q flathub"
     check "Geri alma noktaları (snapper)"  "test -e /etc/snapper/configs/root"
     check "Ekran kartı sürücüsü"           "vabu-drivers status --quiet"
-    ((ok)) && say "Her şey yolunda görünüyor." || warn "Bazı kontroller başarısız. Ayrıntı için: vabu-drivers status"
+    if ((ok)); then
+        say "Her şey yolunda görünüyor."
+    else
+        warn "Bazı kontroller başarısız. Ayrıntı için: vabu-drivers status"
+        return 1
+    fi
 }
 
 usage() {
@@ -101,9 +103,9 @@ usage() {
 ${C_SKY}vabu${C_OFF} - Vabu sistem aracı
 
   vabu info                  Sürüm, çekirdek, kabuk, paket sayısı
-  vabu update                dnf + Flatpak güncellemesi (öncesinde geri alma noktası)
+  vabu update                dnf + Flatpak güncellemesi
   vabu snapshots             Geri alma noktalarını listele
-  vabu rollback <numara>     Sistemi bir geri alma noktasına döndür
+  vabu rollback <numara>     Tam sistem geri alma şu anda devre dışı
   vabu drivers [...]         Ekran kartı ve codec sürücüleri (vabu-drivers)
   vabu reset niri            niri ayarlarını varsayılana döndür
   vabu doctor                Sistem sağlık kontrolü

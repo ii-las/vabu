@@ -3,7 +3,7 @@
 mode=search
 [[ "${1:-}" == "--install" ]] && mode=install
 if command -v qs >/dev/null && [[ -d /usr/share/vabu/shell ]]; then
-    exec qs -p /usr/share/vabu/shell ipc call launcher open "$mode"
+    qs -p /usr/share/vabu/shell ipc call launcher open "$mode" && exit 0
 fi
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 if [[ -e "$CONFIG_HOME/fuzzel/fuzzel.ini" ]]; then exec fuzzel; fi

@@ -29,7 +29,7 @@ ColumnLayout {
     readonly property string nv: st ? st.nvidia : "none"
     readonly property var nvText: ({
         "missing": { title: "Önerilen sürücü kurulu değil", body: "Kart şu an açık kaynak sürücüyle (nouveau) çalışıyor. Oyun, video hızlandırma ve güç yönetimi için NVIDIA sürücüsünü kur.", btn: "Sürücüyü kur", kind: "warn" },
-        "pending-reboot": { title: "Sürücü kuruldu", body: "Devreye girmesi için bilgisayarı yeniden başlat. Secure Boot açıksa açılışta mavi ekranda 'Enroll MOK' adımını tamamla.", btn: "Yeniden başlat", kind: "info" },
+        "installed-inactive": { title: "Sürücü etkin değil", body: "Paket kurulu, fakat çekirdek modülü yüklenmedi. Yeniden başlatma, akmods derlemesi ve Secure Boot/MOK durumunu denetle.", btn: "", kind: "warn" },
         "active": { title: "NVIDIA sürücüsü etkin", body: "Kart tam performansla çalışıyor. Çekirdek güncellemelerinde sürücü kendiliğinden yeniden derlenir.", btn: "", kind: "ok" }
     })
 
@@ -79,7 +79,7 @@ ColumnLayout {
                     visible: (page.nvText[page.nv]?.btn ?? "") !== ""
                     primary: true
                     label: page.nvText[page.nv]?.btn ?? ""
-                    onClicked: page.nv === "pending-reboot" ? Ui.run(["systemctl", "reboot"]) : page.run("nvidia")
+                    onClicked: page.run("nvidia")
                 }
             }
             Text {
