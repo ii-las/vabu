@@ -61,28 +61,52 @@ ColumnLayout {
     // Özet
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: 104
-        radius: 20
-        readonly property color tone: page.total > 0 ? Theme.mint : Theme.sky
-        color: Qt.rgba(tone.r, tone.g, tone.b, 0.08)
-        border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.35)
+        implicitHeight: 92
+        radius: Theme.radiusTile
+        color: Qt.rgba(1, 1, 1, 0.035)
+        border.width: 1
+        border.color: page.total > 0 ? Theme.alpha(Theme.accent, 0.45) : Qt.rgba(1, 1, 1, 0.05)
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 22
-            spacing: 12
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 4
-                Text {
-                    text: page.checking ? "Denetleniyor…" : page.total > 0 ? page.total + " güncelleme hazır" : "Her şey güncel"
-                    color: Theme.paper; font.family: Theme.serif; font.pixelSize: 34
-                }
-                Text {
-                    text: page.total > 0 ? "Güncellemeden önce otomatik geri alma noktası oluşturulur." : "Vabu her gün arka planda denetler."
-                    color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13
+            anchors.leftMargin: 18
+            anchors.rightMargin: 16
+            spacing: 14
+            Rectangle {
+                implicitWidth: 46; implicitHeight: 46
+                radius: 14
+                color: Theme.well
+                Spinner { visible: page.checking; anchors.centerIn: parent; size: 22 }
+                Icon {
+                    visible: !page.checking
+                    anchors.centerIn: parent
+                    name: page.total > 0 ? "system_update_alt" : "check_circle"
+                    size: 24
+                    color: page.total > 0 ? Theme.paper : Theme.ok
                 }
             }
-            PillButton { label: "Denetle"; icon: "restart"; onClicked: page.check(true) }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 3
+                Text {
+                    Layout.fillWidth: true
+                    text: page.checking ? "Denetleniyor" : page.total > 0 ? page.total + " güncelleme hazır" : "Her şey güncel"
+                    color: Theme.paper
+                    font.family: Theme.sans
+                    font.pixelSize: 18
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: -0.2
+                    elide: Text.ElideRight
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: page.total > 0 ? "Kurulumdan önce geri alma noktası alınır." : "Vabu her gün arka planda denetler."
+                    color: Theme.muted
+                    font.family: Theme.sans
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
+                }
+            }
+            PillButton { label: "Denetle"; icon: "refresh"; onClicked: page.check(true) }
             PillButton {
                 visible: page.total > 0
                 primary: true
@@ -92,110 +116,80 @@ ColumnLayout {
         }
     }
 
-    GridLayout {
+    // Paket satırı: ad solda, sürüm sağda
+    component PackageRow: Item {
+        id: pr
+        property string name: ""
+        property string version: ""
+        property bool ours: false
         Layout.fillWidth: true
-        columns: 2
-        columnSpacing: 28
-        rowSpacing: 0
+        implicitHeight: 42
+        Rectangle { visible: pr.y > 1; x: 16; width: parent.width - 32; height: 1; color: Theme.line }
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            spacing: 12
+            Text { Layout.fillWidth: true; text: pr.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: pr.ours ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
+            Text { Layout.maximumWidth: pr.width * 0.5; text: pr.version; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12; font.features: ({ "tnum": 1 }); elide: Text.ElideMiddle }
+        }
+    }
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            spacing: 0
-            SectionLabel { text: "Sistem paketleri · " + page.rpm.length }
-            DashLine { Layout.fillWidth: true }
-            Repeater {
-                model: page.rpm.slice(0, 8)
-                delegate: ColumnLayout {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    spacing: 0
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 46
-                        Text { Layout.fillWidth: true; text: modelData.name; color: modelData.repo.includes("vabu") ? Theme.mint : Theme.paper; font.family: Theme.sans; font.pixelSize: 14; elide: Text.ElideRight }
-                        Text { text: modelData.version; color: Theme.muted; font.family: Theme.mono; font.pixelSize: 11 }
-                    }
-                    DashLine { Layout.fillWidth: true }
-                }
-            }
-            Text {
-                visible: page.rpm.length > 8
-                Layout.topMargin: 10
-                text: "+ " + (page.rpm.length - 8) + " paket daha"
-                color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13
-            }
-            SectionLabel { Layout.topMargin: 18; text: "Flatpak uygulamaları · " + page.flat.length }
-            DashLine { Layout.fillWidth: true }
-            Repeater {
-                model: page.flat.slice(0, 5)
-                delegate: ColumnLayout {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    spacing: 0
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 46
-                        Text { Layout.fillWidth: true; text: Apps.byId(modelData.id)?.name ?? modelData.id; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; elide: Text.ElideRight }
-                        Text { text: modelData.version; color: Theme.muted; font.family: Theme.mono; font.pixelSize: 11 }
-                    }
-                    DashLine { Layout.fillWidth: true }
-                }
+    Group {
+        visible: page.rpm.length > 0
+        title: "Sistem paketleri · " + page.rpm.length
+        note: page.rpm.length > 8 ? "ve " + (page.rpm.length - 8) + " paket daha" : ""
+        Repeater {
+            model: page.rpm.slice(0, 8)
+            delegate: PackageRow {
+                required property var modelData
+                name: modelData.name
+                version: modelData.version
+                ours: modelData.repo.includes("vabu")
             }
         }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            spacing: 0
-            SectionLabel { text: "Geri alma noktaları" }
-            DashLine { Layout.fillWidth: true }
-            Repeater {
-                model: page.snapshots
-                delegate: ColumnLayout {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    spacing: 0
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 52
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 0
-                            Text { Layout.fillWidth: true; text: modelData.description || ("Nokta " + modelData.number); color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; elide: Text.ElideRight }
-                            Text { text: (modelData.date || "") + " · #" + modelData.number; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 11 }
-                        }
-                        Text {
-                            text: "Geri dön"
-                            color: Theme.sky
-                            font.family: Theme.sans; font.pixelSize: 13
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Ui.terminal(["sh", "-c", "vabu rollback " + modelData.number + "; echo; read -p 'Kapatmak için Enter…' _"])
-                            }
-                        }
-                    }
-                    DashLine { Layout.fillWidth: true }
-                }
-            }
-            Text {
-                visible: page.snapshots.length === 0
-                Layout.topMargin: 12
-                Layout.fillWidth: true
-                text: "Henüz geri alma noktası yok. İlk dnf işleminde oluşur."
-                color: Theme.muted; font.family: Theme.serif; font.italic: true; font.pixelSize: 18; wrapMode: Text.Wrap
+    }
+    Group {
+        visible: page.flat.length > 0
+        title: "Flatpak uygulamaları · " + page.flat.length
+        Repeater {
+            model: page.flat.slice(0, 6)
+            delegate: PackageRow {
+                required property var modelData
+                name: Apps.byId(modelData.id)?.name ?? modelData.id
+                version: modelData.version
             }
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Geri alma noktaları"
+        note: "Her paket işleminden önce sistemin bir kopyası alınır. Bir güncelleme sorun çıkarırsa buradan önceki hâline dönebilirsin."
+        Repeater {
+            model: page.snapshots
+            delegate: SettingRow {
+                required property var modelData
+                label: modelData.description || ("Nokta " + modelData.number)
+                sub: (modelData.date || "") + " · #" + modelData.number
+                PillButton {
+                    implicitHeight: 36
+                    label: "Geri dön"
+                    icon: "history"
+                    onClicked: Ui.terminal(["sh", "-c", "vabu rollback " + modelData.number + "; echo; read -p 'Kapatmak için Enter…' _"])
+                }
+            }
+        }
+        SettingRow {
+            visible: page.snapshots.length === 0
+            label: "Henüz geri alma noktası yok"
+            sub: "İlk paket işleminde kendiliğinden oluşur"
+        }
+    }
+
+    Group {
         SettingRow {
             label: "Güncellemeleri arka planda indir"
-            sub: "Her gün indirir; kurulum senin onayınla yapılır. Flatpak uygulamaları kendiliğinden güncellenir."
+            sub: "Her gün indirilir; kurulum senin onayınla yapılır. Flatpak uygulamaları kendiliğinden güncellenir."
             Toggle {
                 checked: page.autoDownload
                 onToggled: {

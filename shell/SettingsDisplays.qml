@@ -94,10 +94,11 @@ ColumnLayout {
     Rectangle {
         id: canvasBox
         Layout.fillWidth: true
-        implicitHeight: 260
-        radius: 18
-        color: Qt.rgba(1, 1, 1, 0.03)
-        border.color: Theme.dash
+        implicitHeight: 240
+        radius: Theme.radiusTile
+        color: Qt.rgba(1, 1, 1, 0.035)
+        border.width: 1
+        border.color: Qt.rgba(1, 1, 1, 0.05)
 
         // Tüm ekranları sığdıran ölçek
         readonly property var bounds: {
@@ -129,14 +130,14 @@ ColumnLayout {
                 width: dims[0] * canvasBox.k
                 height: dims[1] * canvasBox.k
                 radius: 12
-                color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.06)
-                border.width: 2
-                border.color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.2)
+                color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.07)
+                border.width: 1
+                border.color: isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.16)
                 Column {
                     anchors.centerIn: parent
                     spacing: 2
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.serif; font.pixelSize: 34 }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.mono; font.pixelSize: 10 }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.sans; font.weight: Font.DemiBold; font.pixelSize: 26 }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.soft; font.family: Theme.sans; font.pixelSize: 12 }
                 }
                 MouseArea {
                     anchors.fill: parent
@@ -165,21 +166,17 @@ ColumnLayout {
         }
         Text {
             anchors { right: parent.right; bottom: parent.bottom; margins: 12 }
-            text: page.outputs.length > 1 ? "SÜRÜKLEYEREK DİZ" : ""
-            color: Theme.muted
-            font.family: Theme.mono
-            font.pixelSize: 10
-            font.letterSpacing: 1.4
+            text: page.outputs.length > 1 ? "Ekranları sürükleyerek diz" : ""
+            color: Theme.faint
+            font.family: Theme.sans
+            font.pixelSize: 12
         }
     }
 
     // Seçili ekran
-    ColumnLayout {
-        Layout.fillWidth: true
+    Group {
         visible: page.sel !== null && page.cur !== null
-        spacing: 0
-        SectionLabel { text: page.sel ? (page.sel.make + " " + page.sel.model) : "" }
-        DashLine { Layout.fillWidth: true }
+        title: page.sel ? (page.sel.make + " " + page.sel.model).trim() : ""
 
         SettingRow {
             id: resRow
@@ -207,9 +204,9 @@ ColumnLayout {
                     const best = page.sel.modes.filter(m => m.width === w && m.height === h).sort((a, b) => b.refresh_rate - a.refresh_rate)[0]
                     page.setDraft("mode", page.modeString(best))
                 }
-                IconButton { icon: "arrow-left"; tooltip: "Daha büyük"; onClicked: parent.pick(Math.max(0, parent.idx - 1)) }
-                Text { anchors.verticalCenter: parent.verticalCenter; text: parent.sizes[parent.idx] ?? ""; color: Theme.paper; font.family: Theme.mono; font.pixelSize: 14 }
-                IconButton { icon: "arrow-right"; tooltip: "Daha küçük"; onClicked: parent.pick(Math.min(parent.sizes.length - 1, parent.idx + 1)) }
+                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_left"; tooltip: "Daha büyük"; onClicked: parent.pick(Math.max(0, parent.idx - 1)) }
+                Text { anchors.verticalCenter: parent.verticalCenter; text: parent.sizes[parent.idx] ?? ""; color: Theme.paper; font.family: Theme.sans; font.weight: Font.Medium; font.pixelSize: 14; font.features: ({ "tnum": 1 }) }
+                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_right"; tooltip: "Daha küçük"; onClicked: parent.pick(Math.min(parent.sizes.length - 1, parent.idx + 1)) }
             }
         }
         SettingRow {
@@ -258,7 +255,7 @@ ColumnLayout {
         spacing: 14
         visible: page.countdown === 0
         PillButton { primary: true; label: "Uygula"; onClicked: page.apply() }
-        PillButton { label: "Yenile"; icon: "restart"; onClicked: page.load() }
+        PillButton { label: "Yenile"; icon: "refresh"; onClicked: page.load() }
         Text {
             Layout.fillWidth: true
             text: "Onaylamazsan 15 saniye içinde eski ayara döner."
@@ -271,10 +268,11 @@ ColumnLayout {
     Rectangle {
         Layout.fillWidth: true
         visible: page.countdown > 0
-        implicitHeight: 76
-        radius: 18
-        color: Qt.rgba(169 / 255, 199 / 255, 247 / 255, 0.1)
-        border.color: Theme.sky
+        implicitHeight: 68
+        radius: Theme.radiusTile
+        color: Theme.well
+        border.width: 1
+        border.color: Theme.alpha(Theme.accent, 0.5)
         RowLayout {
             anchors.fill: parent
             anchors.margins: 14
@@ -283,8 +281,9 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: "Böyle kalsın mı? " + page.countdown + " sn sonra eski hâline döner."
                 color: Theme.paper
-                font.family: Theme.serif
-                font.pixelSize: 22
+                font.family: Theme.sans
+                font.weight: Font.DemiBold
+                font.pixelSize: 15
             }
             PillButton { label: "Geri al"; onClicked: page.revert() }
             PillButton { primary: true; label: "Böyle kalsın"; onClicked: page.keep() }

@@ -7,7 +7,7 @@ import Quickshell.Widgets
 
 ColumnLayout {
     id: page
-    spacing: 22
+    spacing: 24
 
     property string gtkScheme: "prefer-dark"
     Process {
@@ -26,43 +26,63 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        SectionLabel { text: "Duvar kağıdı" }
+        Text { Layout.leftMargin: 4; text: "Duvar kağıdı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13; font.weight: Font.Medium }
         GridLayout {
             Layout.fillWidth: true
             columns: 4
             columnSpacing: 12
+            uniformCellWidths: true
             Repeater {
                 model: Config.wallpapers.concat([{ name: "Kendi resmin", path: "" }])
                 delegate: ColumnLayout {
                     id: wp
                     required property var modelData
                     readonly property bool custom: modelData.path === ""
-                    readonly property bool on: custom ? !Config.wallpapers.some(w => w.path === Config.wallpaper) : Config.wallpaper === modelData.path
+                    readonly property bool isOn: custom ? !Config.wallpapers.some(w => w.path === Config.wallpaper) : Config.wallpaper === modelData.path
                     Layout.fillWidth: true
                     spacing: 8
-                    ClippingRectangle {
+                    Item {
                         Layout.fillWidth: true
-                        implicitHeight: 116
-                        radius: 16
-                        color: wp.custom ? "transparent" : Theme.stone
-                        border.width: wp.on ? 3 : (wp.custom ? 1 : 0)
-                        border.color: wp.on ? Theme.accent : Qt.rgba(1, 1, 1, 0.3)
-                        Image {
+                        implicitHeight: Math.round(width * 0.6)
+                        ClippingRectangle {
                             anchors.fill: parent
-                            visible: !wp.custom || wp.on
-                            source: wp.custom ? (wp.on ? "file://" + Config.wallpaper : "") : wp.modelData.path
-                            sourceSize: Qt.size(400, 240)
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
+                            radius: 14
+                            color: Theme.well
+                            Image {
+                                anchors.fill: parent
+                                visible: !wp.custom || wp.isOn
+                                source: wp.custom ? (wp.isOn ? Config.wallpaper : "") : wp.modelData.path
+                                sourceSize: Qt.size(480, 300)
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                            }
+                            Icon { visible: wp.custom && !wp.isOn; anchors.centerIn: parent; name: "add_photo_alternate"; color: Theme.muted; size: 24 }
                         }
-                        Icon { visible: wp.custom && !wp.on; anchors.centerIn: parent; name: "plus"; color: Theme.muted; size: 22 }
+                        // seçili: dışta ince bir halka
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            radius: 18
+                            color: "transparent"
+                            border.width: 2
+                            border.color: Theme.accent
+                            opacity: wp.isOn ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Theme.state } }
+                        }
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: wp.custom ? picker.open() : Config.set("wallpaper", wp.modelData.path)
                         }
                     }
-                    Text { text: wp.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 13 }
+                    Text {
+                        Layout.leftMargin: 2
+                        text: wp.modelData.name
+                        color: wp.isOn ? Theme.paper : Theme.soft
+                        font.family: Theme.sans
+                        font.pixelSize: 13
+                        font.weight: wp.isOn ? Font.DemiBold : Font.Normal
+                    }
                 }
             }
         }
@@ -75,53 +95,61 @@ ColumnLayout {
         onAccepted: Config.set("wallpaper", String(selectedFile).replace(/^file:\/\//, ""))
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        DashLine { Layout.fillWidth: true }
-
+    Group {
+        title: "Renk ve tema"
         SettingRow {
             label: "Vurgu rengi"
-            sub: "Seçim, odak halkası ve düğmeler"
+            sub: "Seçili öğeler, odak halkası ve ana düğmeler"
             Repeater {
                 model: Object.keys(Config.accents)
-                delegate: Rectangle {
+                delegate: Item {
+                    id: swatch
                     required property var modelData
-                    readonly property bool on: Config.accentName === modelData
-                    width: 34; height: 34; radius: 17
-                    color: Config.accents[modelData].color
-                    border.width: on ? 3 : 0
-                    border.color: "#16161B"
-                    Rectangle {
-                        visible: parent.on
-                        anchors.centerIn: parent
-                        width: 42; height: 42; radius: 21
-                        color: "transparent"
-                        border.width: 2
-                        border.color: parent.color
-                    }
+                    readonly property bool isOn: Config.accentName === modelData
+                    width: 34; height: 34
                     Accessible.role: Accessible.RadioButton
                     Accessible.name: Config.accents[modelData].name
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 17
+                        color: "transparent"
+                        border.width: 2
+                        border.color: Config.accents[swatch.modelData].color
+                        opacity: swatch.isOn ? 1 : 0
+                        Behavior on opacity { NumberAnimation { duration: Theme.state } }
+                    }
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: swatch.isOn ? 22 : 26
+                        height: width
+                        radius: width / 2
+                        color: Config.accents[swatch.modelData].color
+                        Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+                    }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: { Config.set("accent", parent.modelData); NiriConf.apply(false) }
+                        onClicked: { Config.set("accent", swatch.modelData); NiriConf.apply(false) }
                     }
                 }
             }
         }
         SettingRow {
             label: "Uygulama teması"
-            sub: "GTK ve Qt uygulamalarının rengi. Vabu kabuğu her zaman koyudur."
+            sub: "GTK ve Qt uygulamalarının rengi. Vabu'nun kendi panelleri hep koyudur."
             Segmented {
                 options: ["Koyu", "Açık"]
                 currentIndex: page.gtkScheme === "prefer-dark" ? 0 : 1
                 onPicked: i => page.setScheme(i === 0)
             }
         }
+    }
+
+    Group {
+        title: "Yan panel"
         SettingRow {
-            label: "Yan çubuk konumu"
-            sub: "Pencere kolonları diğer taraftan akar"
+            label: "Konum"
+            sub: "Pencereler diğer taraftan dizilir"
             Segmented {
                 options: ["Sol", "Sağ"]
                 currentIndex: Config.sidebarSide === "right" ? 1 : 0
@@ -133,18 +161,23 @@ ColumnLayout {
             Toggle { checked: Config.showSeconds; onToggled: Config.set("showSeconds", !Config.showSeconds) }
         }
         SettingRow {
-            label: "Yan çubukta çalan medya"
+            label: "Çalan medya"
+            sub: "Bir şey çalarken parça ve denetimler görünür"
             Toggle { checked: Config.showMedia; onToggled: Config.set("showMedia", !Config.showMedia) }
         }
+    }
+
+    Group {
+        title: "Pencereler"
         SettingRow {
-            label: "Pencere köşeleri"
-            sub: "Yuvarlaklık · " + NiriConf.radius + " px"
-            VSlider { from: 0; to: 24; stepSize: 1; value: NiriConf.radius; onMoved: v => NiriConf.set("radius", v) }
+            label: "Köşe yuvarlaklığı"
+            sub: NiriConf.radius + " px"
+            VSlider { implicitWidth: 260; from: 0; to: 24; stepSize: 1; value: NiriConf.radius; onMoved: v => NiriConf.set("radius", v) }
         }
         SettingRow {
-            label: "Pencere aralıkları"
-            sub: "Kolonlar arası boşluk · " + NiriConf.gaps + " px"
-            VSlider { from: 0; to: 32; stepSize: 2; value: NiriConf.gaps; onMoved: v => NiriConf.set("gaps", v) }
+            label: "Aralık"
+            sub: "Pencereler arasındaki boşluk · " + NiriConf.gaps + " px"
+            VSlider { implicitWidth: 260; from: 0; to: 32; stepSize: 2; value: NiriConf.gaps; onMoved: v => NiriConf.set("gaps", v) }
         }
         SettingRow {
             label: "Animasyonlar"
@@ -155,31 +188,34 @@ ColumnLayout {
     NiriStatus { Layout.fillWidth: true }
 
     // Sabitlenmiş uygulamalar
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 10
-        SectionLabel { text: "Yan panelde sabitlenenler (en fazla 6)" }
+    Group {
+        title: "Yan panelde sabitlenenler"
+        note: "En fazla altı uygulama. Sıra, eklenme sırasıdır."
         Flow {
             Layout.fillWidth: true
+            Layout.margins: 12
             spacing: 8
             Repeater {
                 model: Apps.pinnedEntries
                 delegate: Rectangle {
+                    id: pin
                     required property var modelData
-                    width: pinRow.implicitWidth + 20
-                    height: 44
-                    radius: 14
-                    color: Theme.stone
+                    width: pinRow.implicitWidth + 18
+                    height: 40
+                    radius: 12
+                    color: Theme.well
                     Row {
                         id: pinRow
                         anchors.centerIn: parent
                         spacing: 8
-                        IconImage { anchors.verticalCenter: parent.verticalCenter; implicitSize: 22; source: Quickshell.iconPath(modelData.icon, "application-x-executable") }
-                        Text { anchors.verticalCenter: parent.verticalCenter; text: modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 13 }
+                        IconImage { anchors.verticalCenter: parent.verticalCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
+                        Text { anchors.verticalCenter: parent.verticalCenter; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 13; font.weight: Font.Medium }
                         IconButton {
-                            implicitWidth: 26; implicitHeight: 26
-                            icon: "close"; iconSize: 12; tooltip: "Kaldır"
-                            onClicked: Config.set("pinned", Config.pinned.filter(id => Apps.byId(id) !== modelData))
+                            anchors.verticalCenter: parent.verticalCenter
+                            implicitWidth: 24; implicitHeight: 24
+                            radius: 8
+                            icon: "close"; iconSize: 15; iconColor: Theme.muted; tooltip: "Kaldır"
+                            onClicked: Config.set("pinned", Config.pinned.filter(id => Apps.byId(id) !== pin.modelData))
                         }
                     }
                 }
@@ -187,19 +223,23 @@ ColumnLayout {
         }
         RowLayout {
             Layout.fillWidth: true
-            spacing: 10
-            Field { id: pinSearch; Layout.preferredWidth: 300; placeholder: "Sabitlemek için uygulama ara" }
+            Layout.leftMargin: 12
+            Layout.rightMargin: 12
+            Layout.bottomMargin: 12
+            spacing: 8
+            Field { id: pinSearch; Layout.preferredWidth: 260; implicitHeight: 40; placeholder: "Eklemek için uygulama ara" }
             Repeater {
                 model: pinSearch.text.length > 1 ? Apps.search(pinSearch.text).filter(e => !Apps.pinnedEntries.includes(e)).slice(0, 3) : []
                 delegate: PillButton {
                     required property var modelData
                     implicitHeight: 40
-                    icon: "plus"
+                    icon: "add"
                     label: modelData.name
                     enabled: Config.pinned.length < 6
                     onClicked: { Config.set("pinned", Config.pinned.concat([modelData.id.replace(/\.desktop$/, "")])); pinSearch.text = "" }
                 }
             }
+            Item { Layout.fillWidth: true }
         }
     }
 }

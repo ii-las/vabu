@@ -5,7 +5,7 @@ import Quickshell.Io
 
 ColumnLayout {
     id: page
-    spacing: 20
+    spacing: 24
 
     property var users: []            // [{name, full, admin, me}]
     property string message: ""
@@ -38,61 +38,61 @@ ColumnLayout {
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: "Bu bilgisayarın kullanıcıları" }
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Bu bilgisayarın kullanıcıları"
         Repeater {
             model: page.users
             delegate: SettingRow {
                 required property var modelData
-                label: modelData.full + (modelData.me ? "  ·  sen" : "")
+                label: modelData.full + (modelData.me ? " (sen)" : "")
                 sub: modelData.name + (modelData.admin ? " · yönetici" : " · standart kullanıcı")
-                Chip { visible: modelData.admin; text: "YÖNETİCİ"; kind: "info" }
                 PillButton {
                     visible: modelData.me
-                    implicitHeight: 38
+                    implicitHeight: 36
                     label: "Şifremi değiştir"
-                    icon: "lock"
+                    icon: "key"
                     onClicked: Ui.terminal(["sh", "-c", "passwd; echo; read -p 'Kapatmak için Enter…' _"])
                 }
             }
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 10
-        SectionLabel { text: "Yeni kullanıcı" }
+    Group {
+        title: "Yeni kullanıcı"
+        note: "Geçici şifre ilk girişte değiştirilir."
         GridLayout {
             Layout.fillWidth: true
+            Layout.margins: 14
             columns: 2
             columnSpacing: 10
             rowSpacing: 10
+            uniformCellWidths: true
             Field { id: newName; Layout.fillWidth: true; placeholder: "Ad Soyad" }
             Field {
                 id: newUser
                 Layout.fillWidth: true
-                mono: true
-                placeholder: "kullanıcı adı"
+                placeholder: "Kullanıcı adı"
                 onTextChanged: { const t = text.toLowerCase().replace(/[^a-z0-9_-]/g, ""); if (t !== text) text = t }
             }
             Field { id: newPass; Layout.fillWidth: true; echoMode: TextInput.Password; placeholder: "Geçici şifre (en az 6 karakter)" }
             RowLayout {
+                Layout.fillWidth: true
                 spacing: 10
                 Toggle { id: adminToggle; onToggled: checked = !checked }
-                Text { text: "Yönetici olsun"; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14 }
+                Text { Layout.fillWidth: true; text: "Yönetici olsun"; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14 }
             }
         }
         RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 14
+            Layout.rightMargin: 14
+            Layout.bottomMargin: 14
             spacing: 12
             PillButton {
                 primary: true
                 label: "Kullanıcı ekle"
-                icon: "plus"
+                icon: "person_add"
                 enabled: newUser.text.length > 1 && newPass.text.length >= 6
-                opacity: enabled ? 1 : 0.5
                 onClicked: {
                     // Geçici şifre standart girdiden okunur (süreç listesinde görünmez);
                     // ilk girişte değiştirilmesi zorunlu tutulur.

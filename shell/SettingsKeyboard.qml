@@ -4,7 +4,7 @@ import Quickshell
 
 ColumnLayout {
     id: page
-    spacing: 20
+    spacing: 24
 
     readonly property var catalog: [
         { layout: "tr", variant: "", name: "Türkçe Q" },
@@ -39,40 +39,40 @@ ColumnLayout {
         { opt: "grp:caps_toggle", name: "Caps Lock" }
     ]
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: "Klavye düzenleri (ilki varsayılan)" }
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Klavye düzenleri"
+        note: "İlk sıradaki varsayılan düzendir."
         Repeater {
             model: page.current
             delegate: SettingRow {
                 required property var modelData
                 required property int index
-                label: (index + 1) + ".  " + page.nameOf(modelData)
+                label: page.nameOf(modelData)
+                sub: index === 0 ? "Varsayılan" : ""
                 IconButton {
                     visible: index > 0
-                    icon: "arrow-left"; tooltip: "Yukarı taşı"
-                    rotation: 90
+                    implicitWidth: 36; implicitHeight: 36
+                    icon: "arrow_upward"; iconColor: Theme.soft; tooltip: "Yukarı taşı"
                     onClicked: { const l = page.current.slice(); [l[index - 1], l[index]] = [l[index], l[index - 1]]; page.save(l) }
                 }
                 IconButton {
                     visible: page.current.length > 1
-                    icon: "close"; tooltip: "Kaldır"
+                    implicitWidth: 36; implicitHeight: 36
+                    icon: "close"; iconColor: Theme.soft; tooltip: "Kaldır"
                     onClicked: page.save(page.current.filter((_, i) => i !== index))
                 }
             }
         }
         Flow {
             Layout.fillWidth: true
-            Layout.topMargin: 14
+            Layout.margins: 12
             spacing: 8
             Repeater {
                 model: page.catalog.filter(c => !page.current.some(e => e.layout === c.layout && e.variant === c.variant))
                 delegate: PillButton {
                     required property var modelData
-                    implicitHeight: 38
-                    icon: "plus"
+                    implicitHeight: 36
+                    icon: "add"
                     label: modelData.name
                     onClicked: page.save(page.current.concat([{ layout: modelData.layout, variant: modelData.variant }]))
                 }
@@ -80,10 +80,7 @@ ColumnLayout {
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        DashLine { Layout.fillWidth: true }
+    Group {
         SettingRow {
             visible: page.current.length > 1
             label: "Düzenler arasında geçiş"
@@ -102,23 +99,18 @@ ColumnLayout {
 
     NiriStatus { Layout.fillWidth: true }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 10
-        SectionLabel { text: "Kısayollar" }
-        RowLayout {
-            spacing: 10
-            PillButton { label: "Kısayolları göster"; icon: "keyboard"; primary: true; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }
-            PillButton {
-                label: "niri ayar dosyasını aç"
-                icon: "terminal"
-                onClicked: Ui.run(["xdg-open", Quickshell.env("HOME") + "/.config/niri/config.kdl"])
-            }
+    Group {
+        title: "Kısayollar"
+        note: "Kendi kısayollarını ayar dosyasının en altındaki “Kendi eklemelerin” bölümüne yazabilirsin; Vabu Ayarlar o bölüme dokunmaz."
+        SettingRow {
+            label: "Kısayol tablosu"
+            sub: "Super + Shift + /"
+            PillButton { implicitHeight: 38; label: "Göster"; icon: "keyboard"; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }
         }
-        Text {
-            Layout.fillWidth: true
-            text: "Kendi kısayollarını ayar dosyasının en altındaki “Kendi eklemelerin” bölümüne yazabilirsin; Vabu Ayarlar o bölüme dokunmaz."
-            color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12; wrapMode: Text.Wrap
+        SettingRow {
+            label: "niri ayar dosyası"
+            sub: "~/.config/niri/config.kdl"
+            PillButton { implicitHeight: 38; label: "Aç"; icon: "edit"; onClicked: Ui.run(["xdg-open", Quickshell.env("HOME") + "/.config/niri/config.kdl"]) }
         }
     }
 }

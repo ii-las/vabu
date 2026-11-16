@@ -75,7 +75,7 @@ jobs:
 
       - name: Kabuğu çalıştır ve ekran görüntülerini al
         run: |
-          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils
+          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils calamares
           bash tests/ekran.sh /tmp/ekran
 
       - uses: actions/upload-artifact@v4

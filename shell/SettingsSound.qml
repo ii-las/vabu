@@ -5,7 +5,7 @@ import Quickshell.Services.Pipewire
 
 ColumnLayout {
     id: page
-    spacing: 20
+    spacing: 24
 
     readonly property var nodes: Pipewire.nodes.values
     readonly property var sinks: nodes.filter(n => n.audio && n.isSink && !n.isStream)
@@ -24,104 +24,94 @@ ColumnLayout {
         return p["application.name"] || n.description || n.name || "Uygulama"
     }
 
-    component DeviceList: ColumnLayout {
-        id: list
-        property string title
-        property var devices: []
-        property var current: null
-        property string kind: "sink"
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: list.title }
-        DashLine { Layout.fillWidth: true }
-        Repeater {
-            model: list.devices
-            delegate: ColumnLayout {
-                id: dev
-                required property var modelData
-                readonly property bool isOn: list.current === modelData
-                Layout.fillWidth: true
-                spacing: 0
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: 60
-                    RowLayout {
-                        anchors.fill: parent
-                        spacing: 14
-                        Rectangle {
-                            implicitWidth: 22; implicitHeight: 22; radius: 11
-                            color: "transparent"
-                            border.width: 2
-                            border.color: dev.isOn ? Theme.accent : Qt.rgba(1, 1, 1, 0.3)
-                            Rectangle { anchors.centerIn: parent; visible: dev.isOn; width: 10; height: 10; radius: 5; color: Theme.accent }
-                        }
-                        Text { Layout.fillWidth: true; text: page.label(dev.modelData); color: Theme.paper; font.family: Theme.sans; font.pixelSize: 15; elide: Text.ElideRight }
-                        Icon {
-                            name: dev.modelData.audio.muted ? "mute" : "volume"
-                            color: dev.modelData.audio.muted ? Theme.faint : Theme.paper
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: dev.modelData.audio.muted = !dev.modelData.audio.muted }
-                        }
-                        VSlider {
-                            implicitWidth: 220
-                            value: dev.modelData.audio.volume
-                            to: 1
-                            onMoved: v => dev.modelData.audio.volume = v
-                        }
-                        Text {
-                            Layout.preferredWidth: 40
-                            horizontalAlignment: Text.AlignRight
-                            text: Math.round(dev.modelData.audio.volume * 100)
-                            color: Theme.soft; font.family: Theme.mono; font.pixelSize: 12
-                        }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        anchors.rightMargin: 320
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (list.kind === "sink") Pipewire.preferredDefaultAudioSink = dev.modelData
-                            else Pipewire.preferredDefaultAudioSource = dev.modelData
-                        }
-                    }
-                }
-                DashLine { Layout.fillWidth: true }
-            }
+    // Ses düzeyi satırı: sessize alma düğmesi, kaydırıcı, yüzde
+    component Level: RowLayout {
+        id: level
+        property var node: null
+        property string icon: "volume_up"
+        property string mutedIcon: "volume_off"
+        readonly property bool muted: node?.audio?.muted ?? false
+        spacing: 6
+        IconButton {
+            implicitWidth: 36; implicitHeight: 36
+            icon: level.muted ? level.mutedIcon : level.icon
+            iconColor: level.muted ? Theme.muted : Theme.paper
+            tooltip: level.muted ? "Sesi aç" : "Sessize al"
+            onClicked: if (level.node?.audio) level.node.audio.muted = !level.node.audio.muted
+        }
+        VSlider {
+            implicitWidth: 240
+            value: level.muted ? 0 : (level.node?.audio?.volume ?? 0)
+            onMoved: v => { if (level.node?.audio) { level.node.audio.muted = false; level.node.audio.volume = v } }
         }
         Text {
-            visible: list.devices.length === 0
-            Layout.topMargin: 12
-            text: "Aygıt bulunamadı."
-            color: Theme.muted; font.family: Theme.serif; font.italic: true; font.pixelSize: 20
+            Layout.preferredWidth: 30
+            horizontalAlignment: Text.AlignRight
+            text: level.muted ? "0" : Math.round((level.node?.audio?.volume ?? 0) * 100)
+            color: Theme.muted
+            font.family: Theme.sans
+            font.pixelSize: 12
+            font.features: ({ "tnum": 1 })
         }
     }
 
-    DeviceList { title: "Çıkış"; devices: page.sinks; current: page.defSink; kind: "sink" }
-    DeviceList { title: "Giriş"; devices: page.sources; current: page.defSource; kind: "source" }
+    component DeviceGroup: Group {
+        id: list
+        property var devices: []
+        property var current: null
+        property string kind: "sink"
+        property string empty: ""
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: "Uygulamalar" }
-        DashLine { Layout.fillWidth: true }
+        SettingRow {
+            label: list.kind === "sink" ? "Ses düzeyi" : "Giriş düzeyi"
+            sub: list.current ? page.label(list.current) : list.empty
+            Level {
+                node: list.current
+                icon: list.kind === "sink" ? "volume_up" : "mic"
+                mutedIcon: list.kind === "sink" ? "volume_off" : "mic_off"
+            }
+        }
+        Repeater {
+            model: list.devices.length > 1 ? list.devices : []
+            delegate: ListRow {
+                required property var modelData
+                Layout.leftMargin: 4
+                Layout.rightMargin: 4
+                icon: list.kind === "sink" ? "speaker" : "mic"
+                label: page.label(modelData)
+                selected: modelData === list.current
+                onClicked: {
+                    if (list.kind === "sink") Pipewire.preferredDefaultAudioSink = modelData
+                    else Pipewire.preferredDefaultAudioSource = modelData
+                }
+            }
+        }
+        Item { visible: list.devices.length > 1; implicitHeight: 4 }
+    }
+
+    DeviceGroup { title: "Çıkış"; devices: page.sinks; current: page.defSink; kind: "sink"; empty: "Hoparlör ya da kulaklık bulunamadı" }
+    DeviceGroup { title: "Giriş"; devices: page.sources; current: page.defSource; kind: "source"; empty: "Mikrofon bulunamadı" }
+
+    Group {
+        title: "Uygulamalar"
         Repeater {
             model: page.streams
             delegate: SettingRow {
                 required property var modelData
                 label: page.appName(modelData)
-                VSlider { implicitWidth: 220; value: modelData.audio.volume; onMoved: v => modelData.audio.volume = v }
+                Level { node: modelData }
             }
         }
-        Text {
+        SettingRow {
             visible: page.streams.length === 0
-            Layout.topMargin: 12
-            text: "Şu an ses çalan bir uygulama yok."
-            color: Theme.muted; font.family: Theme.serif; font.italic: true; font.pixelSize: 20
+            label: "Şu an ses çalan bir uygulama yok"
+            sub: "Bir uygulama ses çalmaya başladığında düzeyi buradan ayarlanır"
         }
     }
 
     PillButton {
         label: "Gelişmiş ses ayarları"
-        icon: "sliders"
+        icon: "tune"
         onClicked: Quickshell.execDetached(["pavucontrol"])
     }
 }

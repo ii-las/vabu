@@ -4,9 +4,10 @@ import QtQuick.Layouts
 Rectangle {
     visible: NiriConf.status === "manual" || NiriConf.status === "invalid"
     implicitHeight: visible ? col.implicitHeight + 28 : 0
-    radius: 16
-    color: Qt.rgba(242 / 255, 180 / 255, 138 / 255, 0.1)
-    border.color: Theme.peach
+    radius: Theme.radiusTile
+    color: Theme.alpha(Theme.warn, 0.08)
+    border.width: 1
+    border.color: Theme.alpha(Theme.warn, 0.5)
 
     ColumnLayout {
         id: col

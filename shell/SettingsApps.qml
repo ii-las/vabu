@@ -44,15 +44,12 @@ ColumnLayout {
         changer.running = true
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: "Uygulama kaynakları" }
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Uygulama kaynakları"
         SettingRow {
             label: "Fedora"
-            sub: "Temel sistem ve on binlerce açık kaynak uygulama · her zaman açık"
-            Chip { text: "FEDORA"; kind: "ok" }
+            sub: "Temel sistem ve on binlerce açık kaynak uygulama"
+            Chip { text: "Her zaman açık"; kind: "ok" }
         }
         SettingRow {
             label: "RPM Fusion (özgür)"
@@ -122,11 +119,8 @@ ColumnLayout {
     }
 
     property var defaults: [defWeb, defFiles, defImage, defVideo, defMusic, defText, defPdf]
-    ColumnLayout {
-        Layout.fillWidth: true
-        spacing: 0
-        SectionLabel { text: "Varsayılan uygulamalar" }
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Varsayılan uygulamalar"
         DefaultApp { id: defWeb;   label: "Web tarayıcı";  mimes: ["x-scheme-handler/https", "x-scheme-handler/http", "text/html"] }
         DefaultApp { id: defFiles; label: "Dosyalar";      mimes: ["inode/directory"] }
         DefaultApp { id: defImage; label: "Resimler";      mimes: ["image/png", "image/jpeg", "image/webp"] }

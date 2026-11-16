@@ -33,34 +33,37 @@ ColumnLayout {
         "active": { title: "NVIDIA sürücüsü etkin", body: "Kart tam performansla çalışıyor. Çekirdek güncellemelerinde sürücü kendiliğinden yeniden derlenir.", btn: "", kind: "ok" }
     })
 
-    Text {
+    RowLayout {
         visible: page.loading
-        text: "Donanım denetleniyor…"
-        color: Theme.muted; font.family: Theme.serif; font.italic: true; font.pixelSize: 22
+        spacing: 10
+        Spinner { size: 18 }
+        Text { text: "Donanım denetleniyor"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 14 }
     }
 
     // NVIDIA kartı
     Rectangle {
         Layout.fillWidth: true
         visible: !page.loading && page.nv !== "none"
-        implicitHeight: nvCol.implicitHeight + 44
-        radius: 20
-        readonly property color tone: page.nv === "active" ? Theme.mint : Theme.sky
-        color: Qt.rgba(tone.r, tone.g, tone.b, 0.08)
-        border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.4)
+        implicitHeight: nvCol.implicitHeight + 36
+        radius: Theme.radiusTile
+        color: Qt.rgba(1, 1, 1, 0.035)
+        border.width: 1
+        border.color: page.nv === "active" ? Qt.rgba(1, 1, 1, 0.05) : Theme.alpha(Theme.warn, 0.5)
 
         ColumnLayout {
             id: nvCol
-            anchors.fill: parent
-            anchors.margins: 22
-            spacing: 14
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 18
+            spacing: 12
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 16
+                spacing: 14
                 Rectangle {
-                    implicitWidth: 52; implicitHeight: 52; radius: 14
-                    color: Theme.sky
-                    Text { anchors.centerIn: parent; text: "GPU"; color: Theme.skyInk; font.family: Theme.mono; font.pixelSize: 12 }
+                    implicitWidth: 46; implicitHeight: 46; radius: 14
+                    color: Theme.well
+                    Icon { anchors.centerIn: parent; name: "developer_board"; size: 24 }
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -68,7 +71,7 @@ ColumnLayout {
                     Text {
                         Layout.fillWidth: true
                         text: (page.st?.gpus ?? []).find(g => /nvidia/i.test(g)) ?? "NVIDIA ekran kartı"
-                        color: Theme.paper; font.family: Theme.serif; font.pixelSize: 24; elide: Text.ElideRight
+                        color: Theme.paper; font.family: Theme.sans; font.pixelSize: 16; font.weight: Font.DemiBold; elide: Text.ElideRight
                     }
                     Text { text: page.nvText[page.nv]?.title ?? ""; color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13 }
                 }
@@ -82,61 +85,56 @@ ColumnLayout {
             Text {
                 Layout.fillWidth: true
                 text: page.nvText[page.nv]?.body ?? ""
-                color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13; wrapMode: Text.Wrap; lineHeight: 1.2
+                color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13; wrapMode: Text.Wrap; lineHeight: 1.25
             }
-            RowLayout {
+            Flow {
+                Layout.fillWidth: true
                 spacing: 8
-                Chip { text: "RPM FUSION"; kind: page.st?.rpmfusion ? "ok" : "warn" }
-                Chip { text: page.st?.secureBoot ? "SECURE BOOT AÇIK" : "SECURE BOOT KAPALI"; kind: "info" }
-                Chip { visible: page.st?.intel || page.st?.amd; text: "HİBRİT GRAFİK"; kind: "info" }
+                Chip { text: page.st?.rpmfusion ? "RPM Fusion açık" : "RPM Fusion kapalı"; kind: page.st?.rpmfusion ? "ok" : "warn" }
+                Chip { text: page.st?.secureBoot ? "Secure Boot açık" : "Secure Boot kapalı"; kind: "info" }
+                Chip { visible: (page.st?.intel || page.st?.amd) ?? false; text: "Hibrit grafik"; kind: "info" }
             }
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
+    Group {
         visible: !page.loading
-        spacing: 0
-        SectionLabel { text: "Donanım" }
-        DashLine { Layout.fillWidth: true }
+        title: "Donanım"
+        note: "Kurulumdan önce geri alma noktası alınır; bir sorun olursa Güncellemeler sayfasından geri dönebilirsin."
 
         Repeater {
             model: (page.st?.gpus ?? []).filter(g => !/nvidia/i.test(g))
             delegate: SettingRow {
                 required property var modelData
                 label: modelData
-                sub: "Mesa · OpenGL, Vulkan, donanım video hızlandırma"
-                Chip { text: "HAZIR"; kind: "ok" }
+                sub: "Mesa: OpenGL, Vulkan ve donanım video hızlandırma"
+                Chip { text: "Hazır"; kind: "ok" }
             }
         }
         SettingRow {
             label: "Medya codec'leri"
-            sub: "H.264, HEVC, AAC ve diğerleri · RPM Fusion"
-            Chip { visible: page.st?.codecs ?? false; text: "KURULU"; kind: "ok" }
-            PillButton { visible: !(page.st?.codecs ?? true); implicitHeight: 38; primary: true; label: "Kur"; onClicked: page.run("codecs") }
+            sub: "H.264, HEVC, AAC ve diğerleri (RPM Fusion)"
+            Chip { visible: page.st?.codecs ?? false; text: "Kurulu"; kind: "ok" }
+            PillButton { visible: !(page.st?.codecs ?? true); implicitHeight: 36; primary: true; label: "Kur"; onClicked: page.run("codecs") }
         }
         SettingRow {
             visible: page.st?.amd ?? false
             label: "AMD donanım video hızlandırma"
-            sub: "VA-API / VDPAU (RPM Fusion)"
-            PillButton { implicitHeight: 38; label: "Denetle ve kur"; onClicked: page.run("amd") }
+            sub: "VA-API ve VDPAU (RPM Fusion)"
+            PillButton { implicitHeight: 36; label: "Denetle ve kur"; onClicked: page.run("amd") }
         }
         SettingRow {
             visible: page.st?.intel ?? false
             label: "Intel donanım video hızlandırma"
             sub: "intel-media-driver (RPM Fusion)"
-            PillButton { implicitHeight: 38; label: "Denetle ve kur"; onClicked: page.run("intel") }
+            PillButton { implicitHeight: 36; label: "Denetle ve kur"; onClicked: page.run("intel") }
         }
     }
 
     RowLayout {
-        spacing: 10
+        visible: !page.loading
+        spacing: 8
         PillButton { label: "Önerilen her şeyi kur"; primary: true; onClicked: page.run("auto") }
-        PillButton { label: "Yeniden denetle"; icon: "restart"; onClicked: page.refresh() }
-    }
-    Text {
-        Layout.fillWidth: true
-        text: "Kurulumdan önce otomatik bir geri alma noktası alınır; bir sorun olursa Güncellemeler sayfasından geri dönebilirsin."
-        color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12; wrapMode: Text.Wrap
+        PillButton { label: "Yeniden denetle"; icon: "refresh"; onClicked: page.refresh() }
     }
 }

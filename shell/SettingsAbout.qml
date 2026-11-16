@@ -3,9 +3,9 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 
-RowLayout {
+ColumnLayout {
     id: page
-    spacing: 36
+    spacing: 24
 
     property var info: ({})
     property bool editingHost: false
@@ -48,90 +48,114 @@ RowLayout {
         return ["Bilgisayar: " + (info.host || "")].concat(rows.map(r => r[0] + ": " + r[1].replace(/\n/g, ", "))).join("\n")
     }
 
-    ColumnLayout {
-        Layout.preferredWidth: 260
-        Layout.alignment: Qt.AlignTop
-        spacing: 14
-        Rectangle {
-            implicitWidth: 120; implicitHeight: 120; radius: 34
-            color: Theme.mint
-            Text { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; text: "v"; color: Theme.mintInk; font.family: Theme.serif; font.italic: true; font.pixelSize: 104 }
+    // Kimlik
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 18
+        Image {
+            Layout.preferredWidth: 76
+            Layout.preferredHeight: 76
+            source: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
+            sourceSize: Qt.size(152, 152)
         }
-        Text { text: "Vabu " + (page.info.vabu || ""); color: Theme.paper; font.family: Theme.serif; font.pixelSize: 44 }
-        Text {
+        ColumnLayout {
             Layout.fillWidth: true
-            text: "Fedora tabanlı. Uygulamalar Fedora, RPM Fusion ve Flathub’dan gelir."
-            color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13; wrapMode: Text.Wrap; lineHeight: 1.2
-        }
-        PillButton {
-            label: "Sistem bilgisini kopyala"
-            onClicked: { Quickshell.execDetached(["wl-copy", page.asText()]); label = "Kopyalandı" }
-        }
-        PillButton {
-            label: "Hata bildir"
-            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ii-las/vabu/issues"])
+            spacing: 4
+            Text {
+                text: "Vabu " + (page.info.vabu || "")
+                color: Theme.paper
+                font.family: Theme.sans
+                font.pixelSize: 24
+                font.weight: Font.DemiBold
+                font.letterSpacing: -0.3
+            }
+            Text {
+                Layout.fillWidth: true
+                text: "Fedora " + (page.info.fedora || "") + " tabanlı. Uygulamalar Fedora, RPM Fusion ve Flathub'dan gelir."
+                color: Theme.muted
+                font.family: Theme.sans
+                font.pixelSize: 13
+                wrapMode: Text.Wrap
+                lineHeight: 1.2
+            }
         }
     }
 
-    ColumnLayout {
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignTop
-        spacing: 0
-        DashLine { Layout.fillWidth: true }
+    Group {
+        title: "Bu bilgisayar"
 
         // Bilgisayar adı (düzenlenebilir)
-        Item {
-            Layout.fillWidth: true
-            implicitHeight: 58
-            RowLayout {
-                anchors.fill: parent
-                spacing: 14
-                Rectangle {
-                    implicitWidth: 26; implicitHeight: 20; radius: 6; color: "transparent"; border.color: Qt.rgba(1, 1, 1, 0.18)
-                    Text { anchors.centerIn: parent; text: "00"; color: Theme.soft; font.family: Theme.mono; font.pixelSize: 10 }
-                }
-                Text { Layout.preferredWidth: 110; text: "Bilgisayar"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13 }
-                Text { visible: !page.editingHost; Layout.fillWidth: true; text: page.info.host || "-"; color: Theme.paper; font.family: Theme.serif; font.pixelSize: 19 }
-                Field { id: hostField; visible: page.editingHost; Layout.fillWidth: true; mono: true; text: page.info.host || "" }
-                Text {
-                    text: page.editingHost ? "Kaydet" : "Değiştir"
-                    color: Theme.sky
-                    font.family: Theme.sans; font.pixelSize: 13
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (page.editingHost && hostField.text.trim()) {
-                                Quickshell.execDetached(["pkexec", "hostnamectl", "set-hostname", hostField.text.trim()])
-                                page.info = Object.assign({}, page.info, { host: hostField.text.trim() })
-                            }
-                            page.editingHost = !page.editingHost
-                        }
+        SettingRow {
+            label: "Bilgisayar adı"
+            sub: page.editingHost ? "" : (page.info.host || "-")
+            Field {
+                id: hostField
+                visible: page.editingHost
+                implicitWidth: 240
+                implicitHeight: 38
+                text: page.info.host || ""
+                onAccepted: saveHost.clicked()
+            }
+            PillButton {
+                id: saveHost
+                implicitHeight: 38
+                primary: page.editingHost
+                label: page.editingHost ? "Kaydet" : "Değiştir"
+                onClicked: {
+                    if (page.editingHost && hostField.text.trim()) {
+                        Quickshell.execDetached(["pkexec", "hostnamectl", "set-hostname", hostField.text.trim()])
+                        page.info = Object.assign({}, page.info, { host: hostField.text.trim() })
                     }
+                    page.editingHost = !page.editingHost
+                    if (page.editingHost) hostField.focusField()
                 }
             }
-            DashLine { anchors.bottom: parent.bottom; width: parent.width }
         }
 
         Repeater {
             model: page.rows
             delegate: Item {
+                id: line
                 required property var modelData
-                required property int index
                 Layout.fillWidth: true
-                implicitHeight: Math.max(54, value.implicitHeight + 24)
-                RowLayout {
-                    anchors.fill: parent
-                    spacing: 14
-                    Rectangle {
-                        implicitWidth: 26; implicitHeight: 20; radius: 6; color: "transparent"; border.color: Qt.rgba(1, 1, 1, 0.18)
-                        Text { anchors.centerIn: parent; text: String(index + 1).padStart(2, "0"); color: Theme.soft; font.family: Theme.mono; font.pixelSize: 10 }
-                    }
-                    Text { Layout.preferredWidth: 110; text: modelData[0]; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13 }
-                    Text { id: value; Layout.fillWidth: true; text: modelData[1]; color: Theme.paper; font.family: Theme.serif; font.pixelSize: 19; wrapMode: Text.Wrap }
+                implicitHeight: Math.max(46, value.implicitHeight + 26)
+                Rectangle { x: 16; width: parent.width - 32; height: 1; color: Theme.line }
+                Text {
+                    x: 16
+                    y: 14
+                    width: 120
+                    text: line.modelData[0]
+                    color: Theme.muted
+                    font.family: Theme.sans
+                    font.pixelSize: 14
                 }
-                DashLine { anchors.bottom: parent.bottom; width: parent.width }
+                Text {
+                    id: value
+                    x: 152
+                    y: 14
+                    width: parent.width - 168
+                    text: line.modelData[1]
+                    color: Theme.paper
+                    font.family: Theme.sans
+                    font.pixelSize: 14
+                    lineHeight: 1.25
+                    wrapMode: Text.Wrap
+                }
             }
+        }
+    }
+
+    RowLayout {
+        spacing: 8
+        PillButton {
+            label: "Sistem bilgisini kopyala"
+            icon: "content_copy"
+            onClicked: { Quickshell.execDetached(["wl-copy", page.asText()]); label = "Kopyalandı" }
+        }
+        PillButton {
+            label: "Hata bildir"
+            icon: "bug_report"
+            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ii-las/vabu/issues"])
         }
     }
 }
