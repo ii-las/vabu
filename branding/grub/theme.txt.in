@@ -5,12 +5,13 @@ title-text: ""
 desktop-image: "background.png"
 desktop-image-scale-method: "crop"
 desktop-color: "#0F0E11"
-terminal-font: "@FONT_S@"
-terminal-left: "12%"
-terminal-top: "12%"
-terminal-width: "76%"
-terminal-height: "76%"
-terminal-border: "0"
+terminal-font: "@FONT_MONO@"
+terminal-box: "terminal_box_*.png"
+terminal-left: "16%"
+terminal-top: "16%"
+terminal-width: "68%"
+terminal-height: "68%"
+terminal-border: "24"
 
 + image {
     left = 50%-52
@@ -44,6 +45,8 @@ terminal-border: "0"
     top = 100%-84
     width = 160
     height = 4
+    font = "@FONT_XS@"
+    text = ""
     fg_color = "#F0EEE9"
     bg_color = "#3A3740"
     border_color = "#3A3740"
