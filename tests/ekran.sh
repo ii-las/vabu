@@ -211,26 +211,14 @@ swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6
 
-# Kurulum uygulaması (Calamares): yalnızca görünüm, hiçbir şey kurulmaz.
-# Depodaki ayarlar /etc/calamares'e kopyalanır; düğmelere imleçle tıklanır.
-tikla() {
-    swaymsg seat seat0 cursor set "$1" "$2" >/dev/null 2>&1
-    swaymsg seat seat0 cursor press button1 >/dev/null 2>&1
-    swaymsg seat seat0 cursor release button1 >/dev/null 2>&1
-}
+# Gerçek hesap formu: izole, exec adımı olmayan yapılandırmada fare/klavye ve
+# parola doğrulaması denenir. Disk modülleri yüklenmez, kurulum başlatılamaz.
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-if command -v calamares >/dev/null && [[ -d "$REPO/iso/root/etc/calamares" ]]; then
-    mkdir -p /etc/calamares && cp -r "$REPO/iso/root/etc/calamares/." /etc/calamares/
-    # Kapsayıcıda disk yok; sayfalar arasında gezebilmek için koşullar yalnızca testte gevşetilir
-    sed -i 's/^  required: .*/  required: []/; s/^  check: .*/  check: [ ram ]/' /etc/calamares/modules/welcomeq.conf
-    (calamares -d >"$OUT/calamares.log" 2>&1 &)
-    shot 50-kurulum-hosgeldin 9
-    # "Vabu'yu kur" ilk sayfanın kendi düğmesi; sonraki sayfalarda alttaki "Devam et"
-    tikla "${VABU_KUR_X:-866}" "${VABU_KUR_Y:-560}";  shot 51-kurulum-2 2.5
-    for n in 52 53 54 55 56; do
-        tikla 758 848;                                shot "$n-kurulum" 2.5
-    done
-    pkill -x calamares; sleep 1
+if command -v calamares >/dev/null; then
+    timeout 100 python3 -B "$REPO/tests/installer-input.py" "$OUT" || {
+        echo "::error::Calamares hesap formu giriş testi başarısız"
+        touch "$OUT/test-failed"
+    }
 fi
 
 pkill -x qs; sleep 1

@@ -51,6 +51,7 @@ Rectangle {
         }
         Rectangle {
             width: Math.max(160, nextText.implicitWidth + 48)
+            enabled: ViewManager.nextEnabled
             height: 46
             radius: 13
             opacity: ViewManager.nextEnabled ? 1 : 0.45

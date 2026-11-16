@@ -34,8 +34,30 @@ jobs:
           [[ "$fedora" =~ ^[0-9]+$ ]] || exit 1
           echo "fedora=$fedora" >> "$GITHUB_OUTPUT"
 
-  build:
+  installer-input:
     needs: target
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    container: registry.fedoraproject.org/fedora:${{ needs.target.outputs.fedora }}
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gerçek hesap formuna fare ve klavyeyle yaz
+        run: |
+          dnf -y install calamares sway grim wtype mesa-dri-drivers dbus-daemon python3-pyatspi at-spi2-core findutils procps-ng
+          VABU_TEST_ISOLATED=1 bash tests/installer-input.sh /tmp/installer-input
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installer-input-${{ matrix.runner }}
+          path: /tmp/installer-input
+          if-no-files-found: error
+
+  build:
+    needs: [target, installer-input]
     runs-on: ubuntu-24.04
     container: registry.fedoraproject.org/fedora:${{ needs.target.outputs.fedora }}
     steps:
@@ -153,7 +175,7 @@ jobs:
       - name: Kabuğu çalıştır ve ekran görüntülerini al
         timeout-minutes: 15
         run: |
-          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils calamares
+          dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils calamares python3-pyatspi at-spi2-core
           VABU_TEST_ISOLATED=1 bash tests/ekran.sh /tmp/ekran
 
       - name: Önyükleme menüsünün görüntüsünü al

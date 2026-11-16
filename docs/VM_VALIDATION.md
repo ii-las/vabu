@@ -8,7 +8,9 @@ Bu belge bir test planıdır; test sonucu değildir. Bu çalışma ISO üretmez 
 
 ## Sıra ve beklenen sonuç
 
-1. **Kurulum ve açılış:** şifreli/şifresiz kurulum; ISO çıkarıldıktan sonra açılış. Hedef yalnızca sanal disk olmalı. Kaynak RPM sürümleri ve QML yükleme hataları incelenmeli.
+1. **Kurulum ve açılış:** Hesap ekranındaki ad, kullanıcı adı, bilgisayar adı ve iki parola alanına fareyle tıklayıp yazın; Tab ile gezin. Farklı parolalarda ileri engellenmeli, eşleşince açılmalı. Yerleşik `users` formu kullanılır; `usersq` etkin değildir. CI her iki mimaride aynı formu kurulum işi içermeyen izole Wayland oturumunda gerçekten yazarak sınar; bu kontrol VM kurulumunu kanıtlamaz.
+
+    şifreli/şifresiz kurulum; ISO çıkarıldıktan sonra açılış. Hedef yalnızca sanal disk olmalı. Kaynak RPM sürümleri ve QML yükleme hataları incelenmeli.
 2. **İlk açılış:** tamamlanan rehber ikinci girişte açılmamalı. Ayar yüklenmesi gecikince veya dosya bozulunca rehber yanlışlıkla başlamamalı.
 3. **Küçük ekran/dil:** Türkçe ve İngilizce; 800×600 Ayarlar, %150 yazı, yüksek kontrast ve azaltılmış hareket. Tüm eylemlere Tab/Enter/Space ile erişilmeli; metinler ve hata açıklamaları okunmalı. Statik geometri kontrolü insan incelemesinin yerine geçmez.
 4. **Kısayollar:** bir eylemi değiştir, rehberle karşılaştır, varsayılana dön. Sabit bir tuşla çakışma reddedilmeli; kilit kısayolu korunmalı. Kişisel KDL bölümü değişmemeli.
