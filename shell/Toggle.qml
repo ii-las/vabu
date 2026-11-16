@@ -5,21 +5,22 @@ Rectangle {
     property bool checked: false
     signal toggled()
 
-    implicitWidth: 52
-    implicitHeight: 30
-    radius: 15
-    color: checked ? Theme.accent : Qt.rgba(1, 1, 1, 0.14)
-    Behavior on color { ColorAnimation { duration: Theme.normal } }
+    implicitWidth: 44
+    implicitHeight: 26
+    radius: 13
+    color: checked ? Theme.accent : Qt.rgba(1, 1, 1, 0.13)
+    Behavior on color { ColorAnimation { duration: Theme.state } }
 
     Accessible.role: Accessible.CheckBox
     Accessible.checked: checked
 
     Rectangle {
-        width: 24; height: 24; radius: 12
+        width: 20; height: 20; radius: 10
         y: 3
         x: root.checked ? root.width - width - 3 : 3
-        color: root.checked ? "#16161B" : Theme.faint
-        Behavior on x { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } }
+        color: root.checked ? Theme.accentInk : Theme.muted
+        Behavior on x { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+        Behavior on color { ColorAnimation { duration: Theme.state } }
     }
 
     MouseArea {

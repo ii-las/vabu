@@ -26,7 +26,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        SectionLabel { text: "DUVAR KAĞIDI" }
+        SectionLabel { text: "Duvar kağıdı" }
         GridLayout {
             Layout.fillWidth: true
             columns: 4
@@ -158,7 +158,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        SectionLabel { text: "YAN ÇUBUKTA SABİTLENENLER · EN FAZLA 6" }
+        SectionLabel { text: "Yan panelde sabitlenenler (en fazla 6)" }
         Flow {
             Layout.fillWidth: true
             spacing: 8

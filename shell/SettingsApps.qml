@@ -47,7 +47,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "UYGULAMA KAYNAKLARI" }
+        SectionLabel { text: "Uygulama kaynakları" }
         DashLine { Layout.fillWidth: true }
         SettingRow {
             label: "Fedora"
@@ -125,7 +125,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "VARSAYILAN UYGULAMALAR" }
+        SectionLabel { text: "Varsayılan uygulamalar" }
         DashLine { Layout.fillWidth: true }
         DefaultApp { id: defWeb;   label: "Web tarayıcı";  mimes: ["x-scheme-handler/https", "x-scheme-handler/http", "text/html"] }
         DefaultApp { id: defFiles; label: "Dosyalar";      mimes: ["inode/directory"] }

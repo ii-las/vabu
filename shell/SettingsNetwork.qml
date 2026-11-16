@@ -146,7 +146,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "WI‑FI" }
+        SectionLabel { text: "Wi‑Fi" }
         DashLine { Layout.fillWidth: true }
         SettingRow {
             label: "Wi‑Fi"
@@ -231,7 +231,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.topMargin: 10
         spacing: 0
-        SectionLabel { text: "BLUETOOTH" }
+        SectionLabel { text: "Bluetooth" }
         DashLine { Layout.fillWidth: true }
         SettingRow {
             label: "Bluetooth"

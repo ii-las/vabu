@@ -102,7 +102,7 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             spacing: 0
-            SectionLabel { text: "PAKETLER · DNF · " + page.rpm.length }
+            SectionLabel { text: "Sistem paketleri · " + page.rpm.length }
             DashLine { Layout.fillWidth: true }
             Repeater {
                 model: page.rpm.slice(0, 8)
@@ -125,7 +125,7 @@ ColumnLayout {
                 text: "+ " + (page.rpm.length - 8) + " paket daha"
                 color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13
             }
-            SectionLabel { Layout.topMargin: 18; text: "UYGULAMALAR · FLATPAK · " + page.flat.length }
+            SectionLabel { Layout.topMargin: 18; text: "Flatpak uygulamaları · " + page.flat.length }
             DashLine { Layout.fillWidth: true }
             Repeater {
                 model: page.flat.slice(0, 5)
@@ -148,7 +148,7 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop
             spacing: 0
-            SectionLabel { text: "GERİ ALMA NOKTALARI · BTRFS" }
+            SectionLabel { text: "Geri alma noktaları" }
             DashLine { Layout.fillWidth: true }
             Repeater {
                 model: page.snapshots

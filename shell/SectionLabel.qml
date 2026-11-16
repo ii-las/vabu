@@ -1,12 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
 
+// Bölüm başlığı: küçük, sakin, cümle düzeninde.
 Text {
     Layout.fillWidth: true
-    Layout.topMargin: 8
-    Layout.bottomMargin: 4
+    Layout.topMargin: 14
+    Layout.bottomMargin: 2
     color: Theme.muted
-    font.family: Theme.mono
-    font.pixelSize: 10
-    font.letterSpacing: 1.4
+    font.family: Theme.sans
+    font.pixelSize: 12.5
+    font.weight: Font.Medium
+    font.letterSpacing: 0.1
 }

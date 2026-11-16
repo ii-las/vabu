@@ -42,7 +42,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "KLAVYE DÜZENLERİ · İLKİ VARSAYILAN" }
+        SectionLabel { text: "Klavye düzenleri (ilki varsayılan)" }
         DashLine { Layout.fillWidth: true }
         Repeater {
             model: page.current
@@ -105,7 +105,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        SectionLabel { text: "KISAYOLLAR" }
+        SectionLabel { text: "Kısayollar" }
         RowLayout {
             spacing: 10
             PillButton { label: "Kısayolları göster"; icon: "keyboard"; primary: true; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }

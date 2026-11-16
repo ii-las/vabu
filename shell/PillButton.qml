@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 
+// Metinli düğme. `primary`: kağıt zemin; değilse sakin yüzey.
 Rectangle {
     id: root
     property string icon: ""
@@ -8,25 +9,29 @@ Rectangle {
     property bool primary: false
     signal clicked()
 
-    implicitHeight: 48
-    implicitWidth: row.implicitWidth + 36
-    radius: height / 2
-    color: primary ? Theme.mint : (mouse.containsMouse ? Qt.rgba(243 / 255, 241 / 255, 236 / 255, 0.2) : Qt.rgba(243 / 255, 241 / 255, 236 / 255, 0.14))
+    implicitHeight: 42
+    implicitWidth: row.implicitWidth + 32
+    radius: Theme.radiusRow + 2
+    color: primary ? Theme.accent
+         : mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : Theme.well
+    opacity: enabled ? 1 : 0.45
     Behavior on color { ColorAnimation { duration: Theme.fast } }
+    scale: mouse.pressed ? 0.97 : 1
+    Behavior on scale { NumberAnimation { duration: Theme.fast } }
     Accessible.role: Accessible.Button
     Accessible.name: label
 
     RowLayout {
         id: row
         anchors.centerIn: parent
-        spacing: 10
-        Icon { visible: root.icon !== ""; name: root.icon; size: 17; color: root.primary ? Theme.mintInk : Theme.paper }
+        spacing: 8
+        Icon { visible: root.icon !== ""; name: root.icon; size: 18; color: root.primary ? Theme.accentInk : Theme.paper }
         Text {
             text: root.label
-            color: root.primary ? Theme.mintInk : Theme.paper
+            color: root.primary ? Theme.accentInk : Theme.paper
             font.family: Theme.sans
             font.pixelSize: 14
-            font.weight: root.primary ? Font.DemiBold : Font.Normal
+            font.weight: root.primary ? Font.DemiBold : Font.Medium
         }
     }
 
@@ -34,6 +39,7 @@ Rectangle {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
+        enabled: root.enabled
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
     }

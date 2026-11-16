@@ -49,12 +49,12 @@ GAPS="$(j "$SETTINGS" .gaps 12)"
 RADIUS="$(j "$SETTINGS" .radius 14)"
 [[ "$(j "$SETTINGS" .animations true)" == "false" ]] && ANIMATIONS=$'animations {\n    off\n}' || ANIMATIONS=""
 
-case "$(j "$SHELL_SETTINGS" .accent gok)" in
-    nane)    FOCUS_COLOR="#8EF0C6" ;;
-    seftali) FOCUS_COLOR="#F2B48A" ;;
-    gul)     FOCUS_COLOR="#F7A8C4" ;;
-    kagit)   FOCUS_COLOR="#F3F1EC" ;;
-    *)       FOCUS_COLOR="#A9C7F7" ;;
+case "$(j "$SHELL_SETTINGS" .accent kagit)" in
+    nane)    FOCUS_COLOR="#B9E3C6" ;;
+    gok)     FOCUS_COLOR="#B9CCF2" ;;
+    seftali) FOCUS_COLOR="#EBC09A" ;;
+    gul)     FOCUS_COLOR="#EBB4C8" ;;
+    *)       FOCUS_COLOR="#D9D4CB" ;;
 esac
 
 OUTPUTS="$(jq -r '

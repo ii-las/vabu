@@ -31,6 +31,7 @@ jobs:
           for s in vabu-release vabu-desktop vabu-shell; do
             sed -i "s/^Version:.*/Version:        ${ver}/; s/^Release:.*/Release:        ${rel}%{?dist}/" packaging/$s.spec
           done
+          sed -i "s/^Release:.*/Release:        ${rel}%{?dist}/" packaging/vabu-fonts.spec
           sed -i "s/^%global copr_owner .*/%global copr_owner $(cat COPR_OWNER)/" packaging/vabu-release.spec
           # Dış kaynaklar (Quickshell, yazı tipleri)
           for spec in packaging/vabu-*.spec; do spectool -g -R "$spec"; done
@@ -64,6 +65,10 @@ jobs:
           dnf -y install --allowerasing --setopt=protected_packages= ~/rpmbuild/RPMS/noarch/*.rpm
           rpm -q vabu-release vabu-desktop vabu-shell vabu-fonts quickshell
           niri validate -c /etc/niri/config.kdl
+          foot -c /usr/share/vabu/xdg/foot/foot.ini --check-config
+          for f in "Newsreader" "Hanken Grotesk" "Material Symbols Rounded" "JetBrains Mono"; do
+            fc-list : family | grep -q "$f" || { echo "::error::yazı tipi eksik: $f"; exit 1; }
+          done
 
       - name: niri ayarlarını doğrula
         run: |

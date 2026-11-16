@@ -1,32 +1,44 @@
 import QtQuick
 
+// Parçalı seçici. Seçili parçanın zemini bir sonrakine kayarak geçer.
 Rectangle {
     id: root
-    property var options: []          // metin listesi
+    property var options: []
     property int currentIndex: 0
     property bool mono: false
     signal picked(int index)
 
     implicitWidth: row.implicitWidth + 8
-    implicitHeight: 44
-    radius: 14
-    color: Qt.rgba(1, 1, 1, 0.05)
+    implicitHeight: 40
+    radius: Theme.radiusRow + 1
+    color: Theme.well
+
+    Rectangle {
+        id: pill
+        readonly property Item target: repeater.count > root.currentIndex && root.currentIndex >= 0 ? repeater.itemAt(root.currentIndex) : null
+        visible: target !== null
+        x: target ? row.x + target.x : 0
+        width: target ? target.width : 0
+        y: 4
+        height: root.height - 8
+        radius: Theme.radiusRow - 2
+        color: Theme.accent
+        Behavior on x { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+        Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+    }
 
     Row {
         id: row
         anchors.centerIn: parent
-        spacing: 4
         Repeater {
+            id: repeater
             model: root.options
-            delegate: Rectangle {
+            delegate: Item {
                 required property var modelData
                 required property int index
                 readonly property bool isOn: root.currentIndex === index
-                width: label.implicitWidth + 30
-                height: 36
-                radius: 10
-                color: isOn ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
-                Behavior on color { ColorAnimation { duration: Theme.fast } }
+                width: label.implicitWidth + 28
+                height: root.height - 8
                 Accessible.role: Accessible.RadioButton
                 Accessible.checked: isOn
                 Accessible.name: modelData
@@ -35,13 +47,14 @@ Rectangle {
                     anchors.centerIn: parent
                     text: parent.modelData
                     color: parent.isOn ? Theme.accentInk : Theme.soft
-                    font.family: root.mono ? Theme.mono : Theme.sans
-                    font.pixelSize: root.mono ? 12 : 13
+                    font.family: Theme.sans
+                    font.pixelSize: 13.5
+                    font.weight: parent.isOn ? Font.DemiBold : Font.Normal
+                    font.features: root.mono ? { "tnum": 1 } : {}
+                    Behavior on color { ColorAnimation { duration: Theme.state } }
                 }
                 MouseArea {
-                    id: mouse
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.picked(parent.index)
                 }

@@ -1,40 +1,49 @@
-# Vabu yazı tipleri: Instrument Serif (başlık), Geist (arayüz), Geist Mono (etiket).
-# Hepsi SIL Open Font License; Fedora depolarında yoklar.
+# Vabu arayüz yazı tipleri ve ikon fontu.
+#   Newsreader             saat ve büyük başlıklar (OFL)
+#   Hanken Grotesk         arayüz yazısı (OFL)
+#   Material Symbols Rounded  ikonlar, değişken: dolgu/kalınlık animasyonu (Apache-2.0)
+#   JetBrains Mono: terminal (Fedora paketi, bağımlılık olarak gelir)
 %global gf https://github.com/google/fonts/raw/main/ofl
+%global ms https://github.com/google/material-design-icons/raw/master
 
 Name:           vabu-fonts
-Version:        1.0
+Version:        2.0
 Release:        1%{?dist}
-Summary:        Vabu arayüz yazı tipleri
-License:        OFL-1.1
-URL:            https://github.com/google/fonts
+Summary:        Vabu arayüz yazı tipleri ve ikon fontu
+License:        OFL-1.1 AND Apache-2.0
+URL:            https://github.com/ii-las/vabu
 BuildArch:      noarch
-Source0:        %{gf}/instrumentserif/InstrumentSerif-Regular.ttf
-Source1:        %{gf}/instrumentserif/InstrumentSerif-Italic.ttf
-Source2:        %{gf}/instrumentserif/OFL.txt#/OFL-InstrumentSerif.txt
-Source3:        %{gf}/geist/Geist%5Bwght%5D.ttf#/Geist-Variable.ttf
-Source4:        %{gf}/geist/OFL.txt#/OFL-Geist.txt
-Source5:        %{gf}/geistmono/GeistMono%5Bwght%5D.ttf#/GeistMono-Variable.ttf
-Source6:        %{gf}/geistmono/OFL.txt#/OFL-GeistMono.txt
+Source0:        %{gf}/newsreader/Newsreader%5Bopsz,wght%5D.ttf#/Newsreader-Variable.ttf
+Source1:        %{gf}/newsreader/Newsreader-Italic%5Bopsz,wght%5D.ttf#/Newsreader-Italic-Variable.ttf
+Source2:        %{gf}/newsreader/OFL.txt#/OFL-Newsreader.txt
+Source3:        %{gf}/hankengrotesk/HankenGrotesk%5Bwght%5D.ttf#/HankenGrotesk-Variable.ttf
+Source4:        %{gf}/hankengrotesk/HankenGrotesk-Italic%5Bwght%5D.ttf#/HankenGrotesk-Italic-Variable.ttf
+Source5:        %{gf}/hankengrotesk/OFL.txt#/OFL-HankenGrotesk.txt
+Source6:        %{ms}/variablefont/MaterialSymbolsRounded%5BFILL,GRAD,opsz,wght%5D.ttf#/MaterialSymbolsRounded-Variable.ttf
+Source7:        %{ms}/LICENSE#/LICENSE-MaterialSymbols.txt
 
 Requires:       fontconfig
+Requires:       jetbrains-mono-fonts
 
 %description
-Vabu Shell, Vabu Ayarlar ve Vabu Kurulum'un kullandığı yazı tipleri.
+Vabu Shell, Vabu Ayarlar, kurulum ve önyükleme ekranının kullandığı yazı tipleri.
 
 %prep
 %build
 
 %install
 install -d %{buildroot}%{_datadir}/fonts/vabu
-install -m0644 %{SOURCE0} %{SOURCE1} %{SOURCE3} %{SOURCE5} %{buildroot}%{_datadir}/fonts/vabu/
+install -m0644 %{SOURCE0} %{SOURCE1} %{SOURCE3} %{SOURCE4} %{SOURCE6} %{buildroot}%{_datadir}/fonts/vabu/
 install -d %{buildroot}%{_datadir}/licenses/%{name}
-install -m0644 %{SOURCE2} %{SOURCE4} %{SOURCE6} %{buildroot}%{_datadir}/licenses/%{name}/
+install -m0644 %{SOURCE2} %{SOURCE5} %{SOURCE7} %{buildroot}%{_datadir}/licenses/%{name}/
 
 %files
 %{_datadir}/fonts/vabu/
 %{_datadir}/licenses/%{name}/
 
 %changelog
+* Mon Nov 16 2026 ii-las <ii-las@users.noreply.github.com> - 2.0-1
+- Newsreader, Hanken Grotesk ve Material Symbols Rounded
+
 * Sun Nov 15 2026 ii-las <ii-las@users.noreply.github.com> - 1.0-1
 - İlk paket

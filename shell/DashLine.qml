@@ -1,13 +1,9 @@
 import QtQuick
 
-Row {
-    id: root
-    property color color: Theme.dash
+// Ayırıcı: tek piksel, neredeyse görünmez.
+Rectangle {
+    property color lineColor: Theme.line
+    implicitHeight: 1
     height: 1
-    clip: true
-    spacing: 3
-    Repeater {
-        model: Math.ceil(root.width / 7)
-        delegate: Rectangle { width: 4; height: 1; color: root.color }
-    }
+    color: lineColor
 }

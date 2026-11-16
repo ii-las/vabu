@@ -97,7 +97,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: !page.loading
         spacing: 0
-        SectionLabel { text: "DONANIM" }
+        SectionLabel { text: "Donanım" }
         DashLine { Layout.fillWidth: true }
 
         Repeater {

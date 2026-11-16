@@ -41,7 +41,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "BU BİLGİSAYARIN KULLANICILARI" }
+        SectionLabel { text: "Bu bilgisayarın kullanıcıları" }
         DashLine { Layout.fillWidth: true }
         Repeater {
             model: page.users
@@ -64,7 +64,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        SectionLabel { text: "YENİ KULLANICI" }
+        SectionLabel { text: "Yeni kullanıcı" }
         GridLayout {
             Layout.fillWidth: true
             columns: 2

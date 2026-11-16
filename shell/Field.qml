@@ -10,10 +10,12 @@ Rectangle {
 
     implicitWidth: 260
     implicitHeight: 42
-    radius: 12
-    color: Theme.stoneHi
-    border.width: 2
-    border.color: input.activeFocus ? Theme.accent : "transparent"
+    radius: Theme.radiusRow
+    color: input.activeFocus ? Qt.rgba(1, 1, 1, 0.07) : Theme.well
+    border.width: 1
+    border.color: input.activeFocus ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.55) : Theme.edge
+    Behavior on color { ColorAnimation { duration: Theme.fast } }
+    Behavior on border.color { ColorAnimation { duration: Theme.fast } }
 
     function focusField() { input.forceActiveFocus() }
 
@@ -31,7 +33,7 @@ Rectangle {
         clip: true
         onAccepted: root.accepted()
         Text {
-            visible: !input.text && !input.activeFocus
+            visible: !input.text
             anchors.verticalCenter: parent.verticalCenter
             text: root.placeholder
             color: Theme.faint

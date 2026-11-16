@@ -1,5 +1,6 @@
 import QtQuick
 
+// İnce kaydırıcı: 3 px iz, sürüklerken büyüyen tutamak.
 Item {
     id: root
     property real from: 0
@@ -15,6 +16,7 @@ Item {
     Accessible.role: Accessible.Slider
 
     readonly property real ratio: to > from ? Math.max(0, Math.min(1, (value - from) / (to - from))) : 0
+    readonly property bool engaged: mouse.pressed || mouse.containsMouse || activeFocus
 
     function setFromX(x) {
         let v = from + Math.max(0, Math.min(1, x / track.width)) * (to - from)
@@ -30,26 +32,30 @@ Item {
         id: track
         anchors.verticalCenter: parent.verticalCenter
         width: parent.width
-        height: 6
-        radius: 3
+        height: root.engaged ? 4 : 3
+        radius: height / 2
         color: Qt.rgba(1, 1, 1, 0.12)
+        Behavior on height { NumberAnimation { duration: Theme.fast } }
         Rectangle {
             width: parent.width * root.ratio
             height: parent.height
-            radius: 3
+            radius: parent.radius
             color: root.fill
         }
     }
     Rectangle {
+        readonly property real d: mouse.pressed ? 18 : root.engaged ? 14 : 12
         x: track.width * root.ratio - width / 2
         anchors.verticalCenter: parent.verticalCenter
-        width: 20; height: 20; radius: 10
+        width: d; height: d; radius: d / 2
         color: Theme.paper
-        border.color: root.activeFocus ? Theme.accent : "transparent"
-        border.width: 2
+        Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+        Behavior on height { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }
     MouseArea {
+        id: mouse
         anchors.fill: parent
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onPressed: mouse => { root.forceActiveFocus(); root.setFromX(mouse.x) }
         onPositionChanged: mouse => { if (pressed) root.setFromX(mouse.x) }

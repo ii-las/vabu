@@ -7,11 +7,11 @@ Singleton {
     id: root
 
     readonly property var accents: ({
-        "nane":    { color: "#8EF0C6", ink: "#0E3B2C", name: "Nane" },
-        "gok":     { color: "#A9C7F7", ink: "#14243F", name: "Gök" },
-        "seftali": { color: "#F2B48A", ink: "#3B2414", name: "Şeftali" },
-        "gul":     { color: "#F7A8C4", ink: "#3B1426", name: "Gül" },
-        "kagit":   { color: "#F3F1EC", ink: "#16161B", name: "Kağıt" }
+        "kagit":   { color: "#EDEAE3", ink: "#141316", name: "Kağıt" },
+        "nane":    { color: "#B9E3C6", ink: "#10301F", name: "Nane" },
+        "gok":     { color: "#B9CCF2", ink: "#14223D", name: "Gök" },
+        "seftali": { color: "#EBC09A", ink: "#3A2213", name: "Şeftali" },
+        "gul":     { color: "#EBB4C8", ink: "#3A1428", name: "Gül" }
     })
     readonly property var wallpapers: [
         { name: "Alacakaranlık", path: "/usr/share/vabu/assets/wallpaper.png" },
@@ -21,9 +21,9 @@ Singleton {
     property var values: ({})
     readonly property string dir: Quickshell.env("HOME") + "/.config/vabu"
 
-    readonly property string accentName: values.accent ?? "gok"
-    readonly property color accent: (accents[accentName] ?? accents.gok).color
-    readonly property color accentInk: (accents[accentName] ?? accents.gok).ink
+    readonly property string accentName: values.accent ?? "kagit"
+    readonly property color accent: (accents[accentName] ?? accents.kagit).color
+    readonly property color accentInk: (accents[accentName] ?? accents.kagit).ink
     readonly property string wallpaper: values.wallpaper ?? wallpapers[0].path
     readonly property string sidebarSide: values.sidebarSide ?? "left"
     readonly property bool showSeconds: values.showSeconds ?? false

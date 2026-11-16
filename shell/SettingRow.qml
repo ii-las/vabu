@@ -5,10 +5,11 @@ Item {
     id: root
     property string label: ""
     property string sub: ""
+    property bool divider: true
     default property alias control: slot.data
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(64, texts.implicitHeight + 24)
+    implicitHeight: Math.max(60, texts.implicitHeight + 24)
 
     RowLayout {
         anchors.fill: parent
@@ -16,13 +17,14 @@ Item {
         ColumnLayout {
             id: texts
             Layout.fillWidth: true
-            spacing: 2
+            spacing: 3
             Text {
                 Layout.fillWidth: true
                 text: root.label
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 15
+                font.pixelSize: 14.5
+                font.weight: Font.Medium
                 wrapMode: Text.Wrap
             }
             Text {
@@ -31,7 +33,8 @@ Item {
                 text: root.sub
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: 12.5
+                lineHeight: 1.15
                 wrapMode: Text.Wrap
             }
         }
@@ -42,5 +45,5 @@ Item {
         }
     }
 
-    DashLine { anchors.bottom: parent.bottom; width: parent.width }
+    DashLine { visible: root.divider; anchors.bottom: parent.bottom; width: parent.width }
 }

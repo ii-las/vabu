@@ -178,7 +178,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: page.sel !== null && page.cur !== null
         spacing: 0
-        SectionLabel { text: page.sel ? (page.sel.make + " " + page.sel.model).toUpperCase() : "" }
+        SectionLabel { text: page.sel ? (page.sel.make + " " + page.sel.model) : "" }
         DashLine { Layout.fillWidth: true }
 
         SettingRow {

@@ -2,53 +2,70 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
+// Vabu görsel dili: mat koyu, sakin, renk sadece bir şey söylediğinde.
 Singleton {
-    // Zeminler
-    readonly property color night: "#121216"
-    readonly property color ink: "#1D1C22"
-    readonly property color stone: "#26242C"
-    readonly property color stoneHi: "#34313B"
-    readonly property color glass: Qt.rgba(20 / 255, 20 / 255, 26 / 255, 0.62)
-    readonly property color glassStrong: Qt.rgba(28 / 255, 27 / 255, 33 / 255, 0.84)
-    readonly property color hover: Qt.rgba(1, 1, 1, 0.06)
-    readonly property color selected: Qt.rgba(1, 1, 1, 0.09)
-    readonly property color line: Qt.rgba(1, 1, 1, 0.09)
-    readonly property color dash: Qt.rgba(1, 1, 1, 0.16)
+    // Yüzeyler
+    readonly property color night: "#0F0E11"
+    readonly property color panel: Qt.rgba(18 / 255, 16 / 255, 19 / 255, 0.9)
+    readonly property color panelSolid: "#151317"
+    readonly property color well: Qt.rgba(1, 1, 1, 0.045)
+    readonly property color hover: Qt.rgba(1, 1, 1, 0.07)
+    readonly property color pressed: Qt.rgba(1, 1, 1, 0.1)
+    readonly property color line: Qt.rgba(1, 1, 1, 0.06)
+    readonly property color edge: Qt.rgba(1, 1, 1, 0.05)      // panellerin 1 px iç kenarı
 
     // Metin
-    readonly property color paper: "#F3F1EC"
-    readonly property color soft: "#CFC9C2"
-    readonly property color muted: "#A3A1A8"
-    readonly property color faint: "#8E8B93"
+    readonly property color paper: "#EDEAE3"
+    readonly property color soft: "#C9C4BB"
+    readonly property color muted: "#9C978F"
+    readonly property color faint: "#6F6B66"
+    readonly property color ink: "#141316"                     // açık zemin üstündeki yazı
 
-    // Vurgular: nane yapar, gök seçer, şeftali dikkat ister
-    readonly property color mint: "#8EF0C6"
-    readonly property color mintInk: "#0E3B2C"
-    readonly property color sky: "#A9C7F7"
-    readonly property color skyInk: "#14243F"
-    readonly property color peach: "#F2B48A"
-    readonly property color peachInk: "#3B2414"
-    readonly property color rose: "#F7A8C4"
-    readonly property color coral: "#F7A8A8"
+    // Anlam renkleri (az kullanılır)
+    readonly property color ok: "#9FD6B0"
+    readonly property color warn: "#E8B07A"
+    readonly property color danger: "#E89A8E"
 
-    // Kullanıcının seçtiği vurgu (Vabu Ayarlar > Görünüm). Seçim ve odak bunu kullanır.
+    // Seçim ve vurgu: kullanıcı Ayarlar > Görünüm'den seçer (varsayılan kağıt)
     readonly property color accent: Config.accent
     readonly property color accentInk: Config.accentInk
 
     // Yazı
-    readonly property string serif: "Instrument Serif"
-    readonly property string sans: "Geist"
-    readonly property string mono: "Geist Mono"
+    readonly property string serif: "Newsreader"
+    readonly property string sans: "Hanken Grotesk"
+    readonly property string mono: "JetBrains Mono"
+    readonly property string icons: "Material Symbols Rounded"
 
     // Ölçüler
     readonly property int gap: 12
-    readonly property int sidebarWidth: 280
-    readonly property int radiusCard: 20
+    readonly property int sidebarWidth: 284
+    readonly property int radiusPanel: 22
+    readonly property int radiusCard: 18
     readonly property int radiusRow: 12
-    readonly property int radiusPanel: 28
+    readonly property int radiusControl: 11
 
-    // Hareket
-    readonly property int fast: 140
-    readonly property int normal: 220
-    readonly property int slow: 380
+    // Hareket: girişte yumuşak yavaşlama, çıkışta kısa hızlanma
+    readonly property var emphasized: [0.05, 0.7, 0.1, 1, 1, 1]
+    readonly property var accelerate: [0.3, 0, 0.8, 0.15, 1, 1]
+    readonly property var standard: [0.2, 0, 0, 1, 1, 1]
+    readonly property int enter: 420
+    readonly property int exit: 180
+    readonly property int state: 220
+    readonly property int fast: 120
+
+    // Eski adlarla uyumluluk (Ayarlar sayfaları kullanıyor)
+    readonly property color glass: panel
+    readonly property color glassStrong: panel
+    readonly property color stone: well
+    readonly property color stoneHi: Qt.rgba(1, 1, 1, 0.08)
+    readonly property color dash: line
+    readonly property color mint: ok
+    readonly property color mintInk: "#10301F"
+    readonly property color sky: "#B9CCF2"
+    readonly property color skyInk: "#14223D"
+    readonly property color peach: warn
+    readonly property color rose: "#EBB4C8"
+    readonly property color coral: danger
+    readonly property int normal: state
+    readonly property int slow: enter
 }

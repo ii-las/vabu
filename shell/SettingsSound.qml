@@ -95,13 +95,13 @@ ColumnLayout {
         }
     }
 
-    DeviceList { title: "ÇIKIŞ · HOPARLÖR VE KULAKLIK"; devices: page.sinks; current: page.defSink; kind: "sink" }
-    DeviceList { title: "GİRİŞ · MİKROFON"; devices: page.sources; current: page.defSource; kind: "source" }
+    DeviceList { title: "Çıkış"; devices: page.sinks; current: page.defSink; kind: "sink" }
+    DeviceList { title: "Giriş"; devices: page.sources; current: page.defSource; kind: "source" }
 
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 0
-        SectionLabel { text: "UYGULAMALAR" }
+        SectionLabel { text: "Uygulamalar" }
         DashLine { Layout.fillWidth: true }
         Repeater {
             model: page.streams
