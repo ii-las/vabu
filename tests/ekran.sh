@@ -22,6 +22,7 @@ export HOME; HOME="$(mktemp -d)"
 export XDG_CONFIG_DIRS=/usr/share/vabu/xdg:/etc/xdg
 export WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman
 export LIBGL_ALWAYS_SOFTWARE=1 QT_QPA_PLATFORM=wayland
+export LANG=C.UTF-8 LC_ALL=C.UTF-8
 unset WAYLAND_DISPLAY DISPLAY
 
 cat > "$HOME/sway.conf" <<'SWAY'
@@ -29,6 +30,7 @@ output HEADLESS-1 resolution 2880x1800 scale 2
 output HEADLESS-1 bg #101012 solid_color
 default_border none
 focus_follows_mouse no
+for_window [title="Vabu Ayarlar"] floating enable
 SWAY
 
 # Fedora'nın sway'i dosya yetenekleriyle (cap_sys_nice) gelir; yetkisiz bir kapsayıcıda
@@ -52,16 +54,17 @@ export SWAYSOCK; SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'sway-ipc
 (pipewire >/dev/null 2>&1 &) ; sleep 0.5
 (wireplumber >/dev/null 2>&1 &)
 
-shot() { sleep "${2:-1.3}"; grim "$OUT/$1.png" 2>>"$OUT/grim.log" || echo "görüntü alınamadı: $1"; }
-call() { qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || echo "ipc başarısız: $*"; }
-yaz()  { command -v wtype >/dev/null && wtype "$@" 2>/dev/null; sleep 0.4; }
+# Hiçbir adım testi kilitlemesin: her komutun bir süre sınırı var
+shot() { sleep "${2:-1.3}"; timeout 20 grim "$OUT/$1.png" 2>>"$OUT/grim.log" || echo "görüntü alınamadı: $1"; }
+call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || echo "ipc başarısız: $*"; }
+yaz()  { command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null; sleep 0.4; }
 
 # Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
 KOPYA="$HOME/kabuk"
 cp -r "$SHELL_DIR" "$KOPYA"
 cp "$(dirname "$0")/derle.qml" "$KOPYA/derle.qml"
 VABU_QML_DOSYALARI="$(cd "$KOPYA" && ls *.qml | grep -v '^derle.qml$' | paste -sd, -)" \
-    timeout 60 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1
+    timeout 25 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1
 echo "=== derleme"
 sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/derle.log"
 
@@ -134,10 +137,6 @@ if command -v calamares >/dev/null && [[ -d "$REPO/iso/root/etc/calamares" ]]; t
     pkill -x calamares; sleep 1
 fi
 
-# Kilit ekranı: önce boş, sonra yazarken
-call lock lock;                  shot 30-kilit 2.5
-yaz "parola";                    shot 31-kilit-yazarken 1.2
-
 pkill -x qs; sleep 1
 
 # Giriş ekranı (greetd olmadan sadece görünüm)
@@ -155,19 +154,29 @@ if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
     sleep 14
     export NIRI_SOCKET; NIRI_SOCKET="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'niri.*.sock' | head -1)"
     if [[ -n "$NIRI_SOCKET" ]]; then
-        niri msg action spawn -- foot; sleep 2
-        niri msg action spawn -- nautilus; sleep 5
+        nm() { timeout 10 niri msg action "$@" >/dev/null 2>&1; }
+        nm spawn -- foot; sleep 2
+        nm spawn -- nautilus; sleep 5
         shot 40-niri-pencereler 1
-        niri msg action focus-workspace-down; sleep 0.8
-        niri msg action spawn -- foot; sleep 2.5
+        nm focus-workspace-down; sleep 0.8
+        nm spawn -- foot; sleep 2.5
         shot 41-niri-ikinci-alan 1
-        niri msg action toggle-overview
+        nm toggle-overview
         shot 42-niri-genel-bakis 1.5
     else
         echo "::warning::niri iç içe açılamadı"
         tail -20 "$OUT/niri.log"
     fi
 fi
+
+# Kilit ekranı en sonda: oturum kilitlendikten sonra başka hiçbir şey görünmez.
+# Önce boş, sonra yazarken.
+pkill -x niri; pkill -x qs; sleep 1
+qs -p "$SHELL_DIR" >"$OUT/shell-kilit.log" 2>&1 &
+sleep 8
+call lock lock;                  shot 30-kilit 2.5
+yaz "parola";                    shot 31-kilit-yazarken 1.2
+pkill -x qs
 
 # Önyükleme menüsünün parçaları (gözle bakmak için)
 if [[ -d /boot/grub2/themes/vabu ]]; then
@@ -188,7 +197,7 @@ if grep -q "DERLEME-HATASI" "$OUT/derle.log" 2>/dev/null; then
     echo "::error::derlenmeyen QML dosyaları var"
     status=1
 fi
-for f in shell settings greeter shell-niri; do
+for f in shell settings greeter shell-niri shell-kilit; do
     [[ -f "$OUT/$f.log" ]] || continue
     if grep -En "$fatal" "$OUT/$f.log"; then
         echo "::error::$f: QML yüklenirken hata"

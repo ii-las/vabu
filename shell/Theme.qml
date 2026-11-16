@@ -6,8 +6,8 @@ import Quickshell
 Singleton {
     // Yüzeyler. Paneller duvar kağıdını bulanık gösterir; `panel` onun üstündeki tondur.
     readonly property color night: "#0F0E11"
-    readonly property color panel: Qt.rgba(21 / 255, 19 / 255, 23 / 255, 0.6)
-    readonly property color panelDeep: Qt.rgba(17 / 255, 15 / 255, 19 / 255, 0.74)   // açılır paneller, başlatıcı
+    readonly property color panel: Qt.rgba(21 / 255, 19 / 255, 23 / 255, 0.5)
+    readonly property color panelDeep: Qt.rgba(17 / 255, 15 / 255, 19 / 255, 0.64)   // açılır paneller, başlatıcı
     readonly property color panelSolid: "#17151A"                                    // arkasında duvar kağıdı olmayan pencereler
     readonly property color well: Qt.rgba(1, 1, 1, 0.06)
     readonly property color hover: Qt.rgba(1, 1, 1, 0.09)

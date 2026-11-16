@@ -13,10 +13,9 @@ ShellRoot {
                 const msg = c.errorString()
                 if (msg.includes("is not creatable")) continue      // singleton: derlendi, yeter
                 bad++
-                console.log("DERLEME-HATASI " + f + "\n" + msg)
+                console.warn("DERLEME-HATASI " + f + "\n" + msg)
             }
         }
-        console.log("DERLEME-BITTI " + files.length + " dosya, " + bad + " hatalı")
-        Qt.quit()
+        console.warn("DERLEME-BITTI " + files.length + " dosya, " + bad + " hatalı")
     }
 }

@@ -37,7 +37,7 @@ jobs:
               dnf -y install kiwi-cli kiwi-systemdeps-iso-media kiwi-systemdeps-bootloaders
               kiwi-ng system build --description /work/iso --target-dir /work/out
             '
-          name="vabu-$(cat VERSION)-fedora${FEDORA}-${{ inputs.arch }}-$(date -u +%Y%m%d).iso"
+          name="vabu-$(cat VERSION)-fedora${FEDORA}-${{ inputs.arch }}-$(date -u +%Y%m%d-%H%M).iso"
           sudo mv out/*.iso "$name"
           sudo chown "$(id -u)" "$name"
           sha256sum "$name" > "$name.sha256"

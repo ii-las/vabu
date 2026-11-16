@@ -27,6 +27,7 @@ ColumnLayout {
         signal more()
 
         Layout.fillWidth: true
+        implicitWidth: 120
         implicitHeight: 100
         radius: Theme.radiusTile
         color: isOn ? Theme.accent : (tileMouse.pressed ? Theme.pressed : tileMouse.containsMouse ? Theme.hover : Theme.well)
@@ -197,8 +198,11 @@ ColumnLayout {
             }
         }
 
+        // Yerleşimler kendiliğinden genişlemeye çalışır; bu sütun dar kalmalı
         ColumnLayout {
-            Layout.preferredWidth: 52
+            Layout.fillWidth: false
+            Layout.minimumWidth: 52
+            Layout.maximumWidth: 52
             Layout.fillHeight: true
             spacing: 10
             SessionButton { icon: "lock"; tip: "Kilitle"; onClicked: Ui.lock() }

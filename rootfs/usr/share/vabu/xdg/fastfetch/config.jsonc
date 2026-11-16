@@ -1,10 +1,15 @@
 {
   "logo": {
     "source": "/usr/share/vabu/fastfetch/logo.txt",
-    "color": { "1": "cyan", "2": "magenta" }
+    "color": { "1": "white", "2": "bright_black" },
+    "padding": { "top": 1, "left": 2, "right": 4 }
+  },
+  "display": {
+    "separator": "  ",
+    "color": { "keys": "bright_black", "title": "white" }
   },
   "modules": [
-    "title", "separator", "os", "kernel", "uptime", "packages",
-    "wm", "terminal", "cpu", "gpu", "memory", "disk", "break", "colors"
+    "break", "title", "break", "os", "kernel", "uptime", "packages",
+    "wm", "terminal", "cpu", "gpu", "memory", "disk"
   ]
 }
