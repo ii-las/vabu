@@ -6,7 +6,8 @@ Vabu klasik bir Fedora sistemi: `dnf`, RPM dosyaları ve Flathub doğrudan çal�
 
 ## Özellikler
 
-- **Vabu Shell** ([Quickshell](https://quickshell.org) ile yazıldı): yan çubuk, uygulama başlatıcı, bildirimler, kilit ekranı, giriş ekranı, ses ve parlaklık göstergeleri
+- **Vabu Shell** ([Quickshell](https://quickshell.org) ile yazıldı): yan panel (saat, çalışma alanları, uygulamalar, medya), yan panelden açılan Wi-Fi, Bluetooth, ses, takvim, bildirim ve kontrol merkezi panelleri, uygulama başlatıcı, kilit ve giriş ekranı
+- **Çalışma alanları:** yan panelde her alan, içindeki pencerelerin simgeleriyle görünür. Yön tuşları kolonlar, pencereler ve alanlar arasında tek bir haritada gezer; `Super + O` genel bakışı açar.
 - **Başlatıcıdan uygulama kurma:** `kur:` yazınca Fedora, RPM Fusion ve Flathub'da arar
 - **Vabu Ayarlar:** görünüm, ekranlar, ağ, Bluetooth, ses, sürücüler, depolar, güncellemeler, klavye, kullanıcılar
 - **Sürücüler:** `vabu-drivers` ekran kartını algılar. NVIDIA (RPM Fusion akmod, Secure Boot destekli), AMD ve Intel için video hızlandırma ve codec'leri kurar.
@@ -29,7 +30,7 @@ Paketler [COPR](https://copr.fedorainfracloud.org/coprs/ii-las/vabu/) üzerinde 
 
 Her şey GitHub Actions'ta derleniyor:
 
-- `rpm.yml`: paketleri derler, niri ayarlarını doğrular, COPR'a gönderir
+- `rpm.yml`: paketleri derler, niri ayarlarını doğrular, kabuğu başsız bir oturumda çalıştırıp ekran görüntülerini alır, COPR'a gönderir
 - `quickshell.yml`: Quickshell'i COPR'a gönderir (haftalık olarak da yeniden derler)
 - `iso.yml`: Kiwi ile canlı/kurulum ISO'su üretir (x86_64, aarch64)
 
@@ -41,9 +42,11 @@ Bir Fedora makinede yerel olarak derlemek için [docs/BUILDING.md](docs/BUILDING
 shell/         Vabu Shell, Ayarlar ve giriş ekranı (QML)
 shell-system/  vabu-shell paketinin sistem dosyaları
 rootfs/        vabu-desktop paketinin dosyaları
-branding/      logo ve duvar kağıtları
+branding/      logo, duvar kağıtları, önyükleme menüsü teması
 packaging/     RPM spec dosyaları
 iso/           Kiwi ISO tanımı ve Calamares ayarları
+tests/         kabuğu başsız çalıştırıp ekran görüntüsü alan test
+tools/         duvar kağıdı üreticisi
 ```
 
 ## niri ayarı

@@ -5,7 +5,7 @@
 Bir Fedora makinede:
 
 ```bash
-sudo dnf install rpm-build rpmdevtools librsvg2-tools jq perl-interpreter just
+sudo dnf install rpm-build rpmdevtools librsvg2-tools ImageMagick grub2-tools-extra fonttools jq perl-interpreter just
 just rpm
 ```
 
@@ -47,4 +47,23 @@ Canlı oturum açılınca kurulum kendiliğinden başlar.
 
 ```bash
 qs -p shell
+```
+
+## Ekran görüntüleri
+
+`tests/ekran.sh` kabuğu başsız bir sway oturumunda çalıştırır, her ekranın görüntüsünü alır ve QML hatalarını denetler. Vabu paketleri kurulu bir Fedora'da:
+
+```bash
+sudo dnf install sway grim wtype mesa-dri-drivers dbus-daemon libnotify
+tests/ekran.sh /tmp/ekran
+```
+
+GitHub Actions bunu her derlemede yapar; görüntüler `ekran` adlı çıktıda durur.
+
+## Duvar kağıtları
+
+`branding/` altındaki duvar kağıtları `tools/duvar-kagidi.py` ile üretilir. Renkleri ya da sırtları değiştirmek için betiği düzenleyip yeniden çalıştır:
+
+```bash
+tools/duvar-kagidi.py
 ```
