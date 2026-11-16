@@ -127,13 +127,22 @@ Item {
                 color: Theme.panel
                 border.width: 1
                 border.color: Theme.edge
+                readonly property string initial: (root.user.full || root.user.name || "").charAt(0).toLocaleUpperCase()
                 Text {
+                    visible: parent.initial !== ""
                     anchors.centerIn: parent
-                    text: (root.user.full || root.user.name || "?").charAt(0).toUpperCase()
+                    text: parent.initial
                     color: Theme.paper
                     font.family: Theme.sans
                     font.pixelSize: 30
                     font.weight: Font.Medium
+                }
+                Icon {
+                    visible: parent.initial === ""
+                    anchors.centerIn: parent
+                    name: "person"
+                    size: 34
+                    color: Theme.soft
                 }
             }
 
