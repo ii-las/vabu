@@ -150,9 +150,9 @@ gorunum acik
 shot 16-terminal 3
 
 # Dar yan panel
-printf '{"theme":"acik","sidebarCompact":true}\n' > "$HOME/.config/vabu/shell.json"
+printf '{"theme":"acik","sidebarCompact":true,"onboardingDone":true}\n' > "$HOME/.config/vabu/shell.json"
 shot 16b-dar-panel 1.8
-printf '{"theme":"koyu","sidebarCompact":true}\n' > "$HOME/.config/vabu/shell.json"
+printf '{"theme":"koyu","sidebarCompact":true,"onboardingDone":true}\n' > "$HOME/.config/vabu/shell.json"
 shot 16c-dar-panel-koyu 1.5
 gorunum acik
 
@@ -171,6 +171,7 @@ gorunum acik
 # Narrow window + both languages + 150% text and reduced motion/high contrast.
 swaymsg output HEADLESS-1 resolution 1920x1280 scale 2 >/dev/null
 swaymsg '[title="Vabu Ayarlar"] resize set width 800 height 600'  >/dev/null
+swaymsg '[title="Vabu Ayarlar"] move position center' >/dev/null
 for language in tr en; do
     for scale in 1 1.5; do
         printf '{"theme":"acik","onboardingDone":true,"language":"%s","textScale":%s,"reducedMotion":true,"highContrast":true}\n' "$language" "$scale" > "$HOME/.config/vabu/shell.json"

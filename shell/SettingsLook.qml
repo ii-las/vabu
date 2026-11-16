@@ -15,8 +15,10 @@ ColumnLayout {
         spacing: 10
         Text { textFormat: Text.PlainText; Layout.leftMargin: 4; text: Lang.t("Duvar kağıdı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
         GridLayout {
+            id: wallpaperGrid
             Layout.fillWidth: true
-            columns: 5
+            Layout.minimumWidth: 0
+            columns: Math.max(1, Math.min(5, Math.floor(width / (140 * Config.textScale))))
             columnSpacing: 12
             uniformCellWidths: true
             Repeater {
@@ -31,6 +33,7 @@ ColumnLayout {
                     readonly property bool isOn: custom ? (choice !== "auto" && !Config.wallpapers.some(w => w.path === choice))
                         : choice === modelData.path
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 0
                     spacing: 8
                     Item {
                         Layout.fillWidth: true
@@ -85,6 +88,9 @@ ColumnLayout {
                     }
                     Text { textFormat: Text.PlainText;
                         Layout.leftMargin: 2
+                        Layout.fillWidth: true
+                        Layout.minimumWidth: 0
+                        wrapMode: Text.Wrap
                         text: Lang.t(wp.modelData.name)
                         color: wp.isOn ? Theme.paper : Theme.soft
                         font.family: Theme.sans
@@ -108,7 +114,7 @@ ColumnLayout {
         SettingRow {
             label: Lang.t("Görünüm")
             Segmented {
-                options: [Lang.t("Açık"), "Koyu", Lang.t("Otomatik")]
+                options: [Lang.t("Açık"), Lang.t("Koyu"), Lang.t("Otomatik")]
                 currentIndex: ["acik", "koyu", "otomatik"].indexOf(Config.theme)
                 onPicked: i => Config.set("theme", ["acik", "koyu", "otomatik"][i])
             }
@@ -208,16 +214,17 @@ ColumnLayout {
                 delegate: Rectangle {
                     id: pin
                     required property var modelData
-                    width: pinRow.implicitWidth + 18
+                    width: Math.min(pinRow.implicitWidth + 18, parent.width)
                     height: 40
                     radius: 12
                     color: Theme.well
-                    Row {
+                    RowLayout {
                         id: pinRow
-                        anchors.centerIn: parent
+                        anchors.fill: parent
+                        anchors.margins: 9
                         spacing: 8
                         IconImage { anchors.verticalCenter: parent.verticalCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
-                        Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
+                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
                         IconButton {
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24; implicitHeight: 24
@@ -229,17 +236,19 @@ ColumnLayout {
                 }
             }
         }
-        RowLayout {
+        Flow {
+            id: pinAdd
             Layout.fillWidth: true
             Layout.leftMargin: 12
             Layout.rightMargin: 12
             Layout.bottomMargin: 12
             spacing: 8
-            Field { id: pinSearch; Layout.preferredWidth: 260; implicitHeight: 40; placeholder: Lang.t("Eklemek için uygulama ara") }
+            Field { id: pinSearch; width: Math.min(260 * Config.textScale, pinAdd.width); implicitHeight: 40; placeholder: Lang.t("Eklemek için uygulama ara") }
             Repeater {
                 model: pinSearch.text.length > 1 ? Apps.search(pinSearch.text).filter(e => !Apps.pinnedEntries.includes(e)).slice(0, 3) : []
                 delegate: PillButton {
                     required property var modelData
+                    width: Math.min(implicitWidth, pinAdd.width)
                     implicitHeight: 40
                     icon: "add"
                     label: modelData.name
@@ -247,7 +256,6 @@ ColumnLayout {
                     onClicked: { Config.set("pinned", Config.pinned.concat([modelData.id.replace(/\.desktop$/, "")])); pinSearch.text = "" }
                 }
             }
-            Item { Layout.fillWidth: true }
         }
     }
 }

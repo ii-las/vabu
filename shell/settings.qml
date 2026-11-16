@@ -55,7 +55,7 @@ ShellRoot {
                 if (item.activeFocusOnTab && item.enabled && item.width > 0) {
                     const point = item.mapToItem(loader.item, 0, 0)
                     if (point.x < -1 || point.x + item.width > loader.item.width + 1) {
-                        console.warn("UI-AUDIT-FAIL horizontal overflow " + item)
+                        console.warn("UI-AUDIT-FAIL " + root.page + " horizontal overflow " + item + " x=" + point.x + " width=" + item.width + " available=" + loader.item.width)
                         failed = true
                     }
                 }
