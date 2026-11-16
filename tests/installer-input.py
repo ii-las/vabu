@@ -2,7 +2,7 @@
 """Real Calamares input regression; isolated Fedora CI only, no install jobs.
 
 Run inside tests/ekran.sh's disposable Wayland + D-Bus session. AT-SPI reads
-actual widgets, while sway and wtype deliver real mouse and keyboard events.
+actual widgets, while a virtual pointer and wtype deliver real input events.
 No clipboard, block devices, mount operations or account creation are used.
 """
 import json
@@ -21,7 +21,7 @@ def virtual_pointer():
     """Keep a pointer device alive in the disposable headless compositor.
 
     IPC cursor commands alone do not advertise wl_seat pointer capability.
-    The tiny wire client only creates a device; sway IPC still sends events.
+    The tiny wire client keeps the device alive and delivers its mouse events.
     Protocol: swaywm/wlr-protocols/unstable/wlr-virtual-pointer-unstable-v1.xml
     """
     connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -69,7 +69,7 @@ def virtual_pointer():
         send(2, 0, struct.pack('=II', name, len(interface)) + padded + struct.pack('=II', 1, 4))
         send(4, 0, struct.pack('=II', 0, 5))  # create pointer on the default seat
         roundtrip(6)
-        return connection
+        return connection, send
     except Exception:
         connection.close()
         raise
@@ -123,10 +123,24 @@ def main():
         print('Click geometry:', widget.name, rect.x, rect.y, rect.width, rect.height, flush=True)
         if rect.width <= 0 or rect.height <= 0:
             raise RuntimeError('Widget has no clickable rectangle: ' + widget.name)
-        run('swaymsg', 'seat', 'seat0', 'cursor', 'set',
-            str(rect.x + rect.width // 2), str(rect.y + rect.height // 2))
-        run('swaymsg', 'seat', 'seat0', 'cursor', 'press', 'button1')
-        run('swaymsg', 'seat', 'seat0', 'cursor', 'release', 'button1')
+        # Send real virtual-device events, including frame boundaries, rather
+        # than compositor cursor commands which can omit device capabilities.
+        outputs = json.loads(subprocess.check_output(['swaymsg', '-t', 'get_outputs', '-r'], text=True))
+        active = [o for o in outputs if o['active']]
+        if len(active) != 1:
+            raise RuntimeError('Input fixture requires one isolated output')
+        bounds = active[0]['rect']
+        timestamp = int(time.monotonic() * 1000) & 0xffffffff
+        pointer_send(5, 1, struct.pack('=IIIII', timestamp,
+                     rect.x + rect.width // 2, rect.y + rect.height // 2,
+                     bounds['width'], bounds['height']))
+        pointer_send(5, 4, b'')
+        time.sleep(.15)
+        pointer_send(5, 2, struct.pack('=III', timestamp + 1, 272, 1))
+        pointer_send(5, 4, b'')
+        time.sleep(.08)
+        pointer_send(5, 2, struct.pack('=III', timestamp + 2, 272, 0))
+        pointer_send(5, 4, b'')
         time.sleep(.2)
 
     def entries():
@@ -161,7 +175,7 @@ def main():
         # accidentally activates Next. In particular no partition/mount/users job.
         (fixture / 'settings.conf').write_text('''modules-search: [ local, /usr/lib64/calamares/modules ]
 sequence:
-  - show: [ welcomeq, users, summaryq ]
+  - show: [ users, summaryq ]
 branding: vabu
 prompt-install: true
 dont-chroot: false
@@ -171,24 +185,24 @@ disable-cancel-during-exec: true
 hide-back-and-next-during-exec: true
 quit-at-end: false
 ''')
-        (fixture / 'modules/welcomeq.conf').write_text('''qmlSearch: both
-requirements:
-  required: []
-  check: []
-''')
+        # The isolated account form is page zero, whereas production reaches
+        # it after partition. Keep the same navigation controls visible without
+        # requiring unrelated pages or any disk module in this regression.
+        navigation = fixture / 'branding/vabu/calamares-navigation.qml'
+        nav = navigation.read_text()
+        nav = nav.replace('visible: ViewManager.backAndNextVisible && ViewManager.currentStepIndex > 0\n'
+                          '                 && (ViewManager.nextEnabled || ViewManager.backEnabled)',
+                          'visible: ViewManager.backAndNextVisible')
+        navigation.write_text(nav)
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
-            pointer = virtual_pointer()
+            pointer, pointer_send = virtual_pointer()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
-                start = wait_for(lambda: next((b for b in buttons() if b.name == 'Vabu’yu kur' and b.getState().contains(pyatspi.STATE_ENABLED)), None), 'welcome install button', 25)
-                # Let the welcome page's 400 ms entry animation finish.
-                time.sleep(.6)
-                shot('50-kurulum-hosgeldin.png')
-                click(start)
                 fields = wait_for(lambda: entries() if len(entries()) >= 5 else None, 'native account fields')
                 if len(fields) != 5:
                     raise RuntimeError('Expected precisely three identity and two password fields; got ' + str(len(fields)))
+                shot('50-kurulum-hesap-bos.png')
                 full, login, host, password, repeat = fields
                 fill(full, 'Vabu Input Test')
                 fill(login, 'vabuinputtest')

@@ -60,7 +60,7 @@ VABU_TEST_ISOLATED=1 bash tests/ekran.sh /tmp/ekran
 
 Hesap formunu tek başına denemek için aynı atılabilir ortamda
 `VABU_TEST_ISOLATED=1 bash tests/installer-input.sh /tmp/installer-input`
-çalıştırılır. Test yalnızca `welcomeq`, `users`, `summaryq` görünüm modüllerini
+çalıştırılır. Test yalnızca `users`, `summaryq` görünüm modüllerini
 yükler; `exec` dizisi ve disk modülleri içermez. Fare/klavye girişi, odak değişiminde
 metnin korunması ve parola eşleşmesi gerçek Calamares/AT-SPI üzerinden doğrulanır.
 RPM yayını aarch64 ve x86_64 giriş testleri geçmeden başlamaz.
