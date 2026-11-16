@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#121216"
+    color: "#151318"
     readonly property bool failed: (config.failureMessage || "") !== ""
 
     // Eş yükselti adaları: sayfa açılınca halka halka çizilir
@@ -55,10 +55,10 @@ Rectangle {
             NumberAnimation { to: 1; duration: 520; easing.type: Easing.OutBack }
         }
         NumberAnimation on opacity { running: page.visible; to: 1; duration: 500 }
-        color: page.failed ? "#F7A8A8" : "#8EF0C6"
-        Text { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; text: "v"; color: "#0E3B2C"; font.family: "Instrument Serif"; font.italic: true; font.pixelSize: 96 }
+        color: page.failed ? "#EC9C90" : "#EFECE6"
+        Text { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; text: "v"; color: "#141316"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.italic: true; font.pixelSize: 96 }
     }
-    Rectangle { x: page.width * 0.23 + 112; y: page.height * 0.32 + 112; width: 30; height: 30; color: "#F2B48A" }
+    Rectangle { x: page.width * 0.23 + 112; y: page.height * 0.32 + 112; width: 30; height: 30; color: "#E8B07A" }
 
     ColumnLayout {
         opacity: 0
@@ -76,8 +76,8 @@ Rectangle {
             Layout.fillWidth: true
             textFormat: Text.StyledText
             text: page.failed ? "Kurulum<br>tamamlanamadı" : "Kurulum<br>tamamlandı"
-            color: page.failed ? "#F7A8A8" : "#A9C7F7"
-            font.family: "Instrument Serif"
+            color: page.failed ? "#EC9C90" : "#EFECE6"
+            font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
             font.italic: true
             font.pixelSize: 74
             lineHeight: 0.92
@@ -86,26 +86,26 @@ Rectangle {
             Layout.fillWidth: true
             text: page.failed ? config.failureMessage
                 : "Vabu bilgisayarına kuruldu. Yeniden başlattığında giriş ekranı seni karşılayacak."
-            color: "#CFC9C2"; font.family: "Geist"; font.pixelSize: 15; wrapMode: Text.Wrap; lineHeight: 1.25
+            color: "#CDC8C0"; font.family: "Hanken Grotesk"; font.pixelSize: 15; wrapMode: Text.Wrap; lineHeight: 1.25
         }
         Text {
             Layout.fillWidth: true
             visible: page.failed && (config.failureDetails || "") !== ""
             text: config.failureDetails || ""
-            color: "#8E8B93"; font.family: "Geist Mono"; font.pixelSize: 11; wrapMode: Text.Wrap
+            color: "#8C8882"; font.family: "Hanken Grotesk"; font.pixelSize: 11; wrapMode: Text.Wrap
         }
         Text {
             Layout.fillWidth: true
             visible: !page.failed
             text: "İlk açılışta: Ayarlar › Sürücüler ekran kartın için önerilen sürücüyü tek tıkla kurar."
-            color: "#CFC9C2"; font.family: "Geist"; font.pixelSize: 15; wrapMode: Text.Wrap; lineHeight: 1.25
+            color: "#CDC8C0"; font.family: "Hanken Grotesk"; font.pixelSize: 15; wrapMode: Text.Wrap; lineHeight: 1.25
         }
         Rectangle {
             Layout.topMargin: 12
             visible: !page.failed
             implicitWidth: 300; implicitHeight: 80; radius: 40
-            color: "#8EF0C6"
-            Text { anchors.centerIn: parent; text: "Yeniden başlat"; color: "#0E3B2C"; font.family: "Geist"; font.pixelSize: 17; font.weight: Font.DemiBold }
+            color: "#EFECE6"
+            Text { anchors.centerIn: parent; text: "Yeniden başlat"; color: "#141316"; font.family: "Hanken Grotesk"; font.pixelSize: 17; font.weight: Font.DemiBold }
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: config.doRestart(true) }
         }
     }
@@ -114,7 +114,7 @@ Rectangle {
         x: 64; y: page.height - 110
         width: tag.implicitWidth + 20; height: 24; radius: 6
         color: "transparent"; border.color: Qt.rgba(1, 1, 1, 0.3)
-        Text { id: tag; anchors.centerIn: parent; text: "KURULUM"; color: "#A3A1A8"; font.family: "Geist Mono"; font.pixelSize: 10; font.letterSpacing: 1.6 }
+        Text { id: tag; anchors.centerIn: parent; text: "KURULUM"; color: "#A39E97"; font.family: "Hanken Grotesk"; font.pixelSize: 10; font.letterSpacing: 1.6 }
     }
-    Text { x: 64; y: page.height - 76; text: "Vabu 0.1"; color: "#8E8B93"; font.family: "Instrument Serif"; font.pixelSize: 30 }
+    Text { x: 64; y: page.height - 76; text: "Vabu 0.1"; color: "#8C8882"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.pixelSize: 30 }
 }

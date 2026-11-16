@@ -1,0 +1,60 @@
+# Vabu önyükleme menüsü.
+# Yazı tipi adları derleme sırasında üretilen .pf2 dosyalarından okunup yerine yazılır.
+
+title-text: ""
+desktop-image: "background.png"
+desktop-image-scale-method: "crop"
+desktop-color: "#0F0E11"
+terminal-font: "@FONT_S@"
+terminal-left: "12%"
+terminal-top: "12%"
+terminal-width: "76%"
+terminal-height: "76%"
+terminal-border: "0"
+
++ image {
+    left = 50%-52
+    top = 17%
+    width = 104
+    height = 104
+    file = "logo.png"
+}
+
++ boot_menu {
+    left = 50%-290
+    top = 38%
+    width = 580
+    height = 42%
+    item_font = "@FONT_L@"
+    item_color = "#CDC8C0"
+    selected_item_color = "#141316"
+    item_height = 54
+    item_padding = 22
+    item_spacing = 6
+    icon_width = 0
+    icon_height = 0
+    item_icon_space = 0
+    selected_item_pixmap_style = "select_*.png"
+    scrollbar = false
+}
+
++ label {
+    id = "__timeout__"
+    left = 0
+    top = 100%-104
+    width = 100%
+    align = "center"
+    text = "%d saniye içinde açılacak"
+    font = "@FONT_S@"
+    color = "#A39E97"
+}
+
++ label {
+    left = 0
+    top = 100%-64
+    width = 100%
+    align = "center"
+    text = "Ok tuşları: seç  ·  Enter: başlat  ·  E: düzenle  ·  C: komut satırı"
+    font = "@FONT_S@"
+    color = "#77736E"
+}

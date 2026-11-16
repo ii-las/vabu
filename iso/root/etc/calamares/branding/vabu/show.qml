@@ -25,7 +25,7 @@ Presentation {
     Slide {
         Rectangle {
             anchors.fill: parent
-            color: "#121216"
+            color: "#151318"
 
             Canvas {
                 id: map
@@ -41,7 +41,7 @@ Presentation {
                     for (let k = 0; k < Math.ceil(rings); k++) {
                         const r0 = 30 + k * 22
                         ctx.globalAlpha = Math.min(1, rings - k) * (0.55 - k * 0.025)
-                        ctx.strokeStyle = k % 4 === 3 ? "#F2B48A" : "#A9C7F7"
+                        ctx.strokeStyle = k % 4 === 3 ? "#E8B07A" : "#EFECE6"
                         ctx.lineWidth = k % 4 === 3 ? 1.6 : 1.1
                         ctx.beginPath()
                         for (let i = 0; i <= 120; i++) {
@@ -60,8 +60,8 @@ Presentation {
                 y: parent.height * 0.42 - height / 2
                 text: "<i>kuruluyor</i>"
                 textFormat: Text.StyledText
-                color: "#F3F1EC"
-                font.family: "Instrument Serif"
+                color: "#EFECE6"
+                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
                 font.pixelSize: 56
             }
 
@@ -74,8 +74,8 @@ Presentation {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
                 text: presentation.tips[presentation.tip]
-                color: "#CFC9C2"
-                font.family: "Instrument Serif"
+                color: "#CDC8C0"
+                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
                 font.italic: true
                 font.pixelSize: 24
                 Behavior on opacity { NumberAnimation { duration: 280 } }

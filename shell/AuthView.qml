@@ -22,7 +22,7 @@ Item {
     signal submitted(string password)
     signal userPicked(int index)
     signal sessionPicked(int index)
-    signal left()
+    signal finished()
 
     readonly property var user: users[userIndex] ?? ({ name: "", full: "" })
     property bool pinned: false                 // şifre alanı hep açık (giriş ekranı)
@@ -37,7 +37,7 @@ Item {
         shake.restart()
         errorReset.restart()
     }
-    // Başarılı: içerik solar, sonra `left` gelir
+    // Başarılı: içerik solar, sonra `finished` gelir
     function leave() { leaving.start() }
     function mix(a, b) { return a + (b - a) * t }
 
@@ -86,18 +86,17 @@ Item {
         Column {
             id: clockBox
             anchors.horizontalCenter: parent.horizontalCenter
-            y: root.mix(root.height * 0.27, root.height * 0.105)
-            scale: root.mix(1, 0.56)
-            transformOrigin: Item.Top
-            spacing: 4
+            y: root.mix(root.height * 0.27, root.height * 0.12)
+            spacing: root.mix(6, 2)
+            readonly property real big: Math.round(Math.min(190, root.height * 0.19))
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatTime(clock.date, "HH:mm")
                 color: Theme.paper
                 font.family: Theme.serif
                 font.weight: Font.Light
-                font.pixelSize: Math.round(Math.min(190, root.height * 0.19))
-                font.letterSpacing: -5
+                font.pixelSize: Math.round(root.mix(clockBox.big, clockBox.big * 0.58))
+                font.letterSpacing: root.mix(-5, -3)
                 font.features: ({ "tnum": 1, "lnum": 1 })
                 lineHeight: 0.9
             }
@@ -106,7 +105,7 @@ Item {
                 text: root.days[clock.date.getDay()] + ", " + clock.date.getDate() + " " + root.months[clock.date.getMonth()]
                 color: Theme.alpha(Theme.paper, 0.86)
                 font.family: Theme.sans
-                font.pixelSize: 21
+                font.pixelSize: Math.round(root.mix(21, 17))
                 font.weight: Font.Medium
             }
         }
@@ -128,7 +127,7 @@ Item {
             id: form
             visible: root.primary && root.t > 0.01
             anchors.horizontalCenter: parent.horizontalCenter
-            y: root.mix(root.height * 0.5, root.height * 0.4)
+            y: root.mix(root.height * 0.5, root.height * 0.39)
             width: 340
             opacity: root.t
             spacing: 14
@@ -335,6 +334,6 @@ Item {
     SequentialAnimation {
         id: leaving
         NumberAnimation { target: content; property: "opacity"; to: 0; duration: 200; easing.type: Easing.InCubic }
-        ScriptAction { script: { root.password = ""; root.left() } }
+        ScriptAction { script: { root.password = ""; root.finished() } }
     }
 }

@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#121216"
+    color: "#151318"
 
     Flickable {
         anchors.fill: parent
@@ -26,8 +26,8 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
                 textFormat: Text.StyledText
                 text: "Her şey<br><i>hazır mı?</i>"
-                color: "#F3F1EC"
-                font.family: "Instrument Serif"
+                color: "#EFECE6"
+                font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
                 font.pixelSize: 56
                 lineHeight: 0.95
             }
@@ -38,7 +38,7 @@ Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: item.implicitHeight + 36
                     radius: 22
-                    color: "#1D1C22"
+                    color: "#1B191E"
                     border.color: Qt.rgba(1, 1, 1, 0.08)
                     RowLayout {
                         id: item
@@ -50,19 +50,19 @@ Rectangle {
                             implicitWidth: 36; implicitHeight: 36; radius: 18
                             color: "transparent"
                             border.color: Qt.rgba(1, 1, 1, 0.3)
-                            Text { anchors.centerIn: parent; text: index + 1; color: "#CFC9C2"; font.family: "Geist Mono"; font.pixelSize: 13 }
+                            Text { anchors.centerIn: parent; text: index + 1; color: "#CDC8C0"; font.family: "Hanken Grotesk"; font.pixelSize: 13 }
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 4
-                            Text { Layout.fillWidth: true; text: title; color: "#F3F1EC"; font.family: "Instrument Serif"; font.pixelSize: 24; wrapMode: Text.Wrap }
+                            Text { Layout.fillWidth: true; text: title; color: "#EFECE6"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.pixelSize: 24; wrapMode: Text.Wrap }
                             Text {
                                 Layout.fillWidth: true
                                 text: message
                                 textFormat: Text.RichText
-                                color: "#CFC9C2"
-                                linkColor: "#A9C7F7"
-                                font.family: "Geist"
+                                color: "#CDC8C0"
+                                linkColor: "#EFECE6"
+                                font.family: "Hanken Grotesk"
                                 font.pixelSize: 13
                                 wrapMode: Text.Wrap
                             }
@@ -77,8 +77,8 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
                 text: "“Kurulumu başlat”a bastığında disk değişiklikleri uygulanır; bu adım geri alınamaz."
-                color: "#F2B48A"
-                font.family: "Geist"
+                color: "#E8B07A"
+                font.family: "Hanken Grotesk"
                 font.pixelSize: 13
             }
         }

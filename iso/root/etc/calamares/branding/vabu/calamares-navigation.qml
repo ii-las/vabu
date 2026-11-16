@@ -5,7 +5,7 @@ import QtQuick 2.15
 
 Rectangle {
     id: root
-    color: "#121216"
+    color: "#151318"
     // Calamares bu alana implicitHeight kadar yer verir; düğmeler buna sığmalı
     implicitHeight: 104
     height: implicitHeight
@@ -19,8 +19,8 @@ Rectangle {
         Rectangle {
             visible: ViewManager.backEnabled
             width: 64; height: 64; radius: 32
-            color: backMouse.containsMouse ? "#34313B" : "#26242C"
-            Text { anchors.centerIn: parent; text: "←"; color: "#F3F1EC"; font.pixelSize: 22 }
+            color: backMouse.containsMouse ? "#2C2931" : "#221F26"
+            Text { anchors.centerIn: parent; text: "←"; color: "#EFECE6"; font.pixelSize: 22 }
             MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.back() }
             Accessible.role: Accessible.Button
             Accessible.name: ViewManager.backLabel
@@ -28,12 +28,12 @@ Rectangle {
         Rectangle {
             width: 260; height: 64; radius: 32
             opacity: ViewManager.nextEnabled ? 1 : 0.45
-            color: nextMouse.containsMouse && ViewManager.nextEnabled ? "#A6F5D3" : "#8EF0C6"
+            color: nextMouse.containsMouse && ViewManager.nextEnabled ? "#FFFFFF" : "#EFECE6"
             Text {
                 anchors.centerIn: parent
                 text: ViewManager.nextLabel.replace("&", "")
-                color: "#0E3B2C"
-                font.family: "Geist"
+                color: "#141316"
+                font.family: "Hanken Grotesk"
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
             }
@@ -56,8 +56,8 @@ Rectangle {
         anchors.leftMargin: 48
         anchors.verticalCenter: parent.verticalCenter
         text: ViewManager.quitLabel.replace("&", "")
-        color: "#A3A1A8"
-        font.family: "Geist"
+        color: "#A39E97"
+        font.family: "Hanken Grotesk"
         font.pixelSize: 14
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.quit() }
     }

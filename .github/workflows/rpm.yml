@@ -54,6 +54,9 @@ jobs:
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/greeter.qml
           rpm -qp --provides ~/rpmbuild/RPMS/noarch/vabu-release-*.rpm | grep -q system-release
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-shell-*.rpm | grep -q /usr/share/vabu/shell/settings.qml
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/theme.txt
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/vabu-22.pf2
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-sis.jpg
 
       - name: Paketleri gerçekten kur (dosya çakışması, eksik bağımlılık)
         run: |

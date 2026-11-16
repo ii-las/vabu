@@ -5,7 +5,7 @@ import QtQuick 2.15
 
 Rectangle {
     id: root
-    color: "#121216"
+    color: "#151318"
     implicitHeight: 76
     height: implicitHeight
 
@@ -19,8 +19,8 @@ Rectangle {
                 width: index === ViewManager.currentStepIndex ? 46 : 18
                 height: 6
                 radius: 3
-                color: index < ViewManager.currentStepIndex ? "#8EF0C6"
-                     : index === ViewManager.currentStepIndex ? "#F3F1EC" : Qt.rgba(1, 1, 1, 0.18)
+                color: index < ViewManager.currentStepIndex ? "#EFECE6"
+                     : index === ViewManager.currentStepIndex ? "#EFECE6" : Qt.rgba(1, 1, 1, 0.18)
                 Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
             }
         }
@@ -30,8 +30,8 @@ Rectangle {
         anchors.rightMargin: 48
         anchors.verticalCenter: parent.verticalCenter
         text: String(ViewManager.currentStepIndex + 1).padStart(2, "0") + " / " + String(steps.count).padStart(2, "0")
-        color: "#8E8B93"
-        font.family: "Geist Mono"
+        color: "#8C8882"
+        font.family: "Hanken Grotesk"
         font.pixelSize: 11
         font.letterSpacing: 1.6
     }
@@ -40,8 +40,8 @@ Rectangle {
         anchors.leftMargin: 48
         anchors.verticalCenter: parent.verticalCenter
         text: "vabu"
-        color: "#F3F1EC"
-        font.family: "Instrument Serif"
+        color: "#EFECE6"
+        font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
         font.pixelSize: 26
     }
 }

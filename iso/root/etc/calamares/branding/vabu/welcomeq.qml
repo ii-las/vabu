@@ -7,7 +7,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#121216"
+    color: "#151318"
 
     ColumnLayout {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -21,8 +21,8 @@ Rectangle {
             horizontalAlignment: Text.AlignHCenter
             textFormat: Text.StyledText
             text: "Vabu’ya<br><i>hoş geldin</i>"
-            color: "#F3F1EC"
-            font.family: "Instrument Serif"
+            color: "#EFECE6"
+            font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
             font.pixelSize: 64
             lineHeight: 0.95
         }
@@ -35,14 +35,14 @@ Rectangle {
                 Layout.preferredWidth: 250
                 implicitHeight: 76
                 radius: 22
-                color: "#A9C7F7"
-                Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: "Dil"; color: "#14243F"; font.family: "Instrument Serif"; font.pixelSize: 26 }
+                color: "#EFECE6"
+                Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: "Dil"; color: "#141316"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.pixelSize: 26 }
             }
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: 76
                 radius: 22
-                color: "#A9C7F7"
+                color: "#EFECE6"
                 ComboBox {
                     id: lang
                     anchors.fill: parent
@@ -51,23 +51,23 @@ Rectangle {
                     textRole: "label"
                     currentIndex: config.localeIndex
                     onActivated: config.localeIndex = currentIndex
-                    font.family: "Geist"
+                    font.family: "Hanken Grotesk"
                     font.pixelSize: 16
-                    background: Rectangle { radius: 15; color: "#1B2433" }
+                    background: Rectangle { radius: 15; color: "#221F26" }
                     contentItem: Text {
                         leftPadding: 18
                         verticalAlignment: Text.AlignVCenter
                         text: lang.displayText
-                        color: "#F3F1EC"
+                        color: "#EFECE6"
                         font: lang.font
                     }
-                    indicator: Text { x: lang.width - width - 18; anchors.verticalCenter: parent.verticalCenter; text: "▾"; color: "#8E8B93"; font.pixelSize: 16 }
-                    popup.background: Rectangle { color: "#1D1C22"; radius: 14; border.color: Qt.rgba(1, 1, 1, 0.1) }
+                    indicator: Text { x: lang.width - width - 18; anchors.verticalCenter: parent.verticalCenter; text: "▾"; color: "#8C8882"; font.pixelSize: 16 }
+                    popup.background: Rectangle { color: "#1B191E"; radius: 14; border.color: Qt.rgba(1, 1, 1, 0.1) }
                     delegate: ItemDelegate {
                         width: lang.width
                         highlighted: lang.highlightedIndex === index
-                        contentItem: Text { text: model.label; color: highlighted ? "#14243F" : "#F3F1EC"; font.family: "Geist"; font.pixelSize: 15 }
-                        background: Rectangle { color: highlighted ? "#A9C7F7" : "transparent"; radius: 10 }
+                        contentItem: Text { text: model.label; color: highlighted ? "#141316" : "#EFECE6"; font.family: "Hanken Grotesk"; font.pixelSize: 15 }
+                        background: Rectangle { color: highlighted ? "#EFECE6" : "transparent"; radius: 10 }
                     }
                 }
             }
@@ -85,14 +85,14 @@ Rectangle {
                     implicitHeight: visible ? req.implicitHeight + 28 : 0
                     radius: 16
                     color: mandatory ? Qt.rgba(247 / 255, 168 / 255, 168 / 255, 0.1) : Qt.rgba(242 / 255, 180 / 255, 138 / 255, 0.1)
-                    border.color: mandatory ? "#F7A8A8" : "#F2B48A"
+                    border.color: mandatory ? "#EC9C90" : "#E8B07A"
                     Column {
                         id: req
                         anchors.fill: parent
                         anchors.margins: 14
                         spacing: 4
-                        Text { width: parent.width; text: name; color: "#F3F1EC"; font.family: "Geist"; font.pixelSize: 14; wrapMode: Text.Wrap }
-                        Text { width: parent.width; text: details; color: "#CFC9C2"; font.family: "Geist"; font.pixelSize: 12; wrapMode: Text.Wrap }
+                        Text { width: parent.width; text: name; color: "#EFECE6"; font.family: "Hanken Grotesk"; font.pixelSize: 14; wrapMode: Text.Wrap }
+                        Text { width: parent.width; text: details; color: "#CDC8C0"; font.family: "Hanken Grotesk"; font.pixelSize: 12; wrapMode: Text.Wrap }
                     }
                 }
             }
@@ -107,8 +107,8 @@ Rectangle {
 
             Rectangle {
                 implicitWidth: 240; implicitHeight: 64; radius: 32
-                color: tryMouse.containsMouse ? "#34313B" : "#26242C"
-                Text { anchors.centerIn: parent; text: "Kurmadan dene"; color: "#F3F1EC"; font.family: "Geist"; font.pixelSize: 16 }
+                color: tryMouse.containsMouse ? "#2C2931" : "#221F26"
+                Text { anchors.centerIn: parent; text: "Kurmadan dene"; color: "#EFECE6"; font.family: "Hanken Grotesk"; font.pixelSize: 16 }
                 MouseArea { id: tryMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ViewManager.quit() }
                 Accessible.role: Accessible.Button
                 Accessible.name: "Kurmadan dene"
@@ -116,8 +116,8 @@ Rectangle {
             Rectangle {
                 implicitWidth: 260; implicitHeight: 64; radius: 32
                 opacity: ViewManager.nextEnabled ? 1 : 0.45
-                color: installMouse.containsMouse && ViewManager.nextEnabled ? "#A6F5D3" : "#8EF0C6"
-                Text { anchors.centerIn: parent; text: "Vabu’yu kur"; color: "#0E3B2C"; font.family: "Geist"; font.pixelSize: 16; font.weight: Font.DemiBold }
+                color: installMouse.containsMouse && ViewManager.nextEnabled ? "#FFFFFF" : "#EFECE6"
+                Text { anchors.centerIn: parent; text: "Vabu’yu kur"; color: "#141316"; font.family: "Hanken Grotesk"; font.pixelSize: 16; font.weight: Font.DemiBold }
                 MouseArea {
                     id: installMouse
                     anchors.fill: parent
@@ -133,8 +133,8 @@ Rectangle {
         Text {
             Layout.alignment: Qt.AlignHCenter
             text: "KURULUMU SONRA BAŞLATICIDAN “VABU’YU KUR” İLE AÇABİLİRSİN"
-            color: "#8E8B93"
-            font.family: "Geist Mono"
+            color: "#8C8882"
+            font.family: "Hanken Grotesk"
             font.pixelSize: 11
             font.letterSpacing: 1.4
         }

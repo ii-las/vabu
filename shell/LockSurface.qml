@@ -27,6 +27,6 @@ Item {
         users: [{ name: Quickshell.env("USER"), full: Quickshell.env("USER") }]
         busy: pam.active
         onSubmitted: if (!pam.active) pam.start()
-        onLeft: root.unlocked()
+        onFinished: root.unlocked()
     }
 }

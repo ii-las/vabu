@@ -20,12 +20,13 @@
     <timezone>Europe/Istanbul</timezone>
     <rpm-check-signatures>false</rpm-check-signatures>
     <bootsplash-theme>vabu</bootsplash-theme>
+    <bootloader-theme>vabu</bootloader-theme>
     <!-- filesystem="erofs": dracut canlı kökü overlayfs ile /run/rootfsbase altına bağlar;
          Calamares unpackfs sistemi oradan kopyalar. Fedora'nın kendi canlı ISO'ları da böyle. -->
     <type image="iso" primary="true" flags="dmsquash" filesystem="erofs" firmware="uefi"
           mediacheck="false" efifatimagesize="30" publisher="Vabu" volid="VABU_LIVE"
           kernelcmdline="rhgb quiet">
-      <bootloader name="grub2" console="console" timeout="5"/>
+      <bootloader name="grub2" console="gfxterm" timeout="5"/>
     </type>
   </preferences>
 

@@ -8,10 +8,15 @@ Summary:        Vabu masaüstü ortamı ve sistem araçları
 License:        MIT
 URL:            https://github.com/ii-las/vabu
 Source0:        vabu-%{version}.tar.gz
+# Önyükleme menüsünün yazı tipi bundan üretilir (vabu-fonts ile aynı dosya)
+Source1:        https://github.com/google/fonts/raw/main/ofl/hankengrotesk/HankenGrotesk%5Bwght%5D.ttf#/HankenGrotesk-Variable.ttf
 BuildArch:      noarch
 
 BuildRequires:  librsvg2-tools
 BuildRequires:  ImageMagick
+BuildRequires:  grub2-tools-extra
+BuildRequires:  fonttools
+BuildRequires:  python3
 BuildRequires:  jq
 BuildRequires:  perl-interpreter
 BuildRequires:  systemd-rpm-macros
@@ -80,7 +85,33 @@ for n in wallpaper wallpaper-gece wallpaper-sis; do
     magick $n.png -quality 92 -sampling-factor 4:4:4 -interlace none $n.jpg
 done
 rsvg-convert -w 256  -h 256  branding/logo.svg      -o logo-256.png
-rsvg-convert -w 128  -h 128  branding/logo.svg      -o logo-128.png
+
+# Açılış ekranı (Plymouth): zeminsiz işaret ve ilerleme çizgisi parçaları
+rsvg-convert -w 512 -h 512 branding/logo-mark.svg -o plymouth-logo.png
+magick -size 8x8 xc:'#EFECE6' fill.png
+magick -size 8x8 xc:'rgba(255,255,255,0.16)' track.png
+
+# Önyükleme menüsü (GRUB) teması
+mkdir -p grub
+magick wallpaper.png -resize '1920x1080^' -gravity center -extent 1920x1080 \
+    -blur 0x22 -fill '#0C0B0F' -colorize 42 -depth 8 grub/background.png
+rsvg-convert -w 104 -h 104 branding/logo-mark.svg -o grub/logo.png
+# seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür
+magick -size 48x48 xc:none -fill '#EFECE6' -draw 'roundrectangle 0,0 47,47 16,16' pill.png
+i=0
+for part in nw n ne w c e sw s se; do
+    magick pill.png -crop "16x16+$(( (i % 3) * 16 ))+$(( (i / 3) * 16 ))" +repage grub/select_$part.png
+    i=$(( i + 1 ))
+done
+fonttools varLib.instancer -q -o HG-Medium.ttf %{SOURCE1} wght=500
+fonttools varLib.instancer -q -o HG-Regular.ttf %{SOURCE1} wght=400
+grub2-mkfont -n Vabu -s 22 -o grub/vabu-22.pf2 HG-Medium.ttf
+grub2-mkfont -n Vabu -s 15 -o grub/vabu-15.pf2 HG-Regular.ttf
+# temada geçen yazı tipi adı .pf2 içindeki adla birebir aynı olmalı
+pf2name() { python3 -c 'import sys, struct; d = open(sys.argv[1], "rb").read(); i = d.index(b"NAME"); n = struct.unpack(">I", d[i + 4:i + 8])[0]; print(d[i + 8:i + 8 + n].rstrip(b"\0").decode())' "$1"; }
+sed -e "s/@FONT_L@/$(pf2name grub/vabu-22.pf2)/" -e "s/@FONT_S@/$(pf2name grub/vabu-15.pf2)/" \
+    branding/grub/theme.txt.in > grub/theme.txt
+grep -n font grub/theme.txt
 # niri varsayılan ayarı şablondan (Vabu Ayarlar da aynı üreticiyi kullanır)
 VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in \
     bash rootfs/usr/libexec/vabu/niri-config --defaults -o niri-default.kdl
@@ -90,7 +121,13 @@ cp -a rootfs/. %{buildroot}/
 for n in wallpaper wallpaper-gece wallpaper-sis; do
     install -Dm0644 $n.jpg %{buildroot}%{_datadir}/vabu/assets/$n.jpg
 done
-install -Dm0644 logo-128.png   %{buildroot}%{_datadir}/plymouth/themes/vabu/logo.png
+install -Dm0644 plymouth-logo.png %{buildroot}%{_datadir}/plymouth/themes/vabu/logo.png
+install -m0644 fill.png track.png %{buildroot}%{_datadir}/plymouth/themes/vabu/
+# GRUB teması: açılışta okunabilmesi için /boot altında; ISO üreticisi (kiwi) /usr/share'den alır
+for dir in /boot/grub2/themes/vabu %{_datadir}/grub/themes/vabu; do
+    install -d %{buildroot}$dir
+    install -m0644 grub/* %{buildroot}$dir/
+done
 install -Dm0644 logo-256.png   %{buildroot}%{_datadir}/pixmaps/vabu-logo.png
 install -Dm0644 branding/logo.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/vabu-logo.svg
 install -Dm0644 niri-default.kdl %{buildroot}%{_sysconfdir}/niri/config.kdl
@@ -138,6 +175,8 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %{_datadir}/vabu/
 %{_datadir}/glib-2.0/schemas/zz0-vabu.gschema.override
 %{_datadir}/plymouth/themes/vabu/
+/boot/grub2/themes/vabu/
+%{_datadir}/grub/themes/vabu/
 %{_datadir}/pixmaps/vabu-logo.png
 %{_datadir}/icons/hicolor/scalable/apps/vabu-logo.svg
 %{_datadir}/wayland-sessions/vabu-gaming.desktop

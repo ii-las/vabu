@@ -7,7 +7,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#121216"
+    color: "#151318"
     property int focusRow: 0
 
     component PairRow: RowLayout {
@@ -27,22 +27,22 @@ Rectangle {
             Layout.preferredWidth: 250
             implicitHeight: 70
             radius: 20
-            color: row.isOn ? "#A9C7F7" : "#26242C"
+            color: row.isOn ? "#EFECE6" : "#221F26"
             Behavior on color { ColorAnimation { duration: 160 } }
-            Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: row.label; color: row.isOn ? "#14243F" : "#F3F1EC"; font.family: "Instrument Serif"; font.pixelSize: 24 }
+            Text { anchors.verticalCenter: parent.verticalCenter; x: 24; text: row.label; color: row.isOn ? "#141316" : "#EFECE6"; font.family: "Hanken Grotesk"; font.weight: Font.DemiBold; font.pixelSize: 24 }
             MouseArea { anchors.fill: parent; onClicked: input.forceActiveFocus() }
         }
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 70
             radius: 20
-            color: row.isOn ? "#A9C7F7" : "#26242C"
+            color: row.isOn ? "#EFECE6" : "#221F26"
             Behavior on color { ColorAnimation { duration: 160 } }
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 8
                 radius: 13
-                color: row.isOn ? "#1B2433" : "#34313B"
+                color: row.isOn ? "#221F26" : "#2C2931"
                 // Calamares'in kendi QML sayfaları gibi Controls.TextField: klavye odağı
                 // QQuickWidget içinde güvenilir şekilde buraya gelir
                 TextField {
@@ -51,14 +51,14 @@ Rectangle {
                     leftPadding: 18
                     rightPadding: 18
                     verticalAlignment: TextInput.AlignVCenter
-                    color: "#F3F1EC"
-                    font.family: row.monoFont ? "Geist Mono" : "Geist"
+                    color: "#EFECE6"
+                    font.family: row.monoFont ? "Hanken Grotesk" : "Hanken Grotesk"
                     font.pixelSize: 16
                     font.letterSpacing: row.secret ? 3 : 0
                     echoMode: row.secret ? TextInput.Password : TextInput.Normal
                     passwordCharacter: "●"
                     selectByMouse: true
-                    selectionColor: "#A9C7F7"
+                    selectionColor: "#EFECE6"
                     background: Item {}
                     onActiveFocusChanged: if (activeFocus) page.focusRow = row.rowIndex
                     onTextEdited: row.edited(text)
@@ -80,8 +80,8 @@ Rectangle {
             horizontalAlignment: Text.AlignHCenter
             textFormat: Text.StyledText
             text: "Seni<br>tanıyalım"
-            color: "#F3F1EC"
-            font.family: "Instrument Serif"
+            color: "#EFECE6"
+            font.family: "Hanken Grotesk"; font.weight: Font.DemiBold
             font.pixelSize: 56
             lineHeight: 0.95
         }
@@ -106,8 +106,8 @@ Rectangle {
                 return ""
             }
             text: problem || "Şifren bu bilgisayarda yönetici işlemleri için de kullanılır."
-            color: problem ? "#F7A8A8" : "#8E8B93"
-            font.family: "Geist"
+            color: problem ? "#EC9C90" : "#8C8882"
+            font.family: "Hanken Grotesk"
             font.pixelSize: 13
         }
     }

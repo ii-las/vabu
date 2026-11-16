@@ -56,6 +56,15 @@ shot() { sleep "${2:-1.3}"; grim "$OUT/$1.png" 2>>"$OUT/grim.log" || echo "gör�
 call() { qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || echo "ipc başarısız: $*"; }
 yaz()  { command -v wtype >/dev/null && wtype "$@" 2>/dev/null; sleep 0.4; }
 
+# Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
+KOPYA="$HOME/kabuk"
+cp -r "$SHELL_DIR" "$KOPYA"
+cp "$(dirname "$0")/derle.qml" "$KOPYA/derle.qml"
+VABU_QML_DOSYALARI="$(cd "$KOPYA" && ls *.qml | grep -v '^derle.qml$' | paste -sd, -)" \
+    timeout 60 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1
+echo "=== derleme"
+sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/derle.log"
+
 qs -p "$SHELL_DIR" >"$OUT/shell.log" 2>&1 &
 sleep 10
 shot 01-masaustu 0
@@ -140,6 +149,11 @@ if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
     fi
 fi
 
+# Önyükleme menüsünün parçaları (gözle bakmak için)
+if [[ -d /boot/grub2/themes/vabu ]]; then
+    mkdir -p "$OUT/grub" && cp /boot/grub2/themes/vabu/* "$OUT/grub/" 2>/dev/null
+fi
+
 echo "=== kabuk kaydı"
 cat "$OUT/shell.log"
 for f in settings greeter shell-niri; do
@@ -150,6 +164,10 @@ ls -la "$OUT"
 # Yüklenmeyi engelleyen hatalar derlemeyi durdurur; diğerleri uyarı olarak görünür
 fatal='Failed to load|is not a type|non-existent property|Cannot assign to|is not installed|unavailable|Unexpected token|Syntax error'
 status=0
+if grep -q "DERLEME-HATASI" "$OUT/derle.log" 2>/dev/null; then
+    echo "::error::derlenmeyen QML dosyaları var"
+    status=1
+fi
 for f in shell settings greeter shell-niri; do
     [[ -f "$OUT/$f.log" ]] || continue
     if grep -En "$fatal" "$OUT/$f.log"; then
