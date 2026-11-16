@@ -52,9 +52,10 @@ Singleton {
         if (name.startsWith(q)) return 80
         if (name.split(/[\s\-_.:]/).some(w => w.startsWith(q))) return 60
         if (name.includes(q)) return 40
-        if (a.kw.includes(q)) return 25
+        // anahtar kelime ve özet: yalnızca kelime başında eşleşme
+        if ((" " + a.kw).includes(" " + q)) return 25
         if (a.key.includes(q)) return 15
-        if (a.summary.toLowerCase().includes(q)) return 8
+        if ((" " + a.summary.toLowerCase()).includes(" " + q)) return 8
         return 0
     }
 

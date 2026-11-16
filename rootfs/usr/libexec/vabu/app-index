@@ -107,6 +107,18 @@ def components(path):
         elem.clear()
 
 
+def keywords(elem):
+    """Yalnızca arayüz dilindeki ve dilsiz (İngilizce) anahtar kelimeler; yoksa arama gürültülü olur."""
+    out = set()
+    for group in elem.findall("keywords"):
+        glang = group.get(XML_LANG)
+        for k in group.findall("keyword"):
+            lang = k.get(XML_LANG) or glang
+            if k.text and lang in (None, "en", "C", LANG):
+                out.add(clean(k.text).lower())
+    return out
+
+
 def clean(text):
     return " ".join((text or "").split())
 
@@ -155,7 +167,7 @@ def main():
                 return ""
 
             kind = "fusion" if origin.startswith("rpmfusion") else "fedora"
-            kws = {clean(k.text).lower() for k in c.iter("keyword") if k.text}
+            kws = keywords(c)
             add(cid.lower().removesuffix(".desktop"), name, pick(c, "summary"), icon_of(c, cached),
                 kws, kind + "=" + pkg)
 
@@ -178,7 +190,7 @@ def main():
                         return p
                 return ""
 
-            kws = {clean(k.text).lower() for k in c.iter("keyword") if k.text}
+            kws = keywords(c)
             add(appid.lower(), name, pick(c, "summary"), icon_of(c, cached), kws, "flathub=" + appid)
 
     os.makedirs(CACHE, exist_ok=True)
