@@ -9,6 +9,15 @@ on:
     paths-ignore: ["docs/**", "**.md", "packaging/quickshell.spec", ".github/workflows/quickshell.yml"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      kurulum:
+        description: "Kurulum testi: sanal diske kur, QEMU'da aç (uzun sürer)"
+        type: boolean
+        default: false
+      denemeler:
+        description: "Kurulum testinin denemeleri"
+        type: string
+        default: "uefi uefi-sifreli bios"
 
 jobs:
   build:
@@ -57,6 +66,7 @@ jobs:
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/theme.txt
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/vabu-22.pf2
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-gunduz.jpg
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/libexec/vabu/install-system
 
       - name: Paketleri gerçekten kur (dosya çakışması, eksik bağımlılık)
         run: |
@@ -69,6 +79,7 @@ jobs:
           rpm -q vabu-release vabu-desktop vabu-shell vabu-fonts quickshell
           niri validate -c /etc/niri/config.kdl
           foot -c /usr/share/vabu/xdg/foot/foot.ini --check-config
+          /usr/libexec/vabu/install-system --disks | jq -e 'type == "array"'
           for f in "Hanken Grotesk" "Material Symbols Rounded" "JetBrains Mono"; do
             fc-list : family | grep -q "$f" || { echo "::error::yazı tipi eksik: $f"; exit 1; }
           done
@@ -148,3 +159,64 @@ jobs:
           for srpm in ~/rpmbuild/SRPMS/vabu-*.src.rpm; do
             copr-cli build --nowait "${owner}/vabu" "$srpm"
           done
+
+  # Kurulum testi uzun sürer: elle (kurulum: true) ya da kurulum arka ucu değişince çalışır
+  degisiklik:
+    runs-on: ubuntu-24.04
+    outputs:
+      kurulum: ${{ steps.bak.outputs.kurulum }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: bak
+        env:
+          OLAY: ${{ github.event_name }}
+          ELLE: ${{ inputs.kurulum }}
+          ONCEKI: ${{ github.event.before }}
+          TABAN: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ "$OLAY" == workflow_dispatch ]]; then
+            sonuc="${ELLE:-false}"
+          else
+            taban="${TABAN:-$ONCEKI}"
+            git cat-file -e "${taban}^{commit}" 2>/dev/null || taban=HEAD~1
+            git diff --name-only "$taban" HEAD | tee /tmp/degisen
+            if grep -qxE 'rootfs/usr/libexec/vabu/install-system|tests/kurulum\.sh' /tmp/degisen; then sonuc=true; else sonuc=false; fi
+          fi
+          echo "kurulum=$sonuc" | tee -a "$GITHUB_OUTPUT"
+
+  # Canlı imaja benzeyen bir kökten sanal diske kurar, diski QEMU'da açar (tests/kurulum.sh)
+  kurulum:
+    needs: degisiklik
+    if: needs.degisiklik.outputs.kurulum == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Disk alanı ve çekirdek modülleri
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          moduller="btrfs dm_crypt overlay loop vfat"
+          sudo modprobe -a $moduller || {
+            sudo apt-get update && sudo apt-get install -y "linux-modules-extra-$(uname -r)" && sudo modprobe -a $moduller
+          }
+          ls -l /dev/kvm || echo "KVM yok, yazılım öykünmesi kullanılacak"
+          sudo mkdir -p /mnt/vabu
+          df -h / /mnt
+
+      - name: Kur ve aç
+        env:
+          DENEMELER: ${{ inputs.denemeler || 'uefi uefi-sifreli bios' }}
+        run: |
+          sudo podman run --rm --privileged -v /dev:/dev -v "$PWD":/work:Z -v /mnt/vabu:/srv \
+            "registry.fedoraproject.org/fedora:$(cat FEDORA_VERSION)" \
+            bash /work/tests/kurulum.sh /srv /work/kurulum $DENEMELER
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kurulum
+          path: kurulum
+          if-no-files-found: ignore
