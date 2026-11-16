@@ -108,6 +108,22 @@ jobs:
             fc-list : family | grep -q "$f" || { echo "::error::yazı tipi eksik: $f"; exit 1; }
           done
 
+      - name: niri ayarlarını doğrula
+        run: |
+          dnf -y install niri jq perl-interpreter
+          export VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in
+          bash rootfs/usr/libexec/vabu/niri-config --defaults -o /tmp/varsayilan.kdl
+          niri validate -c /tmp/varsayilan.kdl
+          # Tüm seçenekler dolu bir örnek de geçerli olmalı
+          mkdir -p /tmp/h/vabu
+          echo '{"xkbLayout":"tr,us","xkbVariant":"f,","xkbOptions":"grp:caps_toggle","naturalScroll":false,"gaps":20,"radius":0,"animations":false,
+                 "outputs":[{"name":"DP-1","mode":"2560x1440@165.000","scale":1.25,"x":0,"y":0,"vrr":true},{"name":"HDMI-A-1","off":true}]}' > /tmp/h/vabu/niri.json
+          echo '{"accent":"seftali"}' > /tmp/h/vabu/shell.json
+          XDG_CONFIG_HOME=/tmp/h bash rootfs/usr/libexec/vabu/niri-config
+          niri validate -c /tmp/h/niri/config.kdl
+          niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
+          niri validate -c rootfs/usr/share/vabu/recovery/niri.kdl
+
       - name: QML denetimi (qmllint)
         # Static lint runs before the longer runtime scenarios; both remain mandatory.
         run: |
@@ -147,22 +163,6 @@ jobs:
           name: ekran
           path: /tmp/ekran
           if-no-files-found: ignore
-
-      - name: niri ayarlarını doğrula
-        run: |
-          dnf -y install niri jq perl-interpreter
-          export VABU_NIRI_TEMPLATE=rootfs/usr/share/vabu/niri/config.kdl.in
-          bash rootfs/usr/libexec/vabu/niri-config --defaults -o /tmp/varsayilan.kdl
-          niri validate -c /tmp/varsayilan.kdl
-          # Tüm seçenekler dolu bir örnek de geçerli olmalı
-          mkdir -p /tmp/h/vabu
-          echo '{"xkbLayout":"tr,us","xkbVariant":"f,","xkbOptions":"grp:caps_toggle","naturalScroll":false,"gaps":20,"radius":0,"animations":false,
-                 "outputs":[{"name":"DP-1","mode":"2560x1440@165.000","scale":1.25,"x":0,"y":0,"vrr":true},{"name":"HDMI-A-1","off":true}]}' > /tmp/h/vabu/niri.json
-          echo '{"accent":"seftali"}' > /tmp/h/vabu/shell.json
-          XDG_CONFIG_HOME=/tmp/h bash rootfs/usr/libexec/vabu/niri-config
-          niri validate -c /tmp/h/niri/config.kdl
-          niri validate -c shell-system/usr/share/vabu/greeter/niri.kdl
-          niri validate -c rootfs/usr/share/vabu/recovery/niri.kdl
 
       - uses: actions/upload-artifact@v4
         with:

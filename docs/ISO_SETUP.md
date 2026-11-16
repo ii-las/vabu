@@ -1,20 +1,20 @@
 # ISO üretimi için gerekenler
 
-Bu belge hazırlıktır; bu çalışma ISO üretmez veya GitHub workflow başlatmaz.
+Bu belge, ayrıca yetkilendirilen geliştirme ISO derlemesi için hazırlık adımlarını açıklar. Gerçek VM testleri yapılmadan resmi sürüm yayını yapılmaz.
 
 ## Bu çalışmada okunan mevcut durum
 
 - Depo `ii-las/vabu`, public; varsayılan dal `main`.
 - GitHub'da `COPR_CONFIG` adlı secret mevcut. Yalnızca adı okundu; değeri alınmadı. Yeniden paylaşma veya bu sohbete yapıştırma.
-- Repository variables listesi boş: `COPR_KEY_SHA256` henüz tanımlı değil.
+- Repository variables listesi boş; kullanıcı `COPR_KEY_SHA256` değerini Secret olarak ekledi. Yalnızca Secret adı okundu; değeri alınmadı. Akış bu biçimi de kabul eder.
 - Son RPM işleri arasında başarılı işler var; bunlar bu yerel Codex değişikliklerinin derlendiği anlamına gelmez.
-- Kaynak `COPR_OWNER` dosyası `ii-las`, proje adı `vabu`, Fedora `45` diyor. Gerçek COPR hesabındaki projenin bunlarla aynı olduğunu doğrulamak gerekir.
+- Kullanıcı `ii-las/vabu` projesini doğruladı. COPR API üzerinden Fedora 45 x86_64 ve aarch64 hedeflerinin açık olduğu okundu.
 - Bu Mac `arm64`; aynı mimarideki VM için ISO hedefi `aarch64` olur. x86_64 ayrıca üretilebilir; bu başka mimaridir.
 
 ## Kullanıcının hazırlayacağı açık bilgiler
 
 1. [COPR projesini](https://copr.fedorainfracloud.org/coprs/ii-las/vabu/) hesabında aç; bunun gerçekten kullandığın proje olduğunu doğrula. Projen farklıysa yalnızca doğru proje bağlantısını gönder. Mevcut kodda owner değiştirilebilir ama proje adı `vabu` olarak tanımlıdır; farklı isim varsa birlikte uyarlanmalıdır.
-2. Projenin açık imza anahtarı/parmak izini güvenilen COPR proje yönetimi ekranından veya daha önce güvenilir biçimde kaydettiğin kayıttan doğrula. Açık anahtar herkese açıktır; özel anahtar/API token değildir. Aynı indirme dosyasının özetini hesaplamak tek başına kimliği kanıtlamaz.
+2. Varsa projenin açık imza anahtarı/parmak izini daha önce güvenilir biçimde kaydettiğin bağımsız bir kayıtla doğrula. COPR ekranında ayrıca bir parmak izi gösterildiği varsayılmaz. Böyle bir kayıt yoksa başlangıç güveni doğru proje adresi ve resmi COPR HTTPS hizmetidir; bu bağımsız anahtar doğrulaması değildir. Açık anahtar herkese açıktır; özel anahtar/API token değildir. Aynı indirme dosyasının özetini hesaplamak tek başına kimliği kanıtlamaz.
 3. Aşağıdaki yardımcı public key'i yalnızca bellekte okur; dosya kaydetmez, GPG'ye anahtar yüklemez, paket kurmaz ve GitHub ayarı yapmaz. Bu çalışmada `--fetch` çalıştırılmadı; testler yapay anahtar baytlarıyla yapıldı.
 
 ```sh
