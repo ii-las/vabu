@@ -61,3 +61,5 @@ python3 -B tests/stability.py
 | Performans/pil karşılaştırması | Aynı donanımda tekrarlanabilir ölçüm | Ölçüm aracı eklendi, kıyaslama yapılmadı |
 
 Sonraki hata düzeltmeleri: [STABILIZATION.md](STABILIZATION.md). Çalışma alanlarında gerçek pencere kimliği ayrı seçilebilir; ayarlar kilitli ve atomik ortak yardımcıdan yazılır. Fedora/Qt/donanım testlerinin durumu bu belgelerde açıkça ayrılır.
+
+Son hata düzeltmeleri ve yeni özelliklerin kapsamı: [DESKTOP_EXPANSION.md](DESKTOP_EXPANSION.md). ISO sonrası deneme sırası: [VM_VALIDATION.md](VM_VALIDATION.md).

@@ -3,6 +3,8 @@
 import fcntl
 import json
 import os
+import runpy
+import uuid
 from pathlib import Path
 import stat
 import subprocess
@@ -10,6 +12,8 @@ import sys
 import tempfile
 import time
 
+
+EVENTS=runpy.run_path(str(Path(__file__).with_name('update-events')),run_name='manual_events')
 
 def folder():
     return Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'vabu'
@@ -42,6 +46,7 @@ def save(data):
         with os.fdopen(fd, 'w') as stream:
             json.dump(data, stream); stream.write('\n'); stream.flush(); os.fsync(stream.fileno())
         os.replace(temporary, target / 'update-result.json')
+        EVENTS['record'](data,'manual',data.get('eventId'))
     finally:
         if os.path.exists(temporary): os.unlink(temporary)
 
@@ -60,7 +65,7 @@ def update():
         try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             print('Bu kullanıcı için güncelleme zaten çalışıyor.', file=sys.stderr); return 1
-        data = {'format':1, 'state':'running', 'startedAt':int(time.time()), 'phases':[]}
+        data = {'format':1, 'state':'running', 'startedAt':int(time.time()), 'phases':[], 'eventId':uuid.uuid4().hex}
         save(data)
         phases = [('rpm', privileged(['/usr/bin/dnf', 'upgrade', '--refresh', '-y'])),
                   ('flatpak-user', ['flatpak', 'update', '--user', '-y', '--noninteractive']),
@@ -88,7 +93,7 @@ def update():
 if __name__ == '__main__':
     try:
         if sys.argv[1:] == ['run']: sys.exit(update())
-        elif sys.argv[1:] == ['status']: print(json.dumps({'result':status()}))
+        elif sys.argv[1:] == ['status']: print(json.dumps({'result':status(),'history':EVENTS['history']()}))
         else: sys.exit(2)
     except (OSError, ValueError):
         print('Güncelleme durumu kaydedilemedi; işlem durduruldu.', file=sys.stderr)

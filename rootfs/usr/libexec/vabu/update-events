@@ -1,0 +1,109 @@
+#!/usr/bin/python3 -I
+"""Bounded, redacted update records shared by manual updates, timers and DNF hooks."""
+import fcntl
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import uuid
+
+SOURCES=('manual','background-rpm','background-flatpak','background-distrobox','external-rpm')
+STATES=('running','started','success','failed','interrupted','skipped','observed')
+COMMANDS={
+ 'background-rpm':['/usr/bin/dnf','upgrade','--refresh','--downloadonly','-y','-q'],
+ 'background-flatpak':['/usr/bin/flatpak','update','--user','--noninteractive','-y'],
+ 'background-distrobox':['/usr/bin/distrobox','upgrade','--all']
+}
+
+
+def folder(system=False):
+ return Path('/var/lib/vabu') if system else Path(os.environ.get('XDG_STATE_HOME',str(Path.home()/'.local/state')))/'vabu'
+
+
+def sanitize(data):
+ if not isinstance(data,dict) or data.get('source') not in SOURCES or data.get('state') not in STATES:return None
+ token=data.get('id','')
+ if not isinstance(token,str) or len(token)!=32 or any(c not in '0123456789abcdef' for c in token):return None
+ result={'id':token,'source':data['source'],'state':data['state']}
+ for key in ('startedAt','finishedAt'):
+  if key in data and type(data[key]) is int and data[key]>=0:result[key]=data[key]
+ phases=data.get('phases',[])
+ if not isinstance(phases,list):return None
+ result['phases']=[{'phase':v['phase'],'exitCode':v['exitCode']} for v in phases[:8] if isinstance(v,dict) and v.get('phase') in ('rpm','flatpak-user','flatpak-system','distrobox') and type(v.get('exitCode')) is int]
+ return result
+
+
+def read(system=False):
+ path=folder(system)/'update-history.json'
+ try:
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+  with os.fdopen(fd) as stream:
+   info=os.fstat(stream.fileno())
+   if not stat.S_ISREG(info.st_mode) or info.st_size>131072 or info.st_uid not in (0,os.getuid()) or info.st_mode & 0o022:return []
+   data=json.loads(stream.read(131073))
+  if not isinstance(data,list):return []
+  return [clean for row in data[:50] if (clean:=sanitize(row)) is not None]
+ except (OSError,ValueError):return []
+
+
+def record(data,source,token=None):
+ if source not in SOURCES:raise ValueError('Bilinmeyen güncelleme kaynağı.')
+ system=os.geteuid()==0
+ target=folder(system);target.mkdir(mode=0o755 if system else 0o700,parents=True,exist_ok=True)
+ token=token or uuid.uuid4().hex
+ clean=sanitize({**data,'source':source,'id':token})
+ if clean is None:raise ValueError('Geçersiz güncelleme kaydı.')
+ lockfd=os.open(target/'.events.lock',os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+ with os.fdopen(lockfd,'r+') as lock:
+  info=os.fstat(lock.fileno())
+  if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid():raise ValueError('Güvensiz kayıt kilidi.')
+  fcntl.flock(lock,fcntl.LOCK_EX)
+  rows=[clean]+[row for row in read(system) if row['id']!=token]
+  fd,name=tempfile.mkstemp(prefix='.events-',dir=target)
+  try:
+   with os.fdopen(fd,'w') as stream:json.dump(rows[:50],stream);stream.flush();os.fsync(stream.fileno())
+   os.chmod(name,0o644 if system else 0o600);os.replace(name,target/'update-history.json')
+  finally:
+   if os.path.exists(name):os.unlink(name)
+ return token
+
+
+def history():
+ rows=read(False)+read(True)
+ return sorted({row['id']:row for row in rows}.values(),key=lambda row:row.get('startedAt',0),reverse=True)[:50]
+
+
+def run(source):
+ if source not in COMMANDS or (source=='background-rpm' and os.geteuid()!=0):raise ValueError('Geçersiz güncelleme görevi.')
+ data={'state':'running','startedAt':int(time.time()),'phases':[]}
+ token=record(data,source)
+ lock=None
+ try:
+  if source!='background-rpm':
+   path=folder(os.geteuid()==0)/'.update.lock'
+   lock=os.open(path,os.O_RDWR|os.O_CREAT|os.O_NOFOLLOW,0o600)
+   try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+   except BlockingIOError:
+    data['state']='skipped';data['finishedAt']=int(time.time());record(data,source,token);return 0
+  try:code=subprocess.run(COMMANDS[source]).returncode
+  except OSError:code=127
+  data['state']='success' if code==0 else 'failed'
+  data['phases']=[{'phase':{'background-rpm':'rpm','background-flatpak':'flatpak-user','background-distrobox':'distrobox'}[source],'exitCode':code}]
+ except KeyboardInterrupt:
+  data['state']='interrupted';code=130
+ finally:
+  if lock is not None:os.close(lock)
+  data['finishedAt']=int(time.time());record(data,source,token)
+ return code
+
+
+if __name__=='__main__':
+ try:
+  if len(sys.argv)==3 and sys.argv[1]=='run':sys.exit(run(sys.argv[2]))
+  elif sys.argv[1:]==['history']:print(json.dumps({'history':history()}))
+  else:sys.exit(2)
+ except (OSError,ValueError):print('Güncelleme kaydı oluşturulamadı.',file=sys.stderr);sys.exit(1)

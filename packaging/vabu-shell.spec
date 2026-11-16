@@ -17,6 +17,7 @@ Provides:       vabu-source-commit = %{vabu_source_commit}
 BuildRequires:  systemd-rpm-macros
 
 Requires:       quickshell
+Requires:       qt6-qtdeclarative
 Requires:       vabu-fonts
 Requires:       niri
 Requires:       swayidle

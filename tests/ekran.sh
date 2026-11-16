@@ -160,7 +160,7 @@ gorunum acik
 (vabu-settings look >"$OUT/settings.log" 2>&1 &)
 shot 20-ayarlar-gorunum 5
 n=21
-for page in display network sound power health desktop accessibility devices drivers apps updates keyboard users about; do
+for page in display network sound power health desktop notifications backup accessibility devices drivers apps updates keyboard users about; do
     vabu-settings "$page" >/dev/null 2>&1
     shot "$n-ayarlar-$page" 1.5
     n=$((n + 1))
@@ -175,7 +175,7 @@ for language in tr en; do
     for scale in 1 1.5; do
         printf '{"theme":"acik","onboardingDone":true,"language":"%s","textScale":%s,"reducedMotion":true,"highContrast":true}\n' "$language" "$scale" > "$HOME/.config/vabu/shell.json"
         sleep 2
-        for page in look display network sound power health desktop accessibility devices drivers apps updates keyboard users about; do
+        for page in look display network sound power health desktop notifications backup accessibility devices drivers apps updates keyboard users about; do
             vabu-settings "$page" >/dev/null 2>&1
             sleep 0.7
             audit="$(timeout 10 qs -p "$SHELL_DIR/settings.qml" ipc call settings audit 2>/dev/null)"

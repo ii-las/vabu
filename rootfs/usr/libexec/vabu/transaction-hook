@@ -1,0 +1,36 @@
+#!/usr/bin/python3 -I
+"""Fixed DNF transaction descriptions; no command-line interpolation into a shell."""
+import json
+from pathlib import Path
+import re
+import runpy
+import subprocess
+import sys
+import time
+
+EVENTS=runpy.run_path(str(Path(__file__).with_name('update-events')),run_name='dnf_events')
+
+
+def snap(args):
+ result=subprocess.run(['snapper','-c','root',*args],capture_output=True,text=True,timeout=20)
+ return result.stdout.strip() if result.returncode==0 else ''
+
+
+def main(args):
+ if args==['pre']:
+  token=EVENTS['record']({'state':'started','startedAt':int(time.time()),'phases':[]},'external-rpm')
+  pre=snap(['create','-t','pre','-p','-c','number','-d','Vabu RPM transaction']) if Path('/etc/snapper/configs/root').is_file() else '0'
+  print('tmp.vabu_pre='+(pre if re.fullmatch(r'\d+',pre) else '0'))
+  print('tmp.vabu_event='+token)
+ elif len(args)==3 and args[0]=='post' and re.fullmatch(r'\d+',args[1]) and re.fullmatch(r'[a-f0-9]{32}',args[2]):
+  if args[1]!='0':snap(['create','-t','post','--pre-number',args[1],'-c','number','-d','Vabu RPM transaction'])
+  previous=next((row for row in EVENTS['read'](True) if row['id']==args[2]),{})
+  EVENTS['record']({'state':'observed','startedAt':previous.get('startedAt',int(time.time())),'finishedAt':int(time.time()),'phases':[]},'external-rpm',args[2])
+ else:raise ValueError('Geçersiz işlem kancası.')
+
+
+if __name__=='__main__':
+ try:main(sys.argv[1:])
+ except (OSError,ValueError,subprocess.SubprocessError):
+  # A monitoring failure must never interrupt a package transaction.
+  print('Vabu işlem kaydı veya kök anlık görüntüsü oluşturulamadı.',file=sys.stderr)

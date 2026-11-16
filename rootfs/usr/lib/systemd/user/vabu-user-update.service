@@ -5,6 +5,6 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/flatpak update --user --noninteractive -y
-ExecStart=-/usr/bin/distrobox upgrade --all
+ExecStart=/usr/libexec/vabu/update-events run background-flatpak
+ExecStart=-/usr/libexec/vabu/update-events run background-distrobox
 Nice=19

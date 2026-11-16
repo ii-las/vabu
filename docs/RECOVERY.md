@@ -56,3 +56,5 @@ Gerçek testlerden sonra depo yöneticisi GitHub repository variable `RELEASE_VA
 ```
 
 `tools/validate-release.py` tüm tablo anahtarları için `passed` ve HTTPS kanıt bağlantısı ister. Commit, Fedora ve mimari birebir uyuşmalıdır. Kayıt kaynağın dışında tutulur; böylece test kaydı eklemek test edilen commit'i değiştirmez. İşlem insanın beyanını ve kaydın eksiksizliğini denetler; kanıtın gerçekliğini kendiliğinden kanıtlamaz. Eksik kayıt `v*` etiketli ISO/yayın işini derlemeden önce durdurur. Bu değişiklik herhangi bir kayıt oluşturmadı, GitHub değişkeni ayarlamadı veya yayın başlatmadı.
+
+Son hata düzeltmeleri ve yeni özelliklerin kapsamı: [DESKTOP_EXPANSION.md](DESKTOP_EXPANSION.md). ISO sonrası deneme sırası: [VM_VALIDATION.md](VM_VALIDATION.md).

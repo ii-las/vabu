@@ -16,10 +16,14 @@ ColumnLayout {
     readonly property bool checkFailed: rpmError !== "" || flatError !== ""
     property bool autoDownload: true
     property var snapshots: []
+    property string snapshotsError: ""
     property var lastUpdate: null
+    property var history: []
+    property var snapshotUsage: ({})
+    Process { id: usageProbe; running: true; command: ["/usr/libexec/vabu/desktop-measures","snapshots"]; stdout: StdioCollector { onStreamFinished: { try { page.snapshotUsage=JSON.parse(text) } catch(e) {} } } }
     property string rebootState: "unknown"
     function refreshResult() { if (!resultProbe.running) resultProbe.running = true; if (!rebootProbe.running) rebootProbe.running = true }
-    Process { id: resultProbe; command: ["/usr/libexec/vabu/update","status"]; stdout: StdioCollector { onStreamFinished: { try { page.lastUpdate = JSON.parse(text).result } catch(e) { page.lastUpdate = null } } } }
+    Process { id: resultProbe; command: ["/usr/libexec/vabu/update","status"]; stdout: StdioCollector { onStreamFinished: { try { const data=JSON.parse(text); page.lastUpdate=data.result; page.history=data.history || [] } catch(e) { page.lastUpdate = null } } } }
     Process { id: rebootProbe; command: ["/usr/libexec/vabu/system-check","reboot"]; stdout: StdioCollector { onStreamFinished: { try { page.rebootState = JSON.parse(text).reboot } catch(e) { page.rebootState = "unknown" } } } }
     Timer { interval: 10000; running: true; repeat: true; onTriggered: page.refreshResult() }
 
@@ -75,6 +79,8 @@ ColumnLayout {
     }
     Process {
         id: snaps
+        onStarted: page.snapshotsError=""
+        onExited: code => { if (code !== 0) page.snapshotsError=Lang.t("Snapshot bilgisi okunamadı.") }
         command: ["snapper", "-c", "root", "--jsonout", "list"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -165,13 +171,25 @@ ColumnLayout {
     }
 
     Group {
-        title: Lang.t("Son güncelleme sonucu")
+        title: Lang.t("Son elle güncelleme sonucu")
         note: page.lastUpdate ? Lang.t(({success:"Tamamlandı",failed:"Başarısız",interrupted:"Kesildi",running:"Çalışıyor"})[page.lastUpdate.state] || "Bilinmiyor") : Lang.t("Henüz kayıt yok")
         Repeater {
             model: page.lastUpdate?.phases ?? []
-            delegate: SettingRow { required property var modelData; label: modelData.phase; sub: Lang.t("Çıkış kodu") + ": " + modelData.exitCode }
+            delegate: SettingRow { required property var modelData; label: Lang.t(({rpm:"Sistem paketleri","flatpak-user":"Kullanıcı uygulamaları","flatpak-system":"Sistem uygulamaları",distrobox:"Distrobox kutuları"})[modelData.phase] || "Güncelleme"); sub: Lang.t("Çıkış kodu") + ": " + modelData.exitCode }
         }
         SettingRow { label: Lang.t("Yeniden başlatma"); sub: Lang.t(({required:"Öneriliyor", "not-required":"Gerekmiyor",unknown:"Denetlenemedi"})[page.rebootState] || "Denetlenemedi") }
+    }
+    Group {
+        title: Lang.t("Güncelleme geçmişi")
+        note: Lang.t("Elle, arka planda ve DNF üzerinden yapılan işlemlerin son 50 kaydı. Başlatıldı durumu başarı anlamına gelmez. Paket adları ve ham günlükler saklanmaz.")
+        Repeater {
+            model: page.history
+            delegate: SettingRow {
+                required property var modelData
+                label: Lang.t(({manual:"Elle güncelleme","background-rpm":"Arka plan indirme","background-flatpak":"Otomatik Flatpak","background-distrobox":"Otomatik Distrobox","external-rpm":"RPM işlemi"})[modelData.source] || "Güncelleme")
+                sub: Lang.t(({running:"Başlatıldı; sonuç bildirilmedi",started:"Başlatıldı; sonuç bildirilmedi",success:"Tamamlandı",failed:"Başarısız",interrupted:"Kesildi",skipped:"Diğer güncelleme nedeniyle atlandı",observed:"İşlem sonu kaydedildi; sonuç ayrıca denetlenmeli"})[modelData.state] || "Bilinmiyor") + " · " + new Date(modelData.startedAt*1000).toLocaleString(Config.language === "en" ? "en-GB" : "tr-TR")
+            }
+        }
     }
     // Paket satırı: ad solda, sürüm sağda
     component PackageRow: Item {
@@ -220,7 +238,16 @@ ColumnLayout {
     }
 
     Group {
+        title: Lang.t("Disk ve snapshot kullanımı")
+        note: Lang.t("Paylaşılan snapshot blokları toplanmaz. Kullanılan alan ölçülemiyorsa sıfır gösterilmez. Bu sayfa dosya silmez veya temizleme çalıştırmaz.")
+        SettingRow { label: Lang.t("Kök diskte boş alan"); sub: page.snapshotUsage.disk ? (page.snapshotUsage.disk.available / 1073741824).toFixed(1) + " GiB · " + page.snapshotUsage.disk.percent : Lang.t("Denetlenemedi") }
+        Repeater { model: Object.keys(page.snapshotUsage.policy || {}); delegate: SettingRow { required property string modelData; label: Lang.t(({NUMBER_LIMIT:"Tutulacak anlık görüntüler",NUMBER_LIMIT_IMPORTANT:"Önemli görüntü sınırı",SPACE_LIMIT:"Snapshot alan sınırı",FREE_LIMIT:"Boş alan hedefi"})[modelData] || modelData); sub: page.snapshotUsage.policy[modelData] } }
+        Repeater { model: page.snapshotUsage.snapshots || []; delegate: SettingRow { required property var modelData; label: "#" + modelData.number; sub: modelData.usedSpace === null ? Lang.t("Alan ölçümü sunulmuyor") : modelData.usedSpace } }
+        PillButton { label: Lang.t("Yeniden denetle"); enabled: !usageProbe.running; onClicked: usageProbe.running=true }
+    }
+    Group {
         title: Lang.t("Anlık görüntüler")
+        SettingRow { visible: page.snapshotsError !== ""; label: page.snapshotsError }
         note: Lang.t("Anlık görüntüler ayrı /boot bölümünü kapsamaz. Otomatik tam sistem geri alma henüz desteklenmiyor.")
         Repeater {
             model: page.snapshots
@@ -232,7 +259,7 @@ ColumnLayout {
             }
         }
         SettingRow {
-            visible: page.snapshots.length === 0
+            visible: page.snapshots.length === 0 && !page.snapshotsError
             label: Lang.t("Henüz geri alma noktası yok")
         }
     }

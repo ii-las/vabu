@@ -1,0 +1,58 @@
+#!/usr/bin/python3 -I
+"""Resolve saved monitors by identity, refusing missing or ambiguous matches."""
+import hashlib
+import json
+from pathlib import Path
+import runpy
+import subprocess
+import sys
+
+
+def query():
+ result=subprocess.run(['niri','msg','-j','outputs'],capture_output=True,text=True,timeout=5,check=True)
+ data=json.loads(result.stdout)
+ if not isinstance(data,dict) or len(data)>32 or any(not isinstance(v,dict) for v in data.values()):raise ValueError('Ekran bilgisi okunamadı.')
+ return data
+
+
+def identity(output):
+ parts=[output.get(k) or '' for k in ('make','model','serial')]
+ if not all(isinstance(v,str) for v in parts) or not any(parts):return None
+ return hashlib.sha256(json.dumps(parts,ensure_ascii=False).encode()).hexdigest()
+
+
+def save(draft,connected):
+ if not isinstance(draft,dict) or set(draft)!=set(connected):raise ValueError('Ekranlar değişti; yeniden denetle.')
+ validate=runpy.run_path(str(Path(__file__).with_name('config-store')),run_name='profiles_validation')['validate_outputs']
+ validate([dict(state,name=name) for name,state in draft.items()])
+ return {'outputs':draft,'identities':{name:identity(connected[name]) for name in draft}}
+
+
+def resolve(profile,connected):
+ if not isinstance(profile,dict) or not isinstance(profile.get('outputs'),dict):raise ValueError('Geçersiz profil.')
+ saved=profile['outputs']; identities=profile.get('identities')
+ if not identities:
+  if set(saved)!=set(connected):raise ValueError('Eski profilin bağlantıları uyuşmuyor; yeni profil kaydet.')
+  return {'outputs':saved,'legacy':True}
+ if not isinstance(identities,dict) or set(identities)!=set(saved) or len(saved)!=len(connected):raise ValueError('Profilin ekranları bağlı değil.')
+ mapping={}; used=set()
+ for old in saved:
+  fingerprint=identities[old]
+  if fingerprint is None:
+   raise ValueError('Bu ekranın kimliği belirlenemiyor; düzeni elle seç ve yeni profil kaydet.')
+  matches=[name for name,item in connected.items() if identity(item)==fingerprint]
+  if len(matches)!=1 or matches[0] in used:raise ValueError('Ekran kimliği eksik veya belirsiz; düzeni elle seç.')
+  mapping[old]=matches[0];used.add(matches[0])
+ return {'outputs':{mapping[name]:state for name,state in saved.items()},'legacy':False}
+
+
+if __name__=='__main__':
+ try:
+  if len(sys.argv)!=3:raise ValueError('Geçersiz profil işlemi.')
+  data=json.loads(sys.argv[2]); connected=query()
+  if sys.argv[1]=='save':result=save(data,connected)
+  elif sys.argv[1]=='load':result=resolve(data,connected)
+  else:raise ValueError('Geçersiz profil işlemi.')
+  print(json.dumps(result,ensure_ascii=False))
+ except (OSError,ValueError,TypeError,subprocess.SubprocessError):
+  print('Profil eşleştirilemedi. Ekranları yeniden denetle veya düzeni elle seç.',file=sys.stderr);sys.exit(1)

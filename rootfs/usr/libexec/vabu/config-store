@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -I
 """Merge one settings patch under a process lock; retain the last valid document."""
 import fcntl
+import hashlib
 import json
 import math
 import os
@@ -45,7 +46,10 @@ def validate(document, data):
                    'clipboardEnabled', 'reducedMotion', 'highContrast', 'effects', 'restoreWorkspaceApps', 'onboardingDone')
         enums = {'theme': ('acik', 'koyu', 'otomatik'), 'language': ('tr', 'en'),
                  'sidebarSide': ('left', 'right'), 'accent': ('mavi', 'yesil', 'turuncu', 'pembe', 'grafit')}
-        ranges = {'sidebarWidth': (240, 360)}
+        ranges = {'sidebarWidth': (240, 360), 'focusUntil': (0, 9999999999999)}
+        policies=data.get('notificationPolicies',{})
+        if not isinstance(policies,dict) or len(policies)>512 or any(not isinstance(k,str) or not 1 <= len(k) <= 256 or any(ord(c)<32 for c in k) or v not in ('show','silent','block') for k,v in policies.items()):
+            raise ValueError('Geçersiz bildirim tercihi.')
         for prefix in ('ac', 'battery'):
             ranges.update({prefix + key: (0, 120) for key in ('Lock', 'Screen', 'Suspend')})
         if 'textScale' in data and (type(data['textScale']) not in (int, float) or data['textScale'] not in (1, 1.15, 1.3, 1.5)):
@@ -68,11 +72,21 @@ def validate(document, data):
                 if not isinstance(outputs, dict) or any(not isinstance(value, dict) for value in outputs.values()):
                     raise ValueError('Geçersiz profil ekranları.')
                 validate_outputs([dict(value, name=key) for key, value in outputs.items()])
+                if 'identities' in profile:
+                    identities=profile['identities']
+                    if not isinstance(identities,dict) or set(identities)!=set(outputs) or any(v is not None and (not isinstance(v,str) or not re.fullmatch(r'[a-f0-9]{64}',v)) for v in identities.values()):
+                        raise ValueError('Geçersiz ekran kimliği.')
         if data.get('location') is not None:
             location = data['location']
             if not isinstance(location, dict) or any(type(location.get(k)) not in (int, float) or not math.isfinite(location[k]) or abs(location[k]) > bound for k, bound in (('lat',90), ('lon',180))):
                 raise ValueError('Geçersiz konum.')
     elif document == 'niri':
+        if 'shortcuts' in data:
+            import runpy
+            shortcuts=runpy.run_path(str(Path(__file__).with_name('shortcuts')),run_name='shortcut_validation')
+            template=Path('/usr/share/vabu/niri/config.kdl.in')
+            if not template.is_file(): template=Path(__file__).parents[2]/'share/vabu/niri/config.kdl.in'
+            shortcuts['validate'](template.read_text(),data['shortcuts'])
         boolean = ('naturalScroll', 'animations')
         enums = {}
         ranges = {'gaps': (0, 64), 'radius': (0, 64)}
@@ -102,7 +116,7 @@ def validate(document, data):
 
 def read(path, document):
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     except FileNotFoundError:
         return {}
     with os.fdopen(fd, 'r') as stream:
@@ -127,7 +141,7 @@ def atomic(path, data):
         if os.path.exists(temporary): os.unlink(temporary)
 
 
-def transact(document, action, patch=None):
+def transact(document, action, patch=None, expected=None):
     if document not in ('shell', 'niri') or action not in ('read', 'patch', 'recover'):
         raise ValueError('Geçersiz ayar işlemi.')
     folder = Path(os.environ.get('XDG_CONFIG_HOME', str(Path.home() / '.config'))) / 'vabu'
@@ -158,6 +172,8 @@ def transact(document, action, patch=None):
             os.replace(path, target)
             data = saved
             atomic(path, data)
+        if expected is not None and hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False).encode()).hexdigest()!=expected:
+            raise ValueError('Ayarlar değişti; önizlemeyi yenile.')
         if action == 'patch':
             if not isinstance(patch, dict) or '_schemaVersion' in patch:
                 raise ValueError('Geçersiz ayar değişikliği.')
@@ -189,6 +205,9 @@ def main():
 
 if __name__ == '__main__':
     try: sys.exit(main())
-    except (ValueError, OSError, UnicodeError, RecursionError):
+    except ValueError as error:
+        print(json.dumps({'ok':False,'error':str(error)},ensure_ascii=False))
+        sys.exit(1)
+    except (OSError, UnicodeError, RecursionError):
         print(json.dumps({'ok': False, 'error': 'Ayar kaydı tamamlanamadı; dosyayı denetle.'}, ensure_ascii=False))
         sys.exit(1)

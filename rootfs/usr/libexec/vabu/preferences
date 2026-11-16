@@ -1,0 +1,85 @@
+#!/usr/bin/python3 -I
+"""Explicit, previewed settings transfer. No credentials, history, startup or live outputs."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import stat
+import sys
+from urllib.parse import unquote, urlsplit
+
+STORE=runpy.run_path(str(Path(__file__).with_name('config-store')),run_name='preferences_store')
+ALLOWED={
+ 'shell':set('theme accent sidebarSide sidebarWidth sidebarCompact focusCompact showSeconds showMedia reducedMotion highContrast effects textScale language pinned displayProfiles notificationPolicies acLock acScreen acSuspend batteryLock batteryScreen batterySuspend'.split()),
+ 'niri':set('xkbLayout xkbVariant xkbOptions naturalScroll gaps radius animations workspaces shortcuts'.split())
+}
+
+
+def digest(data):return hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+
+
+def path_for(value):
+ parsed=urlsplit(value)
+ if parsed.scheme:
+  if parsed.scheme!='file' or parsed.netloc not in ('','localhost') or parsed.query or parsed.fragment:raise ValueError('Yerel bir JSON dosyası seç.')
+  value=unquote(parsed.path)
+ path=Path(value).expanduser()
+ if not path.is_absolute() or path.suffix.lower()!='.json':raise ValueError('Yerel bir JSON dosyası seç.')
+ return path
+
+
+def read_record(value):
+ path=path_for(value)
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(fd) as stream:
+  if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode) or os.fstat(stream.fileno()).st_size>STORE['LIMIT']:raise ValueError('Dosya uygun değil veya çok büyük.')
+  record=json.loads(stream.read(STORE['LIMIT']+1))
+ if not isinstance(record,dict) or record.get('format')!='vabu-preferences-1' or not isinstance(record.get('document'),str) or record.get('document') not in ALLOWED or not isinstance(record.get('values'),dict):raise ValueError('Vabu ayar dosyası gerekli.')
+ document=record['document']; values=record['values']
+ if any(key not in ALLOWED[document] for key in values):raise ValueError('Aktarılması desteklenmeyen veya özel bir alan var.')
+ if any(v is None for v in values.values()):raise ValueError('Boş ayar değeri desteklenmiyor.')
+ STORE['validate'](document,values)
+ return record
+
+
+def current(document):
+ result=STORE['transact'](document,'read')
+ if not result['ok']:raise ValueError('Önce mevcut ayar dosyasını kurtar.')
+ return result['values']
+
+
+def preview(value):
+ record=read_record(value); data=current(record['document'])
+ changes=[{'key':key,'before':data.get(key),'after':item} for key,item in record['values'].items() if data.get(key)!=item]
+ return {'document':record['document'],'changes':changes,'fileDigest':digest(record),'baseDigest':digest(data)}
+
+
+def apply(value,file_digest,base_digest):
+ record=read_record(value)
+ if digest(record)!=file_digest:raise ValueError('Dosya değişti; önizlemeyi yenile.')
+ result=STORE['transact'](record['document'],'patch',record['values'],expected=base_digest)
+ if not result['ok']:raise ValueError(result['error'])
+ return {'ok':True,'document':record['document']}
+
+
+def export(document,value):
+ if document not in ALLOWED:raise ValueError('Bilinmeyen ayar grubu.')
+ data=current(document); values={k:v for k,v in data.items() if k in ALLOWED[document]}
+ STORE['validate'](document,values)
+ path=path_for(value)
+ if path.is_symlink():raise ValueError('Sembolik bağlantı üzerine yazılmaz.')
+ STORE['atomic'](path,{'format':'vabu-preferences-1','document':document,'values':values})
+ return {'ok':True}
+
+
+if __name__=='__main__':
+ try:
+  args=sys.argv[1:]
+  if len(args)==3 and args[0]=='export':result=export(*args[1:])
+  elif len(args)==2 and args[0]=='preview':result=preview(args[1])
+  elif len(args)==4 and args[0]=='apply':result=apply(*args[1:])
+  else:raise ValueError('Geçersiz aktarım işlemi.')
+  print(json.dumps(result,ensure_ascii=False))
+ except (OSError,ValueError,RecursionError):
+  print('Ayar aktarımı tamamlanamadı. Dosyayı ve önizlemeyi denetle.',file=sys.stderr);sys.exit(1)

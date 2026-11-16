@@ -18,6 +18,8 @@ ShellRoot {
         { key: "power", icon: "battery_charging_full", title: Lang.t("Güç ve uyku"), file: "SettingsPower.qml" },
         { key: "health", icon: "health_and_safety", title: Lang.t("Tanılama ve kurtarma"), file: "SettingsHealth.qml" },
         { key: "desktop", icon: "desktop_windows", title: Lang.t("Masaüstü"), file: "SettingsDesktop.qml" },
+        { key: "notifications", icon: "notifications", title: Lang.t("Bildirim tercihleri"), file: "SettingsNotifications.qml" },
+        { key: "backup", icon: "save", title: Lang.t("Ayar aktarımı"), file: "SettingsBackup.qml" },
         { key: "accessibility", icon: "accessibility_new", title: Lang.t("Erişilebilirlik ve dil"), file: "SettingsAccessibility.qml" },
         { key: "devices", icon: "devices", title: Lang.t("Cihazlar ve paylaşım"), file: "SettingsDevices.qml" },
         { key: "sound",    icon: "volume_up",         title: Lang.t("Ses"),                        file: "SettingsSound.qml" },

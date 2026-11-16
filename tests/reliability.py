@@ -314,8 +314,8 @@ class Reliability(unittest.TestCase):
     def test_update_exit_codes_in_javascript_runtime(self):
         import re
         source = (ROOT / 'shell/SettingsUpdates.qml').read_text()
-        handlers = re.findall(r'onExited: code => \{(.*?)\n        \}', source, re.S)
-        self.assertEqual(len(handlers), 3)
+        sections=[source[source.index('id: dnfCheck'):source.index('id: flatCheck')],source[source.index('id: flatCheck'):source.index('id: timer\n')]]
+        handlers=[re.search(r'onExited: code => \{(.*?)\n        \}',section,re.S)[1] for section in sections]
         script = "const assert = require('node:assert/strict'); const rpmErr={text:'depo hatası'}, flatErr={text:'ağ hatası'}; let page;\n"
         script += 'function rpmExit(code) {' + handlers[0] + '}\n'
         script += 'function flatExit(code) {' + handlers[1] + '}\n'

@@ -13,6 +13,8 @@ Singleton {
     readonly property var all: server.trackedNotifications.values
     readonly property int count: all.length
 
+    function keyFor(n) { return (n.desktopEntry || "").replace(/\.desktop$/, "") || ("name:" + (n.appName || "unknown")) }
+    function policyFor(n) { return (Config.values.notificationPolicies || {})[keyFor(n)] || "show" }
     function dismissPopup(n) {
         popups = popups.filter(p => p !== n)
     }
@@ -33,11 +35,13 @@ Singleton {
 
         onNotification: n => {
             for (const old of root.all.slice(0, Math.max(0, root.all.length - 99))) old.dismiss()
+            const policy = root.policyFor(n)
+            if (policy === "block") { n.dismiss(); return }
             n.tracked = true
             // Uygulama kapatınca ya da merkezden silinince nesne yok edilir; listeden de çıkar
             n.closed.connect(() => root.dismissPopup(n))
             const critical = n.urgency === NotificationUrgency.Critical
-            if (root.effectiveDnd && !critical) return
+            if (policy === "silent" || (root.effectiveDnd && !critical)) return
             root.popups = [n].concat(root.popups).slice(0, 4)
         }
     }

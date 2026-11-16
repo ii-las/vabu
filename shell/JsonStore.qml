@@ -39,19 +39,23 @@ Scope {
     Process {
         id: worker
         stdinEnabled: true
-        onStarted: if (root.active.action === "patch") write(JSON.stringify(root.active.changes) + "\n")
+        onStarted: if (root.active && root.active.action === "patch") write(JSON.stringify(root.active.changes) + "\n")
         stdout: StdioCollector { id: result }
         onExited: code => {
             deadline.stop()
             if (!root.active) return
             try {
                 const reply = JSON.parse(result.text)
+                if (!reply || typeof reply !== "object" || Array.isArray(reply) || typeof reply.ok !== "boolean") throw new Error("Invalid settings reply")
+                if (reply.ok && (!reply.values || typeof reply.values !== "object" || Array.isArray(reply.values))) throw new Error("Missing settings document")
+                if (reply.writable !== undefined && typeof reply.writable !== "boolean") throw new Error("Invalid settings state")
                 if (reply.values && typeof reply.values === "object" && !Array.isArray(reply.values)) { if (JSON.stringify(root.values) !== JSON.stringify(reply.values)) root.values = reply.values }
                 root.error = reply.error || ""
                 if (reply.writable !== undefined) root.writable = reply.writable
+                else if (root.active.action === "read") root.writable = code === 0 && reply.ok
                 root.canRecover = reply.canRecover === true
                 if (code === 0 && root.active.action !== "read") root.committed()
-            } catch(e) { root.error = "Ayar hizmeti yanıt vermedi." }
+            } catch(e) { root.error = "Ayar hizmeti yanıt vermedi."; root.writable = false }
             if (!root.ready) watched.reload()
             root.ready = true
             root.active = null

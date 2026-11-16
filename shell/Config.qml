@@ -21,6 +21,7 @@ Singleton {
     ]
 
     readonly property var values: store.values
+    readonly property bool ready: store.ready && store.writable
     readonly property string error: store.error
     readonly property bool canRecover: store.canRecover
     function recover() { store.recover() }
@@ -50,7 +51,13 @@ Singleton {
     // Gün yayı için konum; boşsa saat diliminden bulunur (bkz. Sun.qml).
     readonly property var location: values.location ?? null
 
-    readonly property bool focusMode: values.focusMode === true
+    property real focusClock: Date.now()
+    readonly property real focusUntil: Number(values.focusUntil) || 0
+    readonly property bool focusMode: values.focusMode === true || focusUntil > focusClock
+    function focusFor(minutes) { store.patch({focusMode:false, focusUntil:Date.now() + minutes * 60000}) }
+    function stopFocus() { store.patch({focusMode:false, focusUntil:null}) }
+    function setMany(changes) { store.patch(changes) }
+    Timer { interval: 1000; repeat: true; running: root.focusUntil > 0; onTriggered: { root.focusClock = Date.now(); if (root.focusUntil <= root.focusClock) store.patch({focusUntil:null}) } }
     readonly property bool clipboardEnabled: values.clipboardEnabled === true
     readonly property bool reducedMotion: values.reducedMotion ?? false
     readonly property bool highContrast: values.highContrast ?? false
@@ -60,6 +67,7 @@ Singleton {
     readonly property string language: values.language === "en" ? "en" : "tr"
 
     function set(key, value) {
+        if (key === "focusMode" && value === false) { stopFocus(); return }
         if (key === "sidebarCompact" && focusMode) key = "focusCompact"
         const change = {}
         change[key] = value === undefined ? null : value

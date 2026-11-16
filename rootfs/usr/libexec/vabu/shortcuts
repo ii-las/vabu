@@ -1,0 +1,81 @@
+#!/usr/bin/python3 -I
+"""Edit only allowlisted existing actions; no imported commands or shell fragments."""
+import json
+from pathlib import Path
+import re
+import sys
+
+CATALOG = {
+ 'terminal':('Terminal','Mod+Return'), 'launcher':('Ara ve başlat','Mod+Space'),
+ 'settings':('Ayarlar','Mod+Comma'), 'files':('Dosyalar','Mod+E'),
+ 'windows':('Pencereler','Mod+Tab'), 'clipboard':('Pano geçmişi','Mod+P'),
+ 'overview':('Genel bakış','Mod+O'), 'close':('Pencereyi kapat','Mod+Q'),
+ 'fullscreen':('Tam ekran','Mod+Shift+F'), 'notifications':('Bildirimler','Mod+N'),
+ 'control':('Kontrol merkezi','Mod+A'), 'session':('Oturum menüsü','Mod+Shift+E')
+}
+BIND = re.compile(r'^(\s+)([A-Za-z0-9_+]+)([^{}]*)(\{.*)$')
+
+
+def canonical(chord):
+ if not isinstance(chord,str) or len(chord)>80: raise ValueError('Geçersiz kısayol.')
+ parts=chord.split('+'); key=parts.pop(); mods=[]
+ aliases={'super':'Mod','mod':'Mod','ctrl':'Ctrl','control':'Ctrl','alt':'Alt','shift':'Shift'}
+ for part in parts:
+  mod=aliases.get(part.lower())
+  if mod is None or mod in mods: raise ValueError('Geçersiz değiştirici.')
+  mods.append(mod)
+ if not re.fullmatch(r'[A-Za-z0-9_]+',key): raise ValueError('Geçersiz tuş.')
+ return '+'.join([m for m in ('Mod','Ctrl','Alt','Shift') if m in mods]+[key.upper()])
+
+
+def binding_block(template):
+ marker='binds {\n'
+ if marker not in template:raise ValueError('Kısayol şablonu bulunamadı.')
+ prefix,rest=template.split(marker,1)
+ if '\n}' not in rest:raise ValueError('Kısayol şablonu geçersiz.')
+ body,suffix=rest.split('\n}',1)
+ return prefix+marker,body,'\n}'+suffix
+
+
+def validate(template, changes):
+ if not isinstance(changes,dict) or any(k not in CATALOG for k in changes):raise ValueError('Bilinmeyen kısayol eylemi.')
+ _,body,_=binding_block(template)
+ bindings=[match for line in body.splitlines() if (match:=BIND.match(line))]
+ defaults={canonical(value[1]):key for key,value in CATALOG.items()}
+ fixed={canonical(match[2]) for match in bindings if canonical(match[2]) not in defaults}
+ key_names={match[2].split('+')[-1].upper():match[2].split('+')[-1] for match in bindings}
+ used=set(fixed);result={}
+ for action,(_,default) in CATALOG.items():
+  chord=changes.get(action,default);normalized=canonical(chord)
+  if 'Mod' not in normalized.split('+')[:-1]:raise ValueError('Özel kısayol Super içermeli.')
+  if normalized in used:raise ValueError('Kısayol başka bir eylemle çakışıyor: '+chord)
+  key=normalized.split('+')[-1]
+  if not (re.fullmatch(r'[A-Z0-9]',key) or re.fullmatch(r'F([1-9]|[12][0-9]|3[0-5])',key) or key in key_names):raise ValueError('Desteklenmeyen tuş adı.')
+  used.add(normalized)
+  result[action]='+'.join(normalized.split('+')[:-1]+[key_names.get(key,key)])
+ return result
+
+
+def rewrite(template, changes):
+ resolved=validate(template,changes)
+ defaults={canonical(value[1]):key for key,value in CATALOG.items()}
+ prefix,body,suffix=binding_block(template)
+ lines=[]
+ for line in body.splitlines():
+  match=BIND.match(line)
+  if match:
+   action=defaults.get(canonical(match[2]))
+   if action:line=match[1]+resolved[action]+match[3]+match[4]
+  lines.append(line)
+ return prefix+'\n'.join(lines)+suffix
+
+
+if __name__=='__main__':
+ try:
+  if len(sys.argv)==4 and sys.argv[1]=='rewrite':
+   output,settings=map(Path,sys.argv[2:]); data=json.loads(settings.read_text()) if settings.is_file() else {}
+   output.write_text(rewrite(output.read_text(),data.get('shortcuts',{})))
+  elif sys.argv[1:]==['catalog']:
+   print(json.dumps([{'id':key,'label':value[0],'defaultKey':value[1]} for key,value in CATALOG.items()],ensure_ascii=False))
+  else:sys.exit(2)
+ except (OSError,ValueError) as error:print(str(error),file=sys.stderr);sys.exit(2)

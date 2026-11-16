@@ -47,3 +47,5 @@ Bu değişiklikte yerel sonuç: 25 güvenilirlik + 18 masaüstü + 23 sağlamla�
 Testlerde sistem/paket/Wayland komutları taklittir. Dosyalar ve Unix soketleri özel geçici klasörlerdedir. Kişisel pano, oturum, disk ve ağ kullanılmaz. macOS uygulama sandbox'ı Unix soketini engelliyorsa test için yalnızca bu geçici soket erişimi gerekir; bu, gerçek hizmetleri başlatmak anlamına gelmez.
 
 API dayanakları: [Quickshell Process](https://quickshell.org/docs/v0.2.1/types/Quickshell.Io/Process/), [Qt FocusScope](https://doc.qt.io/qt-6/qml-qtquick-focusscope.html), [niri pencere kuralları](https://niri-wm.github.io/niri/Configuration:-Window-Rules.html), [DNF5 needs-restarting](https://dnf5.readthedocs.io/en/latest/dnf5_plugins/needs_restarting.8.html), [Fedora dnf5-plugins](https://packages.fedoraproject.org/pkgs/dnf5/dnf5-plugins/).
+
+Son hata düzeltmeleri ve yeni özelliklerin kapsamı: [DESKTOP_EXPANSION.md](DESKTOP_EXPANSION.md). ISO sonrası deneme sırası: [VM_VALIDATION.md](VM_VALIDATION.md).

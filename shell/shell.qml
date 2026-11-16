@@ -94,7 +94,7 @@ ShellRoot {
 
     Timer {
         interval: 1500
-        running: !Config.values.onboardingDone && Quickshell.env("USER") !== "liveuser"
+        running: Config.ready && !Config.values.onboardingDone && Quickshell.env("USER") !== "liveuser"
         onTriggered: Ui.welcomeOpen = true
     }
     IpcHandler {

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 
 ColumnLayout {
     id: page
@@ -96,6 +97,29 @@ ColumnLayout {
     }
 
     NiriStatus { Layout.fillWidth: true }
+
+    Group {
+        title: Lang.t("Kısayol düzenleyicisi")
+        note: Lang.t("Super içeren birleşimleri kullan. Çakışan kısayollar kaydedilmez. Eylemler sabittir; özel komut çalıştırılmaz.")
+        property var catalog: []
+        id: editor
+        Process { running: true; command: ["/usr/libexec/vabu/shortcuts","catalog"]; stdout: StdioCollector { onStreamFinished: { try { editor.catalog = JSON.parse(text) } catch(e) {} } } }
+        Repeater {
+            model: editor.catalog
+            delegate: Group {
+                id: binding
+                required property var modelData
+                title: Lang.t(modelData.label)
+                Field { id: chord; Layout.fillWidth: true; text: (NiriConf.values.shortcuts ?? {})[binding.modelData.id] || binding.modelData.defaultKey }
+                Flow {
+                    Layout.fillWidth: true; spacing: 8
+                    PillButton { label: Lang.t("Kaydet"); onClicked: { const next = Object.assign({},NiriConf.values.shortcuts ?? {}); next[binding.modelData.id] = chord.text.trim(); NiriConf.set("shortcuts",next) } }
+                    PillButton { label: Lang.t("Varsayılana dön"); onClicked: { const next=Object.assign({},NiriConf.values.shortcuts ?? {}); delete next[binding.modelData.id]; NiriConf.set("shortcuts",next) } }
+                }
+            }
+        }
+        PillButton { label: Lang.t("Tüm kısayolları varsayılana döndür"); onClicked: NiriConf.set("shortcuts",{}) }
+    }
 
     Group {
         title: Lang.t("Kısayollar")

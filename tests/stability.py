@@ -20,7 +20,11 @@ LIB = ROOT / 'rootfs/usr/libexec/vabu'
 
 
 def load(name):
-    return runpy.run_path(str(LIB / name), run_name='test_module')
+    result=runpy.run_path(str(LIB / name), run_name='test_module')
+    if name=='update':
+        # CI may run as root; every event record must remain inside this test's XDG directory.
+        result['EVENTS']['record'].__globals__['folder']=lambda system=False:Path(os.environ['XDG_STATE_HOME'])/'vabu'
+    return result
 
 
 class Stability(unittest.TestCase):

@@ -11,6 +11,12 @@ ColumnLayout {
         title: Lang.t("Odak modu")
         note: Lang.t("Bildirimleri susturur ve istersen yan paneli daraltır. Diğer ayarlarını değiştirmeden kapatılabilir.")
         SettingRow { label: Lang.t("Odak modu"); Toggle { checked: Config.focusMode; onToggled: Config.set("focusMode", !checked) } }
+        Flow {
+            Layout.fillWidth: true; spacing: 8
+            Repeater { model: [25,50,90]; delegate: PillButton { required property int modelData; label: modelData + (Config.language === "en" ? " min" : " dk"); onClicked: Config.focusFor(modelData) } }
+            PillButton { visible: Config.focusMode; label: Lang.t("Odağı bitir"); onClicked: Config.stopFocus() }
+        }
+        Text { font.family: Theme.sans; font.pixelSize: Math.round(14 * Config.textScale); visible: Config.focusUntil > Config.focusClock; Layout.fillWidth: true; textFormat: Text.PlainText; color: Theme.soft; text: Lang.t("Kalan dakika") + ": " + Math.ceil((Config.focusUntil - Config.focusClock) / 60000) }
         SettingRow { label: Lang.t("Odakta paneli daralt"); Toggle { checked: Config.values.focusCompact ?? true; onToggled: Config.set("focusCompact", !checked) } }
     }
     Group {
@@ -52,7 +58,7 @@ ColumnLayout {
                         }
                         Field { id: appIdInput; visible: assignment.editing; Layout.fillWidth: true; placeholder: Lang.t("Pencere uygulama kimliği (app_id)"); text: typeof assignment.modelData === "string" ? assignment.desktopId : assignment.modelData.appId }
                         Field { id: titleInput; visible: assignment.editing; Layout.fillWidth: true; placeholder: Lang.t("Tam pencere başlığı (isteğe bağlı)"); text: typeof assignment.modelData === "string" ? "" : (assignment.modelData.title || "") }
-                        Text { visible: assignment.editing; Layout.fillWidth: true; wrapMode: Text.Wrap; textFormat: Text.PlainText; color: Theme.soft; text: Lang.t("Açık bir pencereyi seç veya kimliği elle gir. Paylaşılan org.quickshell kimliğinde başlık da gerekir.") }
+                        Text { font.family: Theme.sans; font.pixelSize: Math.round(14 * Config.textScale); visible: assignment.editing; Layout.fillWidth: true; wrapMode: Text.Wrap; textFormat: Text.PlainText; color: Theme.soft; text: Lang.t("Açık bir pencereyi seç veya kimliği elle gir. Paylaşılan org.quickshell kimliğinde başlık da gerekir.") }
                         Repeater {
                             model: assignment.editing ? Niri.windows.filter(w => w.app_id).slice(0,16) : []
                             delegate: PillButton {

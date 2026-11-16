@@ -125,6 +125,8 @@ perl -pe '
     s/\@\@WORKSPACES\@\@/$ENV{WORKSPACES}/g;
 ' "$TEMPLATE" > "$tmp"
 
+python3 -I "$(dirname "$0")/shortcuts" rewrite "$tmp" "$SETTINGS" || exit 2
+
 # Doğrula: hatalı bir ayar oturumu bozmasın
 if ((!defaults)) && ! command -v niri >/dev/null; then
     echo "niri doğrulayıcısı eksik; mevcut ayar korunuyor." >&2

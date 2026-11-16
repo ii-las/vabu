@@ -7,7 +7,7 @@ ConditionACPower=true
 [Service]
 Type=oneshot
 # Sadece indirir; kurulum Vabu Ayarlar > Güncellemeler'den ya da `vabu update` ile yapılır.
-ExecStart=/usr/bin/dnf upgrade --refresh --downloadonly -y -q
+ExecStart=/usr/libexec/vabu/update-events run background-rpm
 # Flatpak kurulumu kullanıcının başlattığı vabu update işlemine bırakılır.
 Nice=19
 IOSchedulingClass=idle

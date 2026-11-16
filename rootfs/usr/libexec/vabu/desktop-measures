@@ -1,0 +1,108 @@
+#!/usr/bin/python3 -I
+"""Bounded desktop sampling and read-only snapshot/disk usage. No cleanup or restore."""
+import json
+import math
+import stat
+import os
+from pathlib import Path
+import re
+import runpy
+import subprocess
+import sys
+import tempfile
+import time
+import uuid
+
+TOOLS=runpy.run_path(str(Path(__file__).with_name('desktop-tools')),run_name='measure_tools')
+
+
+def snapshots():
+ code,text=TOOLS['run'](['snapper','-c','root','--jsonout','list'])
+ rows=[]
+ try:
+  data=json.loads(text).get('root',[]) if code==0 else []
+  for item in data[:100]:
+   if not isinstance(item,dict):continue
+   number=item.get('number')
+   if type(number) not in (int,str) or not str(number).isdigit():continue
+   used=item.get('used-space',item.get('used_space'))
+   measured=str(used) if type(used) in (int,float,str) and re.fullmatch(r'[0-9., ]+(?:[KMGTPE]i?B)?',str(used),re.I) else None
+   rows.append({'number':int(number),'usedSpace':measured})
+ except (ValueError,TypeError,AttributeError):code=1
+ policy={}
+ try:
+  for line in Path('/etc/snapper/configs/root').read_text()[:16384].splitlines():
+   key,_,value=line.partition('=');value=value.strip().strip('"')
+   if key in ('NUMBER_LIMIT','NUMBER_LIMIT_IMPORTANT','SPACE_LIMIT','FREE_LIMIT') and re.fullmatch(r'[0-9. -]{1,40}',value):policy[key]=value
+ except OSError:pass
+ disk=None
+ result=TOOLS['run'](['df','-B1','--output=size,used,avail,pcent','/'])
+ if result[0]==0:
+  parts=result[1].splitlines()[-1].split() if result[1].splitlines() else []
+  if len(parts)==4 and all(v.isdigit() for v in parts[:3]):disk={'total':int(parts[0]),'used':int(parts[1]),'available':int(parts[2]),'percent':parts[3] if re.fullmatch(r'\d+%',parts[3]) else '?'}
+ return {'readable':code==0,'snapshots':rows,'policy':policy,'disk':disk,
+         'note':'Snapshot kullanılan alanları paylaşılmış bloklar nedeniyle toplanmaz; eksik ölçüm sıfır değildir.'}
+
+
+def records():
+ path=Path(os.environ.get('XDG_STATE_HOME',str(Path.home()/'.local/state')))/'vabu/measurements.json'
+ try:
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+  with os.fdopen(fd) as stream:
+   info=os.fstat(stream.fileno())
+   if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid() or info.st_size>262144:return []
+   data=json.loads(stream.read(262145))
+  if not isinstance(data,list):return []
+  result=[]
+  for row in data[:12]:
+   if not isinstance(row,dict) or not isinstance(row.get('id'),str) or not re.fullmatch(r'[a-f0-9]{32}',row['id']):continue
+   if type(row.get('time')) is not int or row['time']<0 or type(row.get('samples')) is not int or not 2<=row['samples']<=30:continue
+   keys=('memoryMiB','cpuLifetimePercent','batteryWatts','bootSeconds')
+   if any(row.get(k) is not None and (type(row[k]) not in (int,float) or not math.isfinite(row[k]) or row[k]<0) for k in keys):continue
+   interval=row.get('intervalSeconds',1)
+   if type(interval) not in (int,float) or not math.isfinite(interval) or not 0<=interval<=2:continue
+   result.append({**{k:row.get(k) for k in ('id','time','samples',*keys)},'intervalSeconds':interval})
+  return result
+ except (OSError,ValueError):return []
+
+
+def sample(count=10,interval=1):
+ if type(count) is not int or not 2<=count<=30 or not 0<=interval<=2:raise ValueError('Geçersiz ölçüm süresi.')
+ samples=[]
+ for n in range(count):
+  data=TOOLS['performance']()
+  samples.append({'memoryMiB':sum(p['memoryMiB'] for p in data['processes']) if data['processes'] else None,
+                  'cpuLifetimePercent':sum(p['cpu'] for p in data['processes']) if data['processes'] else None,
+                  'batteryWatts':sum(b['watts'] for b in data['battery'] if b.get('watts') is not None) if any(b.get('watts') is not None for b in data['battery']) else None})
+  if n<count-1:time.sleep(interval)
+ boot=None
+ code,text=TOOLS['run'](['systemd-analyze','time'])
+ if code==0 and text.splitlines():
+  first=text.splitlines()[0].split('=')[-1]
+  pattern=r'(\d+(?:\.\d+)?)(h|min|ms|s)'
+  parts=re.findall(pattern,first)
+  if parts and not re.sub(pattern,'',first).strip():
+   boot=sum(float(number)*{'h':3600,'min':60,'s':1,'ms':0.001}[unit] for number,unit in parts)
+ def mean(key):
+  values=[row[key] for row in samples if row[key] is not None]
+  return round(sum(values)/len(values),2) if values else None
+ result={'id':uuid.uuid4().hex,'time':int(time.time()),'samples':count,'intervalSeconds':interval,
+         'memoryMiB':mean('memoryMiB'),'cpuLifetimePercent':mean('cpuLifetimePercent'),'batteryWatts':mean('batteryWatts'),'bootSeconds':boot}
+ destination=Path(os.environ.get('XDG_STATE_HOME',str(Path.home()/'.local/state')))/'vabu'
+ destination.mkdir(mode=0o700,parents=True,exist_ok=True)
+ fd,name=tempfile.mkstemp(prefix='.measure-',dir=destination)
+ try:
+  with os.fdopen(fd,'w') as stream:json.dump(([result]+records())[:12],stream);stream.flush();os.fsync(stream.fileno())
+  os.replace(name,destination/'measurements.json')
+ finally:
+  if os.path.exists(name):os.unlink(name)
+ return result
+
+
+if __name__=='__main__':
+ try:
+  if sys.argv[1:]==['snapshots']:print(json.dumps(snapshots(),ensure_ascii=False))
+  elif sys.argv[1:]==['sample']:print(json.dumps(sample()))
+  elif sys.argv[1:]==['records']:print(json.dumps({'records':records()}))
+  else:sys.exit(2)
+ except (OSError,ValueError,subprocess.SubprocessError):print('Ölçüm tamamlanamadı.',file=sys.stderr);sys.exit(1)

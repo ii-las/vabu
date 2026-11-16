@@ -14,6 +14,26 @@ ColumnLayout {
     property string previewError: ""
     readonly property bool previewBusy: preview.running || finishPreview.running
     property int countdown: 0
+    property string pendingProfileName: ""
+    Process {
+        id: profileTool
+        property string action: ""
+        stdout: StdioCollector { id: profileResult }
+        stderr: StdioCollector { id: profileErrors }
+        onExited: code => {
+            if (code !== 0) { page.previewError=profileErrors.text.trim(); return }
+            try {
+                const result=JSON.parse(profileResult.text)
+                if (action === "save") {
+                    const profile=Object.assign({name:page.pendingProfileName},result)
+                    Config.set("displayProfiles",(Config.values.displayProfiles ?? []).filter(p=>p.name!==profile.name).concat([profile]).slice(-12))
+                } else {
+                    page.draft=result.outputs
+                    if (result.legacy) page.previewError=Lang.t("Eski profil bağlantı adıyla eşleştirildi. Kimlik doğrulaması için yeni profil kaydet.")
+                }
+            } catch(e) { page.previewError=Lang.t("Profil okunamadı.") }
+        }
+    }
 
     readonly property var sel: outputs.find(o => o.name === selected) ?? null
     readonly property var cur: draft[selected] ?? null
@@ -163,7 +183,7 @@ ColumnLayout {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.OpenHandCursor
-                    enabled: !page.previewBusy && page.previewToken === ""
+                    enabled: !page.previewBusy && !profileTool.running && page.previewToken === ""
                     drag.target: page.outputs.length > 1 ? mon : null
                     onPressed: page.selected = mon.modelData.name
                     onReleased: {
@@ -197,7 +217,7 @@ ColumnLayout {
 
     // Seçili ekran
     Group {
-        enabled: !page.previewBusy && page.previewToken === ""
+        enabled: !page.previewBusy && !profileTool.running && page.previewToken === ""
         visible: page.sel !== null && page.cur !== null
         title: page.sel ? (page.sel.make + " " + page.sel.model).trim() : ""
 
@@ -281,14 +301,16 @@ ColumnLayout {
 
     Group {
         title: Lang.t("Ekran düzeni profilleri")
-        note: Lang.t("Profili yükledikten sonra Uygula düğmesiyle dene. Onaylanmayan değişiklikler otomatik geri alınır. Bağlı ekran adları uyuşmalıdır.")
+        note: Lang.t("Profili yükledikten sonra Uygula düğmesiyle dene. Onaylanmayan değişiklikler otomatik geri alınır. Ekran kimlikleri eşleştirilir; eksik veya belirsiz kimlikte düzen uygulanmaz.")
         Field { id: profileName; Layout.fillWidth: true; placeholder: Lang.t("Profil adı (ör. Masa, Sunum)") }
         PillButton {
             label: Lang.t("Bu düzeni profil olarak sakla")
-            enabled: !page.previewBusy && page.previewToken === "" && profileName.text.trim().length > 0 && profileName.text.trim().length <= 40 && page.outputs.length > 0
+            enabled: !page.previewBusy && !profileTool.running && page.previewToken === "" && profileName.text.trim().length > 0 && profileName.text.trim().length <= 40 && page.outputs.length > 0
             onClicked: {
-                const profile = {name:profileName.text.trim(), outputs:JSON.parse(JSON.stringify(page.draft))}
-                Config.set("displayProfiles", (Config.values.displayProfiles ?? []).filter(p => p.name !== profile.name).concat([profile]).slice(-12))
+                page.pendingProfileName=profileName.text.trim()
+                profileTool.action="save"
+                profileTool.command=["/usr/libexec/vabu/display-profiles","save",JSON.stringify(page.draft)]
+                profileTool.running=true
                 profileName.text = ""
             }
         }
@@ -298,12 +320,12 @@ ColumnLayout {
                 required property var modelData
                 label: modelData.name
                 PillButton {
-                    label: Lang.t("Yükle"); enabled: !page.previewBusy && page.previewToken === ""
+                    label: Lang.t("Yükle"); enabled: !page.previewBusy && !profileTool.running && page.previewToken === ""
                     onClicked: {
-                        const expected = Object.keys(modelData.outputs).sort().join("\n")
-                        const actual = page.outputs.map(o => o.name).sort().join("\n")
-                        if (expected !== actual) { page.previewError = "Bu profilin ekranları bağlı ekranlarla uyuşmuyor."; return }
-                        page.draft = JSON.parse(JSON.stringify(modelData.outputs))
+                        page.previewError=""
+                        profileTool.action="load"
+                        profileTool.command=["/usr/libexec/vabu/display-profiles","load",JSON.stringify(modelData)]
+                        profileTool.running=true
                     }
                 }
                 IconButton { icon: "delete"; tooltip: Lang.t("Profili sil"); onClicked: Config.set("displayProfiles", (Config.values.displayProfiles ?? []).filter(p => p.name !== modelData.name)) }

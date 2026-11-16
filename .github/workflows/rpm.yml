@@ -39,6 +39,7 @@ jobs:
           python3 -B tests/reliability.py
           python3 -B tests/desktop.py
           python3 -B tests/stability.py
+          python3 -B tests/expansion.py
 
       - name: Kaynak arşivleri
         run: |
@@ -142,12 +143,12 @@ jobs:
             case "$n" in [A-Z]*) ;; *) continue ;; esac
             if grep -q "^pragma Singleton" "$f"; then echo "singleton $n 1.0 $f"; else echo "$n 1.0 $f"; fi
           done > qmldir
-          $QMLLINT --unqualified disable -I /usr/lib64/qt6/qml -I . *.qml > /tmp/qmllint.txt 2>&1 || true
-          grep -E "does not exist|non-existent|Could not find property|is not a type|Unknown component" /tmp/qmllint.txt | tee /tmp/qmllint-errors.txt || true
-          if [ -s /tmp/qmllint-errors.txt ]; then
-            echo "::error::QML denetimi hatalar buldu (ayrıntı: bu adımın günlüğü)"
-            exit 1
-          fi
+          set +e
+          "$QMLLINT" --unqualified disable -I /usr/lib64/qt6/qml -I . *.qml > /tmp/qmllint.txt 2>&1
+          lint_status=$?
+          set -e
+          cat /tmp/qmllint.txt
+          exit "$lint_status"
 
       - uses: actions/upload-artifact@v4
         with:

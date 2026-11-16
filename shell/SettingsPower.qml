@@ -19,10 +19,11 @@ ColumnLayout {
                 id: row
                 label: modelData.title
                 readonly property string configKey: policy.prefix + modelData.key
-                readonly property var choices: [0, 2, 5, 10, 15, 30, 60]
+                readonly property real minutes: Config.values[configKey] ?? modelData.fallback
+                readonly property var choices: [...new Set([0, 2, 5, 10, 15, 30, 60, 120, minutes])].sort((a,b) => a-b)
                 Row {
                     spacing: 8
-                    readonly property int current: Math.max(0, row.choices.indexOf(Config.values[row.configKey] ?? row.modelData.fallback))
+                    readonly property int current: Math.max(0, row.choices.indexOf(row.minutes))
                     IconButton { icon: "chevron_left"; tooltip: Lang.t("Azalt"); onClicked: Config.set(row.configKey, row.choices[Math.max(0, parent.current - 1)]) }
                     Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: row.choices[parent.current] === 0 ? Lang.t("Asla") : row.choices[parent.current] + (Config.language === "en" ? " min" : " dk"); color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round(14 * Config.textScale) }
                     IconButton { icon: "chevron_right"; tooltip: Lang.t("Artır"); onClicked: Config.set(row.configKey, row.choices[Math.min(row.choices.length - 1, parent.current + 1)]) }

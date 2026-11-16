@@ -40,7 +40,7 @@ def recovery():
     mount_code, mount_text = run(['findmnt', '--json', '--target', '/boot', '-o', 'TARGET,FSTYPE'])
     try:
         filesystems = json.loads(mount_text)['filesystems'] if mount_code == 0 else []
-        separate_boot = any(item.get('target') == '/boot' for item in filesystems)
+        separate_boot = any(item.get('target') == '/boot' for item in filesystems) if mount_code == 0 and filesystems else None
     except (ValueError, KeyError, TypeError): separate_boot = None
     present = any(all(k[key] for key in ('image','initramfs','modules')) for k in kernels)
     return {'format':1, 'inventoryReadable':code == 0 and bool(versions), 'separateBoot':separate_boot,
