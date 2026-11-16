@@ -9,10 +9,70 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
+import struct
 import subprocess
 import sys
 import tempfile
 import time
+
+
+def virtual_pointer():
+    """Keep a pointer device alive in the disposable headless compositor.
+
+    IPC cursor commands alone do not advertise wl_seat pointer capability.
+    The tiny wire client only creates a device; sway IPC still sends events.
+    Protocol: swaywm/wlr-protocols/unstable/wlr-virtual-pointer-unstable-v1.xml
+    """
+    connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    connection.settimeout(5)
+    connection.connect(str(Path(os.environ['XDG_RUNTIME_DIR']) / os.environ['WAYLAND_DISPLAY']))
+
+    def send(obj, opcode, payload):
+        connection.sendall(struct.pack('=II', obj, ((8 + len(payload)) << 16) | opcode) + payload)
+
+    def receive(count):
+        data = b''
+        while len(data) < count:
+            part = connection.recv(count - len(data))
+            if not part:
+                raise RuntimeError('Headless compositor disconnected')
+            data += part
+        return data
+
+    def roundtrip(callback, collect=False):
+        send(1, 0, struct.pack('=I', callback))  # wl_display.sync
+        globals_ = {}
+        while True:
+            obj, word = struct.unpack('=II', receive(8))
+            size, opcode = word >> 16, word & 65535
+            if not 8 <= size <= 65535:
+                raise RuntimeError('Invalid Wayland fixture response')
+            payload = receive(size - 8)
+            if obj == 1 and opcode == 0:
+                raise RuntimeError('Wayland rejected virtual pointer fixture')
+            if collect and obj == 2 and opcode == 0:
+                name, length = struct.unpack_from('=II', payload)
+                interface = payload[8:8 + length - 1].decode('ascii')
+                globals_[interface] = name
+            if obj == callback and opcode == 0:
+                return globals_
+
+    try:
+        send(1, 1, struct.pack('=I', 2))  # wl_display.get_registry
+        globals_ = roundtrip(3, collect=True)
+        interface = b'zwlr_virtual_pointer_manager_v1\0'
+        name = globals_.get(interface[:-1].decode())
+        if name is None:
+            raise RuntimeError('Virtual pointer protocol unavailable in isolated compositor')
+        padded = interface + b'\0' * (-len(interface) % 4)
+        send(2, 0, struct.pack('=II', name, len(interface)) + padded + struct.pack('=II', 1, 4))
+        send(4, 0, struct.pack('=II', 0, 5))  # create pointer on the default seat
+        roundtrip(6)
+        return connection
+    except Exception:
+        connection.close()
+        raise
 
 
 def main():
@@ -118,6 +178,7 @@ requirements:
 ''')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
+            pointer = virtual_pointer()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 start = wait_for(lambda: next((b for b in buttons() if b.name == 'Vabu’yu kur' and b.getState().contains(pyatspi.STATE_ENABLED)), None), 'welcome install button', 25)
@@ -169,6 +230,7 @@ requirements:
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait(timeout=5)
+                pointer.close()
 
 
 if __name__ == '__main__':
