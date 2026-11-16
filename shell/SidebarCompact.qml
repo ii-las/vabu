@@ -30,6 +30,7 @@ ColumnLayout {
 
     // Saat: saat üstte, dakika altta
     Card {
+        id: clockCard
         Layout.fillWidth: true
         originX: root.originX
         implicitHeight: 64
@@ -39,7 +40,7 @@ ColumnLayout {
 
         Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: clockCard.radius
             color: clockMouse.pressed ? Theme.pressed : clockMouse.containsMouse ? Theme.alpha(Theme.paper, 0.03) : "transparent"
             Behavior on color { ColorAnimation { duration: Theme.fast } }
         }

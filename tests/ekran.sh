@@ -57,7 +57,8 @@ export SWAYSOCK; SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'sway-ipc
 # Hiçbir adım testi kilitlemesin: her komutun bir süre sınırı var
 shot() { sleep "${2:-1.3}"; timeout 20 grim "$OUT/$1.png" 2>>"$OUT/grim.log" || echo "görüntü alınamadı: $1"; }
 call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || echo "ipc başarısız: $*"; }
-yaz()  { command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null; sleep 0.4; }
+# Açılan yüzey klavye odağını alsın diye yazmadan önce kısa bir bekleme
+yaz()  { sleep 0.6; command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null; sleep 0.4; }
 
 # Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
 KOPYA="$HOME/kabuk"
