@@ -1,0 +1,786 @@
+#!/usr/bin/env bash
+# Vabu kurulumu: canlı sistemi seçilen diske kurar.
+#
+#   install-system --disks       kurulabilecek diskleri JSON dizisi olarak yazar (root gerekmez)
+#   install-system [--dry-run]   kurulum bilgisini stdin'den tek bir JSON nesnesi olarak okur
+#
+#   {"disk":"/dev/vda","encrypt":false,"passphrase":"","fullName":"Ada Yılmaz","login":"ada",
+#    "password":"…","hostname":"ada-vabu","autologin":false,"locale":"tr_TR.UTF-8",
+#    "keymap":"tr","keymapVariant":"","timezone":"Europe/Istanbul"}
+#
+# stdout'a her olay için bir satır yazılır:
+#   STEP <disk|copy|system|boot|finish> <ileti> · PROGRESS <0-100> · ERROR <ileti> · DONE
+# Ayrıntılı kayıt /tmp/vabu-install.log; kurulumdan sonra hedefte /var/log/vabu-install.log.
+# Parolalar yalnızca stdin'den gelir; diske, kayda ya da komut satırına yazılmaz.
+#
+# --dry-run: girdiyi gerçek kurulumdaki gibi denetler, hiçbir şeye dokunmadan aynı satırları
+# yaklaşık 20 saniyede yazar. VABU_INSTALL_DRYRUN_FAIL=<adım> o adımda hata verdirir.
+#
+# Deneme ortamı için (tests/kurulum.sh):
+#   VABU_INSTALL_SOURCE    kopyalanacak kök (varsayılan /run/rootfsbase)
+#   VABU_INSTALL_FIRMWARE  uefi ya da bios (varsayılan: bu bilgisayarınki)
+#   VABU_INSTALL_TEST=1    loop disklere izin ver, bu bilgisayarın NVRAM'ine ve saatine dokunma
+#   VABU_INSTALL_CMDLINE   çekirdek satırına eklenecekler
+#   VABU_INSTALL_DRIVERS   açılış imajına (initramfs) eklenecek sürücüler
+set -Eeuo pipefail
+export LC_ALL=C.UTF-8 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+umask 022
+
+LOG=/tmp/vabu-install.log
+SRC="${VABU_INSTALL_SOURCE:-/run/rootfsbase}"
+TEST="${VABU_INSTALL_TEST:-0}"
+EN_AZ=$((20 * 1024 * 1024 * 1024))
+ESP_TUR=C12A7328-F81F-11D2-BA4B-00A0C93EC93B
+BIOS_TUR=21686148-6449-6E6F-744E-656564454649
+LINUX_TUR=0FC63DAF-8483-4772-8E79-3D69D8477DE4
+BTRFS_SEC=compress=zstd:1
+
+HATA="" SON_KOMUT="" ADIM="" HEDEF="" LUKS_AD="" SON=-1 DENEME=0
+
+exec 3>&1
+
+# --- diskler -------------------------------------------------------------------------------
+
+# Canlı ortamın kendi diskleri: USB/DVD, ISO dosyasını taşıyan disk, çalışan kök
+canli_diskler() {
+    local k d t
+    {
+        for k in /run/initramfs/live /run/initramfs/isoscan /; do
+            findmnt -nro SOURCE --mountpoint "$k" 2>/dev/null || true
+        done
+        for k in /run/initramfs/livedev /run/initramfs/isoscandev; do
+            if [[ -e $k ]]; then readlink -f "$k"; fi
+        done
+    } | while read -r k; do
+        k=${k%%\[*}
+        [[ -b $k ]] || continue
+        lsblk -nlpso NAME,TYPE "$k" 2>/dev/null | while read -r d t; do
+            if [[ $t == disk ]]; then echo "$d"; fi
+        done
+    done | sort -u
+}
+
+diskler_json() {  # <loop aygıtları da listelensin: 0|1>
+    local canli
+    canli="$(canli_diskler | jq -R . | jq -sc .)"
+    lsblk -J -b -d -o NAME,PATH,SIZE,MODEL,TRAN,RM,RO,TYPE 2>/dev/null | jq -c \
+        --argjson min "$EN_AZ" --argjson canli "$canli" --argjson loop "$1" '
+        def evet: . == true or . == 1 or . == "1";
+        [ (.blockdevices // [])[]
+          | .size = ((.size // 0) | tonumber)
+          | select(.type == "disk" or ($loop == 1 and .type == "loop"))
+          | select(.type == "loop" or (.name | test("^(zram|sr|fd|ram|nbd)") | not))
+          | select((.ro | evet) | not)
+          | select(.size > 0)
+          | select(.path as $p | ($canli | index([$p])) == null)
+          | { path, size,
+              model: ((.model // "") | gsub("^\\s+|\\s+$"; "")),
+              transport: (.tran // ""),
+              removable: ((.rm | evet) or .tran == "usb"),
+              tooSmall: (.size < $min) } ]' || echo '[]'
+}
+
+if [[ ${1:-} == --disks ]]; then
+    diskler_json "$([[ $TEST == 1 ]] && echo 1 || echo 0)"
+    exit 0
+fi
+
+# --- çıktı, kayıt, hata --------------------------------------------------------------------
+
+kayit() { printf '[%(%H:%M:%S)T] %s\n' -1 "$*"; }
+cikti() { printf '%s\n' "$*" >&3; kayit ">> $*"; }
+adim() { ADIM=$1; shift; cikti "STEP $ADIM $*"; }
+ilerleme() { if (( $1 > SON )); then SON=$1; cikti "PROGRESS $1"; fi; }
+hata() { HATA=$1; exit 1; }
+
+agac_durdur() {
+    local c
+    for c in $(pgrep -P "$1" 2>/dev/null); do agac_durdur "$c"; done
+    kill "$1" 2>/dev/null || true
+}
+durdur() {
+    local p
+    for p in $(jobs -p); do agac_durdur "$p"; done
+    wait 2>/dev/null || true
+}
+# Uzun süren işler arka planda beklenir ki durdurma sinyali hemen işlensin
+arkada() { "$@" & wait "$!"; }
+
+temizle() {
+    if [[ -n $HEDEF ]]; then
+        sync
+        if mountpoint -q "$HEDEF"; then
+            umount -R "$HEDEF" || { sleep 2; umount -R "$HEDEF"; } || umount -R -l "$HEDEF" || true
+        fi
+        rmdir "$HEDEF" 2>/dev/null || true
+        HEDEF=""
+    fi
+    if [[ -n $LUKS_AD && -e /dev/mapper/$LUKS_AD ]]; then
+        cryptsetup close "$LUKS_AD" || { sleep 2; cryptsetup close "$LUKS_AD"; } || true
+    fi
+    LUKS_AD=""
+}
+
+bitis() {
+    local rc=$?
+    trap - EXIT ERR
+    set +eE
+    if (( rc != 0 )); then
+        if [[ -n $SON_KOMUT ]]; then kayit "başarısız komut: $SON_KOMUT"; fi
+        cikti "ERROR ${HATA:-Kurulum başarısız oldu}"
+    fi
+    temizle
+    exit "$rc"
+}
+
+case ${1:-} in
+    --dry-run) DENEME=1 ;;
+    "") ;;
+    *) printf 'ERROR Bilinmeyen seçenek: %s\n' "$1"; exit 2 ;;
+esac
+
+rm -f "$LOG" 2>/dev/null || true
+if ( umask 077; : >"$LOG" ) 2>/dev/null; then exec 1>>"$LOG" 2>&1; else exec 1>/dev/null 2>&1; fi
+trap bitis EXIT
+trap 'SON_KOMUT="satır $LINENO: $BASH_COMMAND (çıkış $?)"' ERR
+trap 'HATA="Kurulum durduruldu"; durdur; exit 130' INT TERM HUP
+
+# --- girdi ---------------------------------------------------------------------------------
+
+girdi_oku() {
+    local girdi="" satir=""
+    # Tek nesne tamamlanınca okumayı bırak: arayüz stdin'i açık tutsa da beklemeyelim
+    while IFS= read -r satir || [[ -n $satir ]]; do
+        girdi+=$satir$'\n'
+        satir=""
+        if printf '%s' "$girdi" | jq -e 'type == "object"' >/dev/null 2>&1; then break; fi
+    done
+    if ! printf '%s' "$girdi" | jq -e '
+            type == "object"
+            and ([.disk, .passphrase, .fullName, .login, .password, .hostname, .locale,
+                  .keymap, .keymapVariant, .timezone] | all(. == null or type == "string"))
+            and ([.encrypt, .autologin] | all(. == null or type == "boolean"))
+            and ([.[] | strings | test("[[:cntrl:]]")] | any | not)' >/dev/null 2>&1; then
+        hata "Kurulum bilgisi okunamadı"
+    fi
+    {
+        IFS= read -r -d '' DISK
+        IFS= read -r -d '' SIFRELE
+        IFS= read -r -d '' DISK_PAROLASI
+        IFS= read -r -d '' AD_SOYAD
+        IFS= read -r -d '' KULLANICI
+        IFS= read -r -d '' PAROLA
+        IFS= read -r -d '' MAKINE
+        IFS= read -r -d '' OTOMATIK
+        IFS= read -r -d '' DIL
+        IFS= read -r -d '' KLAVYE
+        IFS= read -r -d '' KLAVYE_TUR
+        IFS= read -r -d '' SAAT_DILIMI
+    } < <(printf '%s' "$girdi" | jq -j '
+            [.disk, .encrypt, .passphrase, .fullName, .login, .password, .hostname, .autologin,
+             .locale, .keymap, .keymapVariant, .timezone]
+            | map(if . == null then "" else tostring end) | join("\u0000") + "\u0000"')
+    [[ $SIFRELE == true ]] || SIFRELE=false
+    [[ $OTOMATIK == true ]] || OTOMATIK=false
+}
+
+dil_var() {  # glibc-langpack-* dilleri /usr/lib/locale/<ad>.utf8 altına kurar
+    local ad=${1%.UTF-8}
+    [[ -d $REF/usr/lib/locale/$ad.utf8 ]] && return 0
+    [[ -f $REF/usr/lib/locale/locale-archive ]] && grep -qaF "$ad.utf8" "$REF/usr/lib/locale/locale-archive"
+}
+
+disk_denetle() {
+    local yol bilgi loop=0
+    [[ -n $DISK ]] || hata "Disk seçilmedi"
+    yol="$(readlink -f -- "$DISK" || true)"
+    [[ -n $yol && -b $yol ]] || hata "Disk bulunamadı"
+    [[ $TEST == 1 ]] && loop=1
+    bilgi="$(diskler_json "$loop" | jq -c --arg p "$yol" '.[] | select(.path == $p)')"
+    if [[ -z $bilgi ]]; then
+        if canli_diskler | grep -qxF "$yol"; then hata "Bu disk kurulum ortamının kendisi"; fi
+        hata "Bu diske kurulum yapılamaz"
+    fi
+    [[ $(jq -r .tooSmall <<<"$bilgi") == false ]] || hata "Disk çok küçük (en az 20 GB gerekli)"
+    DISK=$yol
+    kayit "disk: $bilgi"
+}
+
+denetle() {
+    local ad_kalibi='^[a-z_][a-z0-9_-]{0,31}$'
+    local etiket='[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
+    REF=$SRC
+    [[ -d $REF/etc ]] || REF=/
+
+    if [[ $SIFRELE == true && -z $DISK_PAROLASI ]]; then hata "Disk şifresi boş olamaz"; fi
+    [[ $KULLANICI =~ $ad_kalibi ]] || hata "Kullanıcı adı geçersiz"
+    case $KULLANICI in root | liveuser) hata "Bu kullanıcı adı kullanılamaz" ;; esac
+    if grep -qs -- "^$KULLANICI:" "$REF/etc/passwd" "$REF/etc/group"; then
+        hata "Bu kullanıcı adı kullanılamaz"
+    fi
+    [[ -n $PAROLA ]] || hata "Parola boş olamaz"
+    [[ $AD_SOYAD != *[:,]* && ${#AD_SOYAD} -le 128 ]] || hata "Ad geçersiz"
+    [[ ${#MAKINE} -le 64 && $MAKINE =~ ^$etiket(\.$etiket)*$ ]] || hata "Bilgisayar adı geçersiz"
+
+    [[ $DIL =~ ^[a-z]{2,3}(_[A-Z]{2})?\.UTF-8$ ]] || hata "Dil seçimi geçersiz"
+    dil_var "$DIL" || hata "Bu dil kurulu değil"
+
+    [[ $KLAVYE =~ ^[a-z][a-z0-9_-]*$ && $KLAVYE_TUR =~ ^[A-Za-z0-9_-]*$ ]] || hata "Klavye düzeni geçersiz"
+    local xkb=$REF/usr/share/X11/xkb/symbols
+    if [[ -d $xkb ]]; then
+        [[ -f $xkb/$KLAVYE ]] || hata "Klavye düzeni bulunamadı"
+        if [[ -n $KLAVYE_TUR ]] && ! grep -qF "xkb_symbols \"$KLAVYE_TUR\"" "$xkb/$KLAVYE"; then
+            hata "Klavye düzeni bulunamadı"
+        fi
+    fi
+
+    [[ $SAAT_DILIMI =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]] || hata "Saat dilimi geçersiz"
+    [[ -f $REF/usr/share/zoneinfo/$SAAT_DILIMI ]] || hata "Saat dilimi bulunamadı"
+
+    if [[ -n ${VABU_INSTALL_FIRMWARE:-} ]]; then
+        FIRMWARE=$VABU_INSTALL_FIRMWARE
+        NVRAM=0
+    elif [[ -d /sys/firmware/efi ]]; then
+        FIRMWARE=uefi
+        NVRAM=1
+    else
+        FIRMWARE=bios
+        NVRAM=0
+    fi
+    [[ $TEST == 1 ]] && NVRAM=0
+    [[ $FIRMWARE == uefi || $FIRMWARE == bios ]] || hata "Firmware türü geçersiz"
+    if [[ $FIRMWARE == bios && $(uname -m) != x86_64 ]]; then hata "Bu bilgisayar UEFI ile açılmalı"; fi
+    if [[ ${VABU_INSTALL_CMDLINE:-}${VABU_INSTALL_DRIVERS:-} =~ [\"\$\`\\] ]]; then hata "Deneme ayarı geçersiz"; fi
+
+    disk_denetle
+    kayit "kaynak: $SRC, firmware: $FIRMWARE, şifreleme: $SIFRELE, kullanıcı: $KULLANICI," \
+        "makine: $MAKINE, dil: $DIL, klavye: $KLAVYE/$KLAVYE_TUR, saat: $SAAT_DILIMI, otomatik giriş: $OTOMATIK"
+}
+
+kurulum_oncesi() {
+    local t
+    (( EUID == 0 )) || hata "Yönetici yetkisi gerekli"
+    [[ -d $SRC/usr/bin && -d $SRC/etc ]] || hata "Kurulum kaynağı bulunamadı"
+    for t in sfdisk wipefs partx blockdev lsblk findmnt blkid flock mkfs.ext4 mkfs.btrfs btrfs rsync chroot jq; do
+        command -v "$t" >/dev/null || hata "Gerekli araç eksik: $t"
+    done
+    if [[ $FIRMWARE == uefi ]]; then
+        command -v mkfs.vfat >/dev/null || hata "Gerekli araç eksik: mkfs.vfat"
+        compgen -G "$SRC/boot/efi/EFI/fedora/grub*.efi" >/dev/null || hata "UEFI önyükleyicisi bulunamadı"
+    else
+        [[ -d $SRC/usr/lib/grub/i386-pc ]] || hata "BIOS önyükleyicisi bulunamadı"
+    fi
+    if [[ $SIFRELE == true ]]; then
+        command -v cryptsetup >/dev/null || hata "Gerekli araç eksik: cryptsetup"
+    fi
+    exec 9>/run/vabu-install.lock
+    flock -n 9 || hata "Başka bir kurulum sürüyor"
+}
+
+# --- yardımcılar ---------------------------------------------------------------------------
+
+hedefte() { chroot "$HEDEF" "$@"; }
+uuid_uret() { cat /proc/sys/kernel/random/uuid; }
+bolum() { if [[ $DISK =~ [0-9]$ ]]; then echo "${DISK}p$1"; else echo "$DISK$1"; fi; }
+
+aygit_bekle() {
+    local i
+    for i in $(seq 50); do
+        [[ -b $1 ]] && return 0
+        sleep 0.2
+    done
+    kayit "aygıt görünmedi: $1"
+    return 1
+}
+
+gercek_uuid() {  # <aygıt> <beklenen>: mkfs'e verilen UUID'yi blkid'le doğrula
+    local u
+    u="$(blkid -c /dev/null -s UUID -o value "$1" 2>/dev/null || true)"
+    if [[ -n $u && $u != "$2" ]]; then kayit "UUID farklı çıktı: $1 $2 -> $u"; echo "$u"; else echo "$2"; fi
+}
+
+# --- disk ----------------------------------------------------------------------------------
+
+disk_bosalt() {
+    HATA="Disk kullanımda, boşaltılamadı"
+    local ad tip yer
+    while read -r ad; do
+        while read -r yer; do
+            [[ -n $yer ]] || continue
+            umount -R -- "$yer" 2>/dev/null || umount -l -- "$yer" 2>/dev/null || true
+        done < <(findmnt -nlo TARGET --source "$ad" 2>/dev/null | sort -r)
+        if grep -q "^$ad " /proc/swaps; then swapoff "$ad"; fi
+    done < <(lsblk -nlpo NAME "$DISK" | tac)
+    while read -r ad tip; do
+        case $tip in
+            crypt) cryptsetup close "$ad" || true ;;
+            lvm | dm) dmsetup remove --retry "$ad" || true ;;
+            raid*) mdadm --stop "$ad" || true ;;
+        esac
+    done < <(lsblk -nlpo NAME,TYPE "$DISK" | tac)
+    if [[ -n $(lsblk -nlo MOUNTPOINT "$DISK" | tr -d "[:space:]") ]]; then hata "Diskteki bölümler kullanımda"; fi
+}
+
+bolumle() {
+    HATA="Disk bölümlenemedi"
+    local ad tip
+    while read -r ad tip; do
+        if [[ $tip == part ]]; then wipefs -a -f "$ad" || true; fi
+    done < <(lsblk -nlpo NAME,TYPE "$DISK")
+    wipefs -a -f "$DISK"
+    udevadm settle --timeout=10 2>/dev/null || true
+    {
+        echo "label: gpt"
+        if [[ $FIRMWARE == uefi ]]; then
+            echo "size=600MiB, type=$ESP_TUR, name=\"EFI System Partition\""
+        else
+            echo "size=1MiB, type=$BIOS_TUR, name=\"BIOS boot\""
+        fi
+        echo "size=1GiB, type=$LINUX_TUR, name=\"boot\""
+        echo "type=$LINUX_TUR, name=\"root\""
+    } | sfdisk --no-tell-kernel --wipe always --wipe-partitions always "$DISK"
+    # udev diski yoklarken çekirdek yeni tabloyu reddedebilir; birkaç kez dene
+    local i
+    for i in 1 2 3 4 5; do
+        udevadm settle --timeout=10 2>/dev/null || true
+        blockdev --rereadpt "$DISK" && break
+        sleep 1
+    done
+    partx -u "$DISK" 2>/dev/null || true
+    udevadm settle --timeout=10 2>/dev/null || true
+    P1=$(bolum 1) P2=$(bolum 2) P3=$(bolum 3)
+    aygit_bekle "$P1"
+    aygit_bekle "$P2"
+    aygit_bekle "$P3"
+}
+
+dosya_sistemleri() {
+    HATA="Dosya sistemleri oluşturulamadı"
+    local seri
+    if [[ $FIRMWARE == uefi ]]; then
+        seri="$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n' | tr a-f A-F)"
+        mkfs.vfat -F 32 -n EFI -i "$seri" "$P1"
+        ESP_UUID=$(gercek_uuid "$P1" "${seri:0:4}-${seri:4:4}")
+    fi
+    BOOT_UUID=$(uuid_uret)
+    mkfs.ext4 -F -q -L boot -U "$BOOT_UUID" "$P2"
+    BOOT_UUID=$(gercek_uuid "$P2" "$BOOT_UUID")
+
+    if [[ $SIFRELE == true ]]; then
+        HATA="Disk şifrelenemedi"
+        LUKS_UUID=$(uuid_uret)
+        printf '%s' "$DISK_PAROLASI" |
+            cryptsetup luksFormat --type luks2 --batch-mode --uuid "$LUKS_UUID" --key-file=- "$P3"
+        printf '%s' "$DISK_PAROLASI" | cryptsetup open --key-file=- "$P3" "luks-$LUKS_UUID"
+        LUKS_AD=luks-$LUKS_UUID
+        KOK=/dev/mapper/$LUKS_AD
+        aygit_bekle "$KOK"
+        HATA="Dosya sistemleri oluşturulamadı"
+    else
+        KOK=$P3
+    fi
+    ROOT_UUID=$(uuid_uret)
+    mkfs.btrfs -f -q -L vabu -U "$ROOT_UUID" "$KOK"
+    ROOT_UUID=$(gercek_uuid "$KOK" "$ROOT_UUID")
+}
+
+bagla() {
+    HATA="Disk bağlanamadı"
+    HEDEF="$(mktemp -d /run/vabu-kurulum.XXXXXX)"
+    # Fedora düzeni: root → /, home → /home, var/log → /var/log
+    mount -o "$BTRFS_SEC" "$KOK" "$HEDEF"
+    btrfs subvolume create "$HEDEF/root"
+    btrfs subvolume create "$HEDEF/home"
+    mkdir -p "$HEDEF/var"
+    btrfs subvolume create "$HEDEF/var/log"
+    umount "$HEDEF"
+    mount -o "subvol=root,$BTRFS_SEC" "$KOK" "$HEDEF"
+    mkdir -p "$HEDEF/home" "$HEDEF/var/log" "$HEDEF/boot"
+    mount -o "subvol=home,$BTRFS_SEC" "$KOK" "$HEDEF/home"
+    mount -o "subvol=var/log,$BTRFS_SEC" "$KOK" "$HEDEF/var/log"
+    mount "$P2" "$HEDEF/boot"
+    if [[ $FIRMWARE == uefi ]]; then
+        mkdir -p "$HEDEF/boot/efi"
+        mount -o umask=0077,shortname=winnt "$P1" "$HEDEF/boot/efi"
+    fi
+    findmnt -R "$HEDEF"
+}
+
+# --- kopyalama -----------------------------------------------------------------------------
+
+ilerleme_oku() {  # <başlangıç> <bitiş>: rsync --info=progress2 çıktısını PROGRESS satırına çevirir
+    local parca="" p son=$1
+    while IFS= read -r -d $'\r' parca || [[ -n $parca ]]; do
+        if [[ $parca =~ ([0-9]+)% ]]; then
+            p=$(( $1 + ($2 - $1) * 10#${BASH_REMATCH[1]} / 100 ))
+            if (( p > son )); then son=$p; cikti "PROGRESS $p"; fi
+        fi
+        if [[ $parca == *$'\n'* ]]; then printf '%s\n' "$parca"; fi
+        parca=""
+    done
+}
+
+kopya_isi() { rsync "$@" | ilerleme_oku 5 80; }
+
+kopyala() {
+    HATA="Dosyalar kopyalanamadı"
+    local rc=0 secenek=(-aHAXS --numeric-ids --no-inc-recursive --info=progress2,stats1
+        '--filter=-x trusted.*' '--filter=-x security.evm'
+        '--exclude=/dev/*' '--exclude=/proc/*' '--exclude=/sys/*' '--exclude=/run/*'
+        '--exclude=/tmp/*' '--exclude=/var/tmp/*')
+    # ESP (FAT) sahiplik, izin ve xattr tutmaz; ayrıca kopyalanır
+    if [[ $FIRMWARE == uefi ]]; then secenek+=('--exclude=/boot/efi'); fi
+    kopya_isi "${secenek[@]}" "$SRC/" "$HEDEF/" &
+    wait "$!" || rc=$?
+    if (( rc != 0 && rc != 24 )); then hata "Dosyalar kopyalanamadı (rsync $rc)"; fi
+    if [[ $FIRMWARE == uefi ]]; then
+        arkada rsync -rt --modify-window=2 "$SRC/boot/efi/" "$HEDEF/boot/efi/"
+    fi
+    SON=80
+    # Kalıptaki makineye özel dosyalar her kurulumda yeniden üretilsin
+    rm -f "$HEDEF"/etc/ssh/ssh_host_*key* "$HEDEF/var/lib/systemd/random-seed"
+}
+
+# --- sistem --------------------------------------------------------------------------------
+
+chroot_bagla() {
+    mount -t proc proc "$HEDEF/proc"
+    mount -t sysfs sys "$HEDEF/sys"
+    mount --bind /dev "$HEDEF/dev"
+    mount -t tmpfs tmpfs "$HEDEF/run"
+    if [[ -d /run/udev ]]; then
+        mkdir -p "$HEDEF/run/udev"
+        mount --bind /run/udev "$HEDEF/run/udev"
+    fi
+    if (( NVRAM )) && [[ -d $HEDEF/sys/firmware/efi/efivars ]]; then
+        mount -t efivarfs efivarfs "$HEDEF/sys/firmware/efi/efivars" || kayit "uyarı: efivarfs bağlanamadı"
+    fi
+}
+
+konsol_duzeni() {  # XKB düzeni → konsol düzeni (systemd'nin kbd-model-map tablosu)
+    local harita=$HEDEF/usr/share/systemd/kbd-model-map k x m v o ilk=""
+    if [[ -f $harita ]]; then
+        while read -r k x m v o; do
+            [[ -n $k && $k != \#* ]] || continue
+            [[ $x == "$KLAVYE" && $v == "${KLAVYE_TUR:--}" ]] || continue
+            if find "$HEDEF/usr/lib/kbd/keymaps" -name "$k.map*" -print -quit 2>/dev/null | grep -q .; then
+                echo "$k"
+                return 0
+            fi
+            [[ -n $ilk ]] || ilk=$k
+        done <"$harita"
+    fi
+    if [[ -n $ilk ]]; then echo "$ilk"; return 0; fi
+    k=$KLAVYE${KLAVYE_TUR:+-$KLAVYE_TUR}
+    if find "$HEDEF/usr/lib/kbd/keymaps" -name "$k.map*" -print -quit 2>/dev/null | grep -q .; then
+        echo "$k"
+    else
+        echo us
+    fi
+}
+
+yerel_ayarlar() {
+    local konsol
+    printf 'LANG=%s\n' "$DIL" >"$HEDEF/etc/locale.conf"
+    konsol=$(konsol_duzeni)
+    printf 'KEYMAP=%s\n' "$konsol" >"$HEDEF/etc/vconsole.conf"
+    if compgen -G "$HEDEF/usr/lib/kbd/consolefonts/eurlatgr.*" >/dev/null; then
+        echo 'FONT=eurlatgr' >>"$HEDEF/etc/vconsole.conf"
+    fi
+    mkdir -p "$HEDEF/etc/X11/xorg.conf.d"
+    {
+        echo 'Section "InputClass"'
+        echo '        Identifier "system-keyboard"'
+        echo '        MatchIsKeyboard "on"'
+        echo "        Option \"XkbLayout\" \"$KLAVYE\""
+        if [[ -n $KLAVYE_TUR ]]; then echo "        Option \"XkbVariant\" \"$KLAVYE_TUR\""; fi
+        echo 'EndSection'
+    } >"$HEDEF/etc/X11/xorg.conf.d/00-keyboard.conf"
+    ln -sfn "../usr/share/zoneinfo/$SAAT_DILIMI" "$HEDEF/etc/localtime"
+    printf '%s\n' "$MAKINE" >"$HEDEF/etc/hostname"
+    cat >"$HEDEF/etc/hosts" <<EOF
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+127.0.1.1   $MAKINE
+EOF
+    kayit "konsol klavyesi: $konsol"
+}
+
+fstab_yaz() {
+    {
+        echo "# Vabu kurulumu"
+        printf 'UUID=%s  /          btrfs  subvol=root,%s     0 0\n' "$ROOT_UUID" "$BTRFS_SEC"
+        printf 'UUID=%s  /boot      ext4   defaults  1 2\n' "$BOOT_UUID"
+        if [[ $FIRMWARE == uefi ]]; then
+            printf 'UUID=%s  /boot/efi  vfat   umask=0077,shortname=winnt  0 2\n' "$ESP_UUID"
+        fi
+        printf 'UUID=%s  /home      btrfs  subvol=home,%s     0 0\n' "$ROOT_UUID" "$BTRFS_SEC"
+        printf 'UUID=%s  /var/log   btrfs  subvol=var/log,%s  0 0\n' "$ROOT_UUID" "$BTRFS_SEC"
+    } >"$HEDEF/etc/fstab"
+    if [[ $SIFRELE == true ]]; then
+        printf 'luks-%s UUID=%s none discard\n' "$LUKS_UUID" "$LUKS_UUID" >"$HEDEF/etc/crypttab"
+        chmod 0600 "$HEDEF/etc/crypttab"
+    fi
+    cat "$HEDEF/etc/fstab"
+}
+
+kullanicilar() {
+    HATA="Kullanıcı oluşturulamadı"
+    local ev=/home/$KULLANICI
+    if hedefte id liveuser >/dev/null 2>&1; then
+        hedefte userdel -f -r liveuser || kayit "uyarı: userdel liveuser"
+    fi
+    if hedefte id liveuser >/dev/null 2>&1; then hata "Canlı kullanıcı silinemedi"; fi
+    rm -rf "$HEDEF/home/liveuser" "$HEDEF/var/lib/AccountsService/users/liveuser" \
+        "$HEDEF/var/cache/vabu-greeter"
+
+    hedefte useradd -m -G wheel -s /bin/bash -c "$AD_SOYAD" "$KULLANICI"
+    printf '%s:%s\n' "$KULLANICI" "$PAROLA" | hedefte chpasswd
+    hedefte usermod -L root
+
+    # Seçilen klavye masaüstünde de geçerli olsun (Vabu Ayarlar > Klavye aynı dosyayı kullanır)
+    install -d -m 0755 "$HEDEF$ev/.config" "$HEDEF$ev/.config/vabu"
+    jq -n --arg l "$KLAVYE" --arg v "$KLAVYE_TUR" '{xkbLayout: $l, xkbVariant: $v}' \
+        >"$HEDEF$ev/.config/vabu/niri.json"
+    if ! hedefte env HOME="$ev" XDG_CONFIG_HOME="$ev/.config" /usr/libexec/vabu/niri-config; then
+        kayit "uyarı: niri ayarı üretilemedi, sistem varsayılanı kullanılacak"
+    fi
+    hedefte chown -R "$KULLANICI:" "$ev/.config"
+
+    install -m 0644 "$HEDEF/usr/share/vabu/greetd/vabu.toml" "$HEDEF/etc/greetd/vabu.toml"
+    if [[ $OTOMATIK == true ]]; then
+        printf '\n[initial_session]\ncommand = "niri-session"\nuser = "%s"\n' "$KULLANICI" \
+            >>"$HEDEF/etc/greetd/vabu.toml"
+    fi
+}
+
+ag_ayarlari() {  # canlı oturumda kaydedilen bağlantılar kurulan sisteme geçer
+    local dizin=/etc/NetworkManager/system-connections f
+    [[ -d $dizin ]] || return 0
+    install -d -m 0700 "$HEDEF$dizin"
+    for f in "$dizin"/*; do
+        [[ -f $f ]] || continue
+        sed "s/user:liveuser:/user:$KULLANICI:/g" "$f" >"$HEDEF$dizin/${f##*/}"
+        chmod 0600 "$HEDEF$dizin/${f##*/}"
+        kayit "ağ bağlantısı: ${f##*/}"
+    done
+}
+
+canli_izleri() {
+    local f
+    rm -f "$HEDEF/etc/sudoers.d/10-liveuser" "$HEDEF/usr/share/applications/vabu-kur.desktop"
+    # Kiwi'nin canlı açılış imajı için eklediği dracut modülleri (dmsquash-live …) hedefe geçmesin
+    for f in "$HEDEF"/etc/dracut.conf.d/*.conf; do
+        [[ -f $f ]] || continue
+        if grep -qE 'dmsquash-live|livenet|pollcdrom|kiwi-live' "$f"; then
+            kayit "canlı ortam ayarı kaldırıldı: ${f#"$HEDEF"}"
+            rm -f "$f"
+        fi
+    done
+    f="$(grep -rlsI liveuser "$HEDEF/etc" 2>/dev/null | head -n 20 || true)"
+    if [[ -n $f ]]; then kayit "uyarı: liveuser hâlâ geçiyor:"$'\n'"$f"; fi
+}
+
+sistem() {
+    HATA="Sistem ayarlanamadı"
+    chroot_bagla
+    uuid_uret | tr -d '-' >"$HEDEF/etc/machine-id"
+    chmod 0444 "$HEDEF/etc/machine-id"
+    fstab_yaz
+    yerel_ayarlar
+    ilerleme 82
+    kullanicilar
+    HATA="Sistem ayarlanamadı"
+    ag_ayarlari
+    if (( NVRAM )); then hwclock --systohc --utc || kayit "uyarı: donanım saati ayarlanamadı"; fi
+    ilerleme 84
+    canli_izleri
+    hedefte systemctl enable vabu-flatpak-setup.service vabu-update.timer vabu-snapper-setup.service
+    hedefte plymouth-set-default-theme vabu
+    hedefte systemctl enable greetd.service NetworkManager.service
+    hedefte systemctl set-default graphical.target
+    # Kopyalanan dosyaların SELinux etiketleri ilk açılışta yenilensin
+    touch "$HEDEF/.autorelabel"
+    ilerleme 86
+}
+
+# --- önyükleme -----------------------------------------------------------------------------
+
+grub_ayarlari() {
+    local satir="rhgb quiet"
+    if [[ $SIFRELE == true ]]; then satir="rd.luks.uuid=luks-$LUKS_UUID $satir"; fi
+    if [[ -n ${VABU_INSTALL_CMDLINE:-} ]]; then satir="$satir $VABU_INSTALL_CMDLINE"; fi
+    {
+        echo 'GRUB_TIMEOUT=3'
+        echo "GRUB_DISTRIBUTOR=\"\$(sed 's, release .*\$,,g' /etc/system-release)\""
+        echo 'GRUB_DEFAULT=saved'
+        echo 'GRUB_DISABLE_SUBMENU=true'
+        echo 'GRUB_TERMINAL_OUTPUT="gfxterm"'
+        echo 'GRUB_GFXMODE=auto'
+        if [[ -f $HEDEF/boot/grub2/themes/vabu/theme.txt ]]; then
+            echo 'GRUB_THEME="/boot/grub2/themes/vabu/theme.txt"'
+        fi
+        echo "GRUB_CMDLINE_LINUX=\"$satir\""
+        echo 'GRUB_DISABLE_RECOVERY="true"'
+        echo 'GRUB_ENABLE_BLSCFG=true'
+    } >"$HEDEF/etc/default/grub"
+    # Yeni çekirdekler kurulurken BLS girdisinin satırı buradan alınır
+    install -d "$HEDEF/etc/kernel"
+    printf 'root=UUID=%s ro rootflags=subvol=root %s\n' "$ROOT_UUID" "$satir" >"$HEDEF/etc/kernel/cmdline"
+    cat "$HEDEF/etc/default/grub" "$HEDEF/etc/kernel/cmdline"
+}
+
+cekirdekler() {
+    HATA="Açılış dosyaları oluşturulamadı"
+    local k surumler=() maske=$HEDEF/etc/kernel/install.d/50-dracut.install maskeli=0
+    for k in "$HEDEF"/usr/lib/modules/*/vmlinuz; do
+        if [[ -f $k ]]; then k=${k%/vmlinuz}; surumler+=("${k##*/}"); fi
+    done
+    (( ${#surumler[@]} )) || hata "Çekirdek bulunamadı"
+    kayit "çekirdekler: ${surumler[*]}"
+
+    # Canlı imajın girdileri eski makine kimliği ve canlı çekirdek satırıyla yazılmıştı
+    rm -f "$HEDEF"/boot/loader/entries/*.conf "$HEDEF"/boot/initramfs-*.img "$HEDEF"/boot/*-rescue-*
+    install -d -m 0700 "$HEDEF/boot/loader/entries"
+    install -d -m 0700 "$HEDEF/boot/grub2"
+    rm -f "$HEDEF/boot/grub2/grubenv"
+    hedefte grub2-editenv /boot/grub2/grubenv create
+
+    # Açılış imajı aşağıda bir kez üretilir; kernel-install yalnızca çekirdeği ve girdiyi kursun
+    if [[ ! -e $maske ]]; then
+        install -d "${maske%/*}"
+        ln -s /dev/null "$maske"
+        maskeli=1
+    fi
+    for k in "${surumler[@]}"; do
+        arkada hedefte kernel-install add "$k" "/usr/lib/modules/$k/vmlinuz"
+    done
+    if (( maskeli )); then rm -f "$maske"; fi
+    ilerleme 89
+
+    local dr=(-f --regenerate-all)
+    if [[ -n ${VABU_INSTALL_DRIVERS:-} ]]; then dr+=(--add-drivers "$VABU_INSTALL_DRIVERS"); fi
+    arkada hedefte dracut "${dr[@]}"
+    for k in "${surumler[@]}"; do
+        [[ -s $HEDEF/boot/initramfs-$k.img ]] || hata "Açılış imajı oluşturulamadı"
+    done
+    ls -la "$HEDEF/boot" "$HEDEF/boot/loader/entries"
+    ilerleme 95
+}
+
+efi_kur() {
+    local s efi=$HEDEF/boot/efi/EFI yukleyici
+    case $(uname -m) in
+        x86_64) s=x64 ;;
+        aarch64) s=aa64 ;;
+        *) hata "Bu mimari desteklenmiyor" ;;
+    esac
+    [[ -f $efi/fedora/grub$s.efi ]] || hata "UEFI önyükleyicisi bulunamadı"
+    yukleyici=grub$s.efi
+    if [[ -f $efi/fedora/shim$s.efi ]]; then yukleyici=shim$s.efi; fi
+
+    # Fedora'nın imzalı grub'ı EFI/fedora/grub.cfg'yi okur; asıl menü /boot/grub2/grub.cfg
+    cat >"$efi/fedora/grub.cfg" <<EOF
+search --no-floppy --fs-uuid --set=dev $BOOT_UUID
+set prefix=(\$dev)/grub2
+export \$prefix
+configfile \$prefix/grub.cfg
+EOF
+    # Yedek yol: NVRAM girdisi olmasa da firmware EFI/BOOT/BOOT<mimari>.EFI'yi açar
+    install -d "$efi/BOOT"
+    cp -f "$efi/fedora/$yukleyici" "$efi/BOOT/BOOT${s^^}.EFI"
+    if [[ $yukleyici == shim* ]]; then
+        cp -f "$efi/fedora/grub$s.efi" "$efi/BOOT/grub$s.efi"
+        if [[ -f $efi/fedora/mm$s.efi ]]; then cp -f "$efi/fedora/mm$s.efi" "$efi/BOOT/mm$s.efi"; fi
+        if [[ ! -f $efi/BOOT/fb$s.efi && -f $HEDEF/usr/share/shim/$s/fb$s.efi ]]; then
+            cp -f "$HEDEF/usr/share/shim/$s/fb$s.efi" "$efi/BOOT/fb$s.efi"
+        fi
+    fi
+    find "$efi" -type f | sort
+
+    if (( NVRAM )) && [[ -d $HEDEF/sys/firmware/efi/efivars ]]; then
+        hedefte efibootmgr --create --disk "$DISK" --part 1 --label Vabu \
+            --loader "\\EFI\\fedora\\$yukleyici" || kayit "uyarı: NVRAM girdisi eklenemedi"
+    fi
+}
+
+onyukleme() {
+    HATA="Önyükleyici kurulamadı"
+    grub_ayarlari
+    ilerleme 87
+    cekirdekler
+    HATA="Önyükleyici kurulamadı"
+    if [[ $FIRMWARE == uefi ]]; then
+        efi_kur
+    else
+        hedefte grub2-install --target=i386-pc --boot-directory=/boot "$DISK"
+    fi
+    ilerleme 96
+    HATA="Önyükleme menüsü oluşturulamadı"
+    arkada hedefte grub2-mkconfig --update-bls-cmdline -o /boot/grub2/grub.cfg
+    if ! grep -qs "root=UUID=$ROOT_UUID" "$HEDEF"/boot/loader/entries/*.conf ||
+        grep -qsE 'root=live:|rd\.live\.' "$HEDEF"/boot/loader/entries/*.conf; then
+        cat "$HEDEF"/boot/loader/entries/*.conf || true
+        hata "Açılış girdileri hatalı"
+    fi
+    cat "$HEDEF"/boot/loader/entries/*.conf
+    ilerleme 98
+}
+
+# --- akış ----------------------------------------------------------------------------------
+
+kur() {
+    adim disk "Disk hazırlanıyor"
+    ilerleme 0
+    disk_bosalt
+    bolumle
+    ilerleme 2
+    dosya_sistemleri
+    ilerleme 4
+    bagla
+    ilerleme 5
+
+    adim copy "Dosyalar kopyalanıyor"
+    kopyala
+
+    adim system "Sistem ayarlanıyor"
+    sistem
+
+    adim boot "Önyükleyici kuruluyor"
+    onyukleme
+
+    adim finish "Kurulum tamamlanıyor"
+    HATA="Kurulum tamamlanamadı"
+    kayit "kurulum bitti, diskler ayrılıyor"
+    install -m 0600 "$LOG" "$HEDEF/var/log/vabu-install.log"
+    ilerleme 99
+    temizle
+    ilerleme 100
+    cikti DONE
+}
+
+deneme() {
+    local p hatali=${VABU_INSTALL_DRYRUN_FAIL:-}
+    adim_dene() { adim "$@"; if [[ $1 == "$hatali" ]]; then sleep 1; hata "Deneme hatası ($1)"; fi; }
+    adim_dene disk "Disk hazırlanıyor"
+    ilerleme 0; sleep 1; ilerleme 2; sleep 0.5; ilerleme 4; sleep 0.5; ilerleme 5
+    adim_dene copy "Dosyalar kopyalanıyor"
+    for p in $(seq 6 80); do ilerleme "$p"; sleep 0.16; done
+    adim_dene system "Sistem ayarlanıyor"
+    sleep 1; ilerleme 82; sleep 0.5; ilerleme 84; sleep 0.5; ilerleme 86
+    adim_dene boot "Önyükleyici kuruluyor"
+    ilerleme 87; sleep 1; ilerleme 89; sleep 1; ilerleme 95; sleep 0.5; ilerleme 96; sleep 0.5; ilerleme 98
+    adim_dene finish "Kurulum tamamlanıyor"
+    sleep 0.5; ilerleme 99; sleep 0.5; ilerleme 100
+    cikti DONE
+}
+
+kayit "Vabu kurulumu ($( ((DENEME)) && echo deneme || echo gerçek )), kaynak: $SRC"
+girdi_oku
+denetle
+if (( DENEME )); then
+    deneme
+else
+    kurulum_oncesi
+    kur
+fi
