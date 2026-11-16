@@ -63,19 +63,21 @@ call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || { echo "
 # Açılan yüzey klavye odağını alsın diye yazmadan önce kısa bir bekleme
 yaz() {
     sleep 0.6
-    command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null || { echo "::error::klavye girdisi gönderilemedi"; echo "keyboard injection failed" >>"$OUT/test-failed"; }
+    command -v wtype >/dev/null && timeout 5 wtype -s 300 -d 30 "$@" 2>/dev/null || { echo "::error::klavye girdisi gönderilemedi"; echo "keyboard injection failed" >>"$OUT/test-failed"; }
     sleep 0.4
 }
 assert_open() {
     local target="$1" expected="$2" actual="" attempt
-    for attempt in $(seq 30); do
-        actual="$(timeout 10 qs -p "$SHELL_DIR" ipc call "$target" isOpen 2>/dev/null)"
+    for attempt in $(seq 20); do
+        actual="$(timeout 1 qs -p "$SHELL_DIR" ipc call "$target" isOpen 2>/dev/null)"
         [[ "$actual" == "$expected" ]] && return 0
         sleep 0.1
     done
     printf '::error::%s open state: expected=%s actual=%q\n' "$target" "$expected" "$actual"
     printf '%s open state: expected=%s actual=%q\n' "$target" "$expected" "$actual" >>"$OUT/test-failed"
-    return 1
+    shot "failed-$target-$expected" 0
+    cat "$OUT/shell.log"
+    exit 1
 }
 
 # Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
