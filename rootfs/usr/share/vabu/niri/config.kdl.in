@@ -102,9 +102,14 @@ window-rule {
     match app-id=r#"^org\.pulseaudio\.pavucontrol$"#
     match app-id=r#"^\.?blueman-manager"#
     match app-id=r#"^nm-connection-editor$"#
-    match title="^Vabu Ayarlar$"
     match app-id="^vabu-shell-error$"
     open-floating true
+}
+
+// Ayarlar diğer pencereler gibi döşenir; gezinme ile içerik sığsın diye biraz geniş açılır.
+window-rule {
+    match app-id=r#"^org\.quickshell$"# title="^Vabu Ayarlar$"
+    default-column-width { proportion 0.66667; }
 }
 
 // Oyunlar tam ekran açılsın.

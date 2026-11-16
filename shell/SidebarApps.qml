@@ -8,24 +8,6 @@ Card {
     id: root
     implicitHeight: col.implicitHeight + 16
 
-    function running(entry) {
-        const id = entry.id.toLowerCase().replace(/\.desktop$/, "")
-        return Niri.windows.some(w => {
-            const a = (w.app_id || "").toLowerCase()
-            return a === id || id.endsWith("." + a) || a.endsWith("." + id)
-        })
-    }
-    // Açıksa penceresine git, değilse başlat
-    function open(entry) {
-        const id = entry.id.toLowerCase().replace(/\.desktop$/, "")
-        const win = Niri.windows.find(w => {
-            const a = (w.app_id || "").toLowerCase()
-            return a === id || id.endsWith("." + a) || a.endsWith("." + id)
-        })
-        if (win) Niri.focusWindow(win.id)
-        else Apps.launch(entry)
-    }
-
     ColumnLayout {
         id: col
         x: 8
@@ -78,7 +60,7 @@ Card {
                 delegate: Item {
                     id: app
                     required property var modelData
-                    readonly property bool isRunning: root.running(modelData)
+                    readonly property bool isRunning: Apps.windowsOf(modelData).length > 0
                     width: dock.cell
                     height: 44
                     Accessible.role: Accessible.Button
@@ -117,7 +99,7 @@ Card {
                         cursorShape: Qt.PointingHandCursor
                         acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                         // orta tuş: açık olsa da yeni pencere
-                        onClicked: e => e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : root.open(app.modelData)
+                        onClicked: e => e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : Apps.open(app.modelData)
                     }
                 }
             }

@@ -25,7 +25,10 @@ Card {
     function isOpen(name) { return Ui.popover === name && Ui.popoverScreen === screenName }
     function toggle(name) { Ui.togglePopover(name, screenName) }
 
-    // Düğmeler kartın genişliğine eşit aralıkla yayılır; dizüstünde pil de araya girer
+    // Dizüstünde Bluetooth da varsa düğmeler biraz daralır ki pil yüzdesi sığsın
+    readonly property int button: hasBattery && Bt.available ? 36 : 40
+
+    // Düğmeler kartın genişliğine eşit aralıkla yayılır. İlki paneli daraltır.
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 8
@@ -33,6 +36,15 @@ Card {
         spacing: 0
 
         IconButton {
+            implicitWidth: root.button
+            icon: Config.sidebarSide === "right" ? "right_panel_close" : "left_panel_close"
+            iconColor: Theme.soft
+            tooltip: "Yan paneli daralt"
+            onClicked: { Ui.closePopover(); Config.set("sidebarCompact", true) }
+        }
+        Item { Layout.fillWidth: true }
+        IconButton {
+            implicitWidth: root.button
             icon: Net.icon
             iconColor: Net.kind === "none" ? Theme.muted : Theme.paper
             tooltip: "Ağ: " + Net.label
@@ -42,6 +54,7 @@ Card {
         Item { Layout.fillWidth: true; visible: Bt.available }
         IconButton {
             visible: Bt.available
+            implicitWidth: root.button
             icon: Bt.icon
             iconColor: Bt.isOn ? Theme.paper : Theme.muted
             tooltip: "Bluetooth: " + Bt.label
@@ -50,6 +63,7 @@ Card {
         }
         Item { Layout.fillWidth: true }
         IconButton {
+            implicitWidth: root.button
             icon: root.muted || root.volume === 0 ? "volume_off" : root.volume < 0.4 ? "volume_down" : "volume_up"
             iconColor: root.muted ? Theme.muted : Theme.paper
             tooltip: root.muted ? "Ses kapalı" : "Ses %" + Math.round(root.volume * 100)
@@ -66,6 +80,7 @@ Card {
         Item { Layout.fillWidth: true }
         IconButton {
             id: bell
+            implicitWidth: root.button
             icon: Notifs.dnd ? "notifications_off" : "notifications"
             iconColor: Notifs.dnd ? Theme.muted : Theme.paper
             tooltip: "Bildirimler: " + Notifs.count
@@ -74,49 +89,46 @@ Card {
             Rectangle {
                 visible: Notifs.count > 0 && !bell.active
                 width: 7; height: 7; radius: 3.5
-                x: parent.width - 13
+                x: parent.width / 2 + 5
                 y: 9
                 color: Theme.ok
             }
         }
 
 
-        // Pil: yalnızca dizüstünde
-        Item { Layout.fillWidth: true; visible: root.hasBattery }
-        Item {
-            visible: root.hasBattery
-            implicitWidth: batt.implicitWidth + 12
-            implicitHeight: 40
+        // Kontrol merkezi; dizüstünde pil durumunu da gösterir
+        Item { Layout.fillWidth: true }
+        IconButton {
+            id: control
+            implicitWidth: root.hasBattery ? batt.implicitWidth + 16 : root.button
+            icon: root.hasBattery ? "" : "tune"
+            tooltip: root.hasBattery ? "Kontrol merkezi · pil %" + root.batteryPct : "Kontrol merkezi"
+            active: root.isOpen("control")
+            onClicked: root.toggle("control")
             Row {
                 id: batt
+                visible: root.hasBattery
                 anchors.centerIn: parent
-                spacing: 3
+                spacing: 2
+                readonly property color tone: control.active ? Theme.accentInk
+                    : !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     name: root.charging ? "bolt" : root.batteryIcon
                     size: 19
                     filled: root.charging
-                    color: !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
+                    color: batt.tone
                 }
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.batteryPct
-                    color: !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
+                    color: batt.tone
                     font.family: Theme.sans
                     font.pixelSize: 13
                     font.weight: Font.Medium
                     font.features: ({ "tnum": 1 })
                 }
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggle("control") }
-        }
-
-        Item { Layout.fillWidth: true }
-        IconButton {
-            icon: "tune"
-            tooltip: "Kontrol merkezi"
-            active: root.isOpen("control")
-            onClicked: root.toggle("control")
         }
     }
 }

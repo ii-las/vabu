@@ -57,6 +57,7 @@ jobs:
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/theme.txt
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /boot/grub2/themes/vabu/vabu-22.pf2
           rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/share/vabu/assets/wallpaper-gunduz.jpg
+          rpm -qlp ~/rpmbuild/RPMS/noarch/vabu-desktop-*.rpm | grep -q /usr/libexec/vabu/app-index
 
       - name: Paketleri gerçekten kur (dosya çakışması, eksik bağımlılık)
         run: |

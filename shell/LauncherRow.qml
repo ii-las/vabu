@@ -36,14 +36,20 @@ Item {
         Item {
             implicitWidth: 32
             implicitHeight: 32
+            // Kur kipinde simge AppStream önbelleğinden (dosya yolu) ya da temadan gelir
+            readonly property string pkgIcon: !root.isInstall || !root.item.icon ? ""
+                : root.item.icon.startsWith("/") ? "file://" + root.item.icon
+                : Quickshell.iconPath(root.item.icon, true)
+            readonly property string source: root.mode === "search" ? Quickshell.iconPath(root.item.icon, "application-x-executable") : pkgIcon
             IconImage {
-                visible: root.mode === "search"
+                id: appIcon
+                visible: parent.source !== "" && status !== Image.Error
                 anchors.centerIn: parent
                 implicitSize: 30
-                source: root.mode === "search" ? Quickshell.iconPath(root.item.icon, "application-x-executable") : ""
+                source: parent.source
             }
             Rectangle {
-                visible: root.mode !== "search"
+                visible: !appIcon.visible
                 anchors.fill: parent
                 radius: 10
                 color: Theme.well

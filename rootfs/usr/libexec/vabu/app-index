@@ -1,0 +1,194 @@
+#!/usr/bin/python3 -I
+# Kurulabilir uygulamaların yerel dizini. Fedora, RPM Fusion ve Flathub'ın AppStream
+# kataloglarından ad, özet, simge ve kaynakları tek bir TSV'de toplar; başlatıcının
+# "Kur" kipi aramayı bu dosyada yapar, ağ beklemez.
+#   app-index [--force]     dizin güncelse hiçbir şey yapmaz
+import glob
+import gzip
+import os
+import subprocess
+import sys
+import time
+import xml.etree.ElementTree as ET
+
+ARCH = os.uname().machine
+HOME = os.path.expanduser("~")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "vabu")
+OUT = os.path.join(CACHE, "apps.tsv")
+LANG = (os.environ.get("LANG") or "tr").split("_")[0].split(".")[0] or "tr"
+XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+APP_TYPES = {"desktop-application", "desktop", "console-application"}
+
+RPM_DIRS = ["/usr/share/swcatalog", "/var/cache/swcatalog", "/var/lib/swcatalog"]
+FLATPAK_DIRS = ["/var/lib/flatpak", os.path.join(HOME, ".local/share/flatpak")]
+
+
+def rpm_catalogs():
+    for base in RPM_DIRS:
+        for path in sorted(glob.glob(os.path.join(base, "xml", "*.xml*"))):
+            yield path, base
+
+
+def flatpak_catalogs():
+    for base in FLATPAK_DIRS:
+        for active in sorted(glob.glob(os.path.join(base, "appstream", "*", ARCH, "active"))):
+            remote = active.split(os.sep)[-3]
+            for name in ("appstream.xml.gz", "appstream.xml"):
+                path = os.path.join(active, name)
+                if os.path.exists(path):
+                    yield path, active, remote
+                    break
+
+
+def refresh_flathub():
+    """Flathub ekliyse ve kataloğu yoksa ya da eskiyse indir (yetki gerekmez)."""
+    try:
+        remotes = subprocess.run(["flatpak", "remotes", "--columns=name"], capture_output=True,
+                                 text=True, timeout=20).stdout.split()
+    except (OSError, subprocess.SubprocessError):
+        return
+    if "flathub" not in remotes:
+        return
+    paths = [p for p, _, r in flatpak_catalogs() if r == "flathub"]
+    if paths and time.time() - os.path.getmtime(paths[0]) < 2 * 86400:
+        return
+    subprocess.run(["flatpak", "update", "--appstream", "flathub"], stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL, timeout=180, check=False)
+
+
+def open_xml(path):
+    return gzip.open(path, "rb") if path.endswith(".gz") else open(path, "rb")
+
+
+def pick(elem, tag):
+    """Önce arayüz dilindeki, yoksa dilsiz metin."""
+    plain = None
+    for child in elem.findall(tag):
+        lang = child.get(XML_LANG)
+        text = (child.text or "").strip()
+        if not text:
+            continue
+        if lang == LANG:
+            return text
+        if lang is None and plain is None:
+            plain = text
+    return plain or ""
+
+
+def icon_of(elem, find_cached):
+    best, best_size, stock = "", -1, ""
+    for icon in elem.findall("icon"):
+        kind = icon.get("type")
+        text = (icon.text or "").strip()
+        if not text:
+            continue
+        if kind == "cached":
+            size = int(icon.get("height") or icon.get("width") or 64)
+            path = find_cached(text, size)
+            if path and size > best_size:
+                best, best_size = path, size
+        elif kind == "stock" and not stock:
+            stock = text
+        elif kind == "local" and text.startswith("/") and not best:
+            best = text
+    return best or stock
+
+
+def components(path):
+    origin = ""
+    for event, elem in ET.iterparse(open_xml(path), events=("start", "end")):
+        if event == "start":
+            if elem.tag == "components":
+                origin = elem.get("origin", "")
+            continue
+        if elem.tag != "component":
+            continue
+        yield origin, elem
+        elem.clear()
+
+
+def clean(text):
+    return " ".join((text or "").split())
+
+
+def main():
+    force = "--force" in sys.argv
+    refresh_flathub()
+
+    rpm = list(rpm_catalogs())
+    flat = list(flatpak_catalogs())
+    sources = [p for p, _ in rpm] + [p for p, _, _ in flat]
+    newest = max([os.path.getmtime(p) for p in sources] + [os.path.getmtime(__file__)])
+    if not force and os.path.exists(OUT) and os.path.getmtime(OUT) >= newest:
+        return
+
+    apps = {}
+
+    def add(key, name, summary, icon, keywords, source):
+        a = apps.get(key)
+        if a is None:
+            a = apps[key] = {"name": name, "summary": summary, "icon": icon, "kw": set(), "src": []}
+        else:
+            a["name"] = a["name"] or name
+            a["summary"] = a["summary"] or summary
+            # Önbellekteki PNG, tema adından daha güvenilir
+            if icon and (not a["icon"] or (icon.startswith("/") and not a["icon"].startswith("/"))):
+                a["icon"] = icon
+        a["kw"].update(keywords)
+        if source not in a["src"]:
+            a["src"].append(source)
+
+    for path, base in rpm:
+        for origin, c in components(path):
+            if c.get("type") not in APP_TYPES or c.get("merge"):
+                continue
+            cid, pkg = (c.findtext("id") or "").strip(), (c.findtext("pkgname") or "").strip()
+            name = pick(c, "name")
+            if not cid or not pkg or not name:
+                continue
+
+            def cached(file, size, origin=origin, base=base):
+                for d in ("%dx%d" % (size, size), "128x128", "64x64"):
+                    p = os.path.join(base, "icons", origin, d, file)
+                    if os.path.exists(p):
+                        return p
+                return ""
+
+            kind = "fusion" if origin.startswith("rpmfusion") else "fedora"
+            kws = {clean(k.text).lower() for k in c.iter("keyword") if k.text}
+            add(cid.lower().removesuffix(".desktop"), name, pick(c, "summary"), icon_of(c, cached),
+                kws, kind + "=" + pkg)
+
+    for path, active, remote in flat:
+        if remote != "flathub":
+            continue
+        for _, c in components(path):
+            if c.get("type") not in APP_TYPES:
+                continue
+            bundle = (c.findtext("bundle") or "").strip().split("/")
+            name = pick(c, "name")
+            if len(bundle) < 2 or bundle[0] != "app" or not name:
+                continue
+            appid = bundle[1]
+
+            def cached(file, size, active=active):
+                for d in ("%dx%d" % (size, size), "128x128", "64x64"):
+                    p = os.path.join(active, "icons", d, file)
+                    if os.path.exists(p):
+                        return p
+                return ""
+
+            kws = {clean(k.text).lower() for k in c.iter("keyword") if k.text}
+            add(appid.lower(), name, pick(c, "summary"), icon_of(c, cached), kws, "flathub=" + appid)
+
+    os.makedirs(CACHE, exist_ok=True)
+    tmp = OUT + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        for key, a in sorted(apps.items(), key=lambda kv: kv[1]["name"].lower()):
+            f.write("\t".join([key, clean(a["name"]), clean(a["summary"]), a["icon"],
+                               clean(" ".join(sorted(a["kw"]))), ",".join(a["src"])]) + "\n")
+    os.replace(tmp, OUT)
+
+
+if __name__ == "__main__":
+    main()

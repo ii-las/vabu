@@ -72,6 +72,13 @@ sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/d
 gorunum() { mkdir -p "$HOME/.config/vabu"; printf '{"theme":"%s"}\n' "$1" > "$HOME/.config/vabu/shell.json"; sleep 1.5; }
 gorunum acik
 
+# Başlatıcının "Kur" kipi için uygulama dizini (AppStream kataloglarından)
+if [ -x /usr/libexec/vabu/app-index ]; then
+    { basla=$SECONDS; timeout 180 /usr/libexec/vabu/app-index; echo "süre: $((SECONDS - basla)) sn"
+      f="${XDG_CACHE_HOME:-$HOME/.cache}/vabu/apps.tsv"; wc -l "$f"; grep -i "gimp" "$f" | head -3
+      awk -F'\t' '$4 ~ /^\// { n++ } END { print "dosya simgesi olan:", n+0 }' "$f"; } >"$OUT/app-index.log" 2>&1
+fi
+
 qs -p "$SHELL_DIR" >"$OUT/shell.log" 2>&1 &
 sleep 10
 shot 01-masaustu 0
@@ -117,6 +124,13 @@ gorunum acik
 # Pencerelerle birlikte
 (foot -e sh -c 'fastfetch 2>/dev/null; sleep 120' >/dev/null 2>&1 &)
 shot 16-terminal 3
+
+# Dar yan panel
+printf '{"theme":"acik","sidebarCompact":true}\n' > "$HOME/.config/vabu/shell.json"
+shot 16b-dar-panel 1.8
+printf '{"theme":"koyu","sidebarCompact":true}\n' > "$HOME/.config/vabu/shell.json"
+shot 16c-dar-panel-koyu 1.5
+gorunum acik
 
 # Ayarlar: her sayfa
 (vabu-settings look >"$OUT/settings.log" 2>&1 &)

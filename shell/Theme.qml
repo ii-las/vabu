@@ -60,6 +60,8 @@ Singleton {
     // Ölçüler
     readonly property int gap: 10
     readonly property int sidebarWidth: 280
+    readonly property int sidebarCompactWidth: 72
+    readonly property int sidebarNow: Config.sidebarCompact ? sidebarCompactWidth : sidebarWidth
     readonly property int radiusPanel: 22
     readonly property int radiusCard: 20
     readonly property int radiusTile: 15

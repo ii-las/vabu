@@ -51,7 +51,7 @@ PanelWindow {
     color: "transparent"
     anchors { top: true; bottom: true; left: true; right: true }
     // Yan paneli örtmez: panel açıkken başka bir düğmeye tek tıkla geçilebilsin
-    readonly property real inset: Theme.sidebarWidth - Theme.gap
+    readonly property real inset: Theme.sidebarNow - Theme.gap
     margins { left: onRight ? 0 : inset; right: onRight ? inset : 0 }
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.namespace: "vabu-panel"

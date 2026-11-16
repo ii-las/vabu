@@ -163,6 +163,10 @@ ColumnLayout {
             }
         }
         SettingRow {
+            label: "Dar görünüm"
+            Toggle { checked: Config.sidebarCompact; onToggled: Config.set("sidebarCompact", !Config.sidebarCompact) }
+        }
+        SettingRow {
             label: "Saatte saniyeler"
             Toggle { checked: Config.showSeconds; onToggled: Config.set("showSeconds", !Config.showSeconds) }
         }

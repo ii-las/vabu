@@ -1,4 +1,5 @@
 //@ pragma UseQApplication
+//@ pragma IconTheme Papirus
 // Vabu Ayarlar - giriş noktası.  Çalıştırma:  vabu-settings [sayfa]
 // Sayfalar: look display network sound drivers apps updates keyboard users about
 // Zaten açıksa:  qs -p /usr/share/vabu/shell/settings.qml ipc call settings open <sayfa>

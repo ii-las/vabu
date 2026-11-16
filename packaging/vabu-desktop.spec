@@ -59,6 +59,11 @@ Requires:       libdnf5-plugin-actions
 Requires:       pciutils
 Requires:       mokutil
 Requires:       jq
+# Başlatıcıda uygulama kurma: AppStream kataloglarından yerel dizin
+Requires:       python3
+Requires:       appstream-data
+Recommends:     rpmfusion-free-appstream-data
+Recommends:     rpmfusion-nonfree-appstream-data
 # Oyun
 Requires:       gamescope
 Requires:       gamemode

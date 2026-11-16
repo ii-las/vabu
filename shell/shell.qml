@@ -1,4 +1,5 @@
 //@ pragma UseQApplication
+//@ pragma IconTheme Papirus
 // Vabu Shell - giriş noktası.  Çalıştırma:  qs -p /usr/share/vabu/shell
 // Komut satırından denetim (niri kısayolları bunları kullanır):
 //   qs -p /usr/share/vabu/shell ipc call launcher open search|install|command

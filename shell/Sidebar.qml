@@ -19,9 +19,23 @@ PanelWindow {
         left: !onRight
         right: onRight
     }
-    implicitWidth: Theme.sidebarWidth
+    // Dar görünüme geçerken içerik söner, genişlik değişir (niri pencereleri kaydırır), sonra yeni içerik belirir
+    property bool compact: Config.sidebarCompact
+    property real fade: 1
+    Connections {
+        target: Config
+        function onSidebarCompactChanged() { if (root.compact !== Config.sidebarCompact) switcher.restart() }
+    }
+    SequentialAnimation {
+        id: switcher
+        NumberAnimation { target: root; property: "fade"; to: 0; duration: 110; easing.type: Easing.InCubic }
+        ScriptAction { script: root.compact = Config.sidebarCompact }
+        NumberAnimation { target: root; property: "fade"; to: 1; duration: 280; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+    }
+
+    implicitWidth: compact ? Theme.sidebarCompactWidth : Theme.sidebarWidth
     // Pencerelerle kartlar arasındaki boşluğu niri'nin kendi aralığı verir
-    exclusiveZone: Theme.sidebarWidth - Theme.gap
+    exclusiveZone: implicitWidth - Theme.gap
     color: "transparent"
 
     WlrLayershell.namespace: "vabu-sidebar"
@@ -33,34 +47,48 @@ PanelWindow {
         onPressed: Ui.closePopover()
     }
 
-    ColumnLayout {
+    Item {
         anchors.fill: parent
         anchors.margins: Theme.gap
-        spacing: 8
+        opacity: root.fade
+        transform: Translate { x: (1 - root.fade) * (root.onRight ? 12 : -12) }
 
-        SidebarClock {
-            Layout.fillWidth: true
-            originX: root.originX
-            screenName: root.screenName
-        }
-        SidebarWorkspaces {
-            Layout.fillWidth: true
-            originX: root.originX
-            output: root.screenName
-        }
-        SidebarApps {
-            Layout.fillWidth: true
-            originX: root.originX
+        ColumnLayout {
+            anchors.fill: parent
+            visible: !root.compact
+            spacing: 8
+
+            SidebarClock {
+                Layout.fillWidth: true
+                originX: root.originX
+                screenName: root.screenName
+            }
+            SidebarWorkspaces {
+                Layout.fillWidth: true
+                originX: root.originX
+                output: root.screenName
+            }
+            SidebarApps {
+                Layout.fillWidth: true
+                originX: root.originX
+            }
+
+            Item { Layout.fillHeight: true }
+
+            SidebarMedia {
+                Layout.fillWidth: true
+                originX: root.originX
+            }
+            SidebarStatus {
+                Layout.fillWidth: true
+                originX: root.originX
+                screenName: root.screenName
+            }
         }
 
-        Item { Layout.fillHeight: true }
-
-        SidebarMedia {
-            Layout.fillWidth: true
-            originX: root.originX
-        }
-        SidebarStatus {
-            Layout.fillWidth: true
+        SidebarCompact {
+            anchors.fill: parent
+            visible: root.compact
             originX: root.originX
             screenName: root.screenName
         }

@@ -14,27 +14,47 @@ Singleton {
         return all.find(e => e.id.toLowerCase() === low || e.id.toLowerCase() === low + ".desktop") ?? null
     }
 
-    // Pencereden uygulamaya: app_id çoğu zaman .desktop adıyla aynıdır ama her zaman değil
+    // Pencereden uygulamaya: app_id çoğu zaman .desktop adıyla aynıdır ama her zaman değil.
+    // Quickshell pencerelerinin (Ayarlar, kurulum) app_id'si hep "org.quickshell"; onları başlıktan tanırız.
     property var windowCache: ({})
-    function forWindow(appId) {
+    function forWindow(appId, title) {
         if (!appId) return null
-        if (appId in windowCache) return windowCache[appId]
-        const e = byId(appId) ?? DesktopEntries.heuristicLookup(appId) ?? null
-        windowCache[appId] = e
+        const own = appId === "org.quickshell"
+        const key = own ? appId + "|" + (title ?? "") : appId
+        if (key in windowCache) return windowCache[key]
+        const e = own ? (all.find(x => x.name === title || x.genericName === title) ?? null)
+            : (byId(appId) ?? DesktopEntries.heuristicLookup(appId) ?? null)
+        windowCache[key] = e
         return e
     }
-    function iconFor(appId) {
-        const e = forWindow(appId)
+    function iconFor(appId, title) {
+        const e = forWindow(appId, title)
         return Quickshell.iconPath(e?.icon || appId || "application-x-executable", "application-x-executable")
     }
-    function nameFor(appId) {
-        const e = forWindow(appId)
+    function nameFor(appId, title) {
+        const e = forWindow(appId, title)
         if (e) return e.name
         if (!appId) return ""
         const last = appId.split(".").pop().replace(/[-_]/g, " ")
         return last.charAt(0).toUpperCase() + last.slice(1)
     }
     onAllChanged: windowCache = ({})
+
+    // Bu uygulamanın açık pencereleri
+    function windowsOf(entry) {
+        const id = entry.id.toLowerCase().replace(/\.desktop$/, "")
+        return Niri.windows.filter(w => {
+            const a = (w.app_id || "").toLowerCase()
+            if (a === "org.quickshell") return forWindow(w.app_id, w.title) === entry
+            return a === id || id.endsWith("." + a) || a.endsWith("." + id)
+        })
+    }
+    // Açıksa penceresine git, değilse başlat
+    function open(entry) {
+        const w = windowsOf(entry)[0]
+        if (w) Niri.focusWindow(w.id)
+        else launch(entry)
+    }
 
     readonly property var pinnedEntries: Config.pinned.map(id => byId(id)).filter(e => e)
 

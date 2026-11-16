@@ -7,12 +7,13 @@ Singleton {
     id: root
 
     property string query: ""
-    property var results: []            // [{key, name, summary, sources:[{kind, ref}], installed}]
-    property bool busy: dnfSearch.running || flatpakSearch.running
+    property var results: []            // [{key, name, summary, icon, sources:[{kind, ref}], installed}]
+    property bool busy: (indexer.running && catalog.length === 0) || dnfSearch.running
     property var states: ({})           // key -> "installing" | "done" | "error"
 
+    // AppStream kataloglarından çıkarılan yerel dizin (bkz. /usr/libexec/vabu/app-index)
+    property var catalog: []
     property var rpmHits: []
-    property var flatpakHits: []
     property var installedRpms: ({})
     property var installedFlatpaks: ({})
 
@@ -35,41 +36,71 @@ Singleton {
         return "fedora"
     }
 
+    function isInstalled(sources) {
+        return sources.some(s => s.kind === "flathub" ? !!installedFlatpaks[s.ref] : !!installedRpms[s.ref])
+    }
+
     function search(q) {
         query = q.trim()
+        if (catalog.length === 0 && !indexer.running) indexer.running = true
         debounce.restart()
     }
 
+    function score(a, q) {
+        const name = a.lower
+        if (name === q) return 100
+        if (name.startsWith(q)) return 80
+        if (name.split(/[\s\-_.:]/).some(w => w.startsWith(q))) return 60
+        if (name.includes(q)) return 40
+        if (a.kw.includes(q)) return 25
+        if (a.key.includes(q)) return 15
+        if (a.summary.toLowerCase().includes(q)) return 8
+        return 0
+    }
+
     function run() {
-        if (query.length < 2) { results = []; return }
+        if (query.length < 2) { results = []; rpmHits = []; return }
         rpmHits = []
-        flatpakHits = []
-        dnfSearch.command = ["dnf", "repoquery", "--available", "--latest-limit=1", "-q",
-            "--queryformat", "%{name}\t%{summary}\t%{repoid}\n", "*" + query + "*"]
-        dnfSearch.running = true
-        flatpakSearch.command = ["flatpak", "search", "--columns=application,name,description,remotes", query]
-        flatpakSearch.running = true
+        merge()
+        // Katalogda az sonuç varsa uygulama olmayan paketlere de bak; yalnızca önbellekten,
+        // depo verisi indirmeden (sistem önbelleğini güncelleme zamanlayıcısı tazeler)
+        if (results.length < 4 && query.length >= 3) {
+            dnfSearch.command = ["dnf", "repoquery", "-C", "--available", "--latest-limit=1", "-q",
+                "--queryformat", "%{name}\t%{summary}\t%{repoid}\n", "*" + query + "*"]
+            dnfSearch.running = false
+            dnfSearch.running = true
+        }
     }
 
     function merge() {
         const q = query.toLowerCase()
-        const map = {}
-        for (const r of rpmHits) {
-            const key = r.name.toLowerCase()
-            map[key] = map[key] || { key, name: r.name, summary: r.summary, sources: [], installed: !!installedRpms[r.name] }
-            map[key].sources.push({ kind: kindOf(r.repo), ref: r.name })
+        const found = catalog.map(a => ({ a, s: score(a, q) })).filter(x => x.s > 0)
+            .sort((x, y) => y.s - x.s || x.a.lower.localeCompare(y.a.lower))
+            .slice(0, 8)
+            .map(x => ({ key: x.a.key, name: x.a.name, summary: x.a.summary, icon: x.a.icon,
+                         sources: x.a.sources, installed: isInstalled(x.a.sources) }))
+        const taken = new Set()
+        for (const r of found) for (const s of r.sources) if (s.kind !== "flathub") taken.add(s.ref)
+        const extra = rpmHits.filter(r => !taken.has(r.name)).slice(0, Math.max(0, 8 - found.length)).map(r => ({
+            key: "rpm:" + r.name, name: r.name, summary: r.summary, icon: "",
+            sources: [{ kind: kindOf(r.repo), ref: r.name }], installed: !!installedRpms[r.name]
+        }))
+        results = found.concat(extra)
+    }
+
+    function parseCatalog(text) {
+        const list = []
+        for (const line of text.split("\n")) {
+            if (!line) continue
+            const [key, name, summary, icon, kw, src] = line.split("\t")
+            if (!key || !name || !src) continue
+            list.push({
+                key, name, lower: name.toLowerCase(), summary: summary ?? "", icon: icon ?? "", kw: kw ?? "",
+                sources: src.split(",").map(x => { const i = x.indexOf("="); return { kind: x.slice(0, i), ref: x.slice(i + 1) } })
+            })
         }
-        for (const f of flatpakHits) {
-            const short = f.name.toLowerCase().replace(/\s+/g, "-")
-            const key = map[short] ? short : f.id.toLowerCase()
-            map[key] = map[key] || { key, name: f.name, summary: f.summary, sources: [], installed: false }
-            map[key].name = f.name           // Flathub'daki görünen ad daha güzel
-            if (!map[key].summary) map[key].summary = f.summary
-            map[key].sources.push({ kind: "flathub", ref: f.id })
-            if (installedFlatpaks[f.id]) map[key].installed = true
-        }
-        const rank = x => (x.name.toLowerCase() === q ? 0 : x.name.toLowerCase().startsWith(q) ? 1 : 2)
-        results = Object.values(map).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name)).slice(0, 8)
+        catalog = list
+        if (query.length >= 2) merge()
     }
 
     function install(item, source) {
@@ -105,7 +136,24 @@ Singleton {
         flatpakList.running = true
     }
 
-    Timer { id: debounce; interval: 280; onTriggered: root.run() }
+    Timer { id: debounce; interval: 90; onTriggered: root.run() }
+
+    FileView {
+        id: catalogFile
+        path: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/vabu/apps.tsv"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.parseCatalog(text())
+    }
+
+    // Dizin açılıştan biraz sonra, kabuğu yavaşlatmadan tazelenir
+    Process {
+        id: indexer
+        command: ["nice", "-n", "19", "/usr/libexec/vabu/app-index"]
+        onExited: catalogFile.reload()
+    }
+    Timer { running: true; interval: 15000; onTriggered: indexer.running = true }
 
     Process {
         id: dnfSearch
@@ -121,19 +169,6 @@ Singleton {
     }
 
     Process {
-        id: flatpakSearch
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.flatpakHits = text.split("\n").filter(l => l && !l.startsWith("No matches")).map(l => {
-                    const [id, name, summary, remotes] = l.split("\t")
-                    return { id, name, summary, remotes: remotes || "" }
-                }).filter(f => f.id && f.remotes.includes("flathub")).slice(0, 20)
-                root.merge()
-            }
-        }
-    }
-
-    Process {
         id: rpmList
         running: true
         command: ["rpm", "-qa", "--qf", "%{NAME}\n"]
@@ -142,6 +177,7 @@ Singleton {
                 const m = {}
                 for (const n of text.split("\n")) if (n) m[n] = true
                 root.installedRpms = m
+                if (root.query.length >= 2) root.merge()
             }
         }
     }
@@ -155,6 +191,7 @@ Singleton {
                 const m = {}
                 for (const n of text.split("\n")) if (n) m[n.trim()] = true
                 root.installedFlatpaks = m
+                if (root.query.length >= 2) root.merge()
             }
         }
     }

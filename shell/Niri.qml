@@ -75,6 +75,18 @@ Singleton {
             "niri msg action focus-monitor \"$1\" && niri msg action focus-workspace \"$2\"",
             "sh", ws.output, String(ws.idx)])
     }
+    // Sürükle bırak: pencereyi aynı ekrandaki başka bir alana taşı, odak yerinde kalsın
+    function moveWindowToWorkspace(winId, ws) {
+        Quickshell.execDetached(["sh", "-c",
+            "niri msg action focus-monitor \"$1\"; niri msg action move-window-to-workspace --window-id \"$2\" --focus false \"$3\"",
+            "sh", ws.output, String(winId), String(ws.idx)])
+    }
+    // Pencerenin kolonunu şeritte verilen sıraya (1'den başlar) taşı
+    function moveColumnTo(winId, index) {
+        Quickshell.execDetached(["sh", "-c",
+            "niri msg action focus-window --id \"$1\" && niri msg action move-column-to-index \"$2\"",
+            "sh", String(winId), String(index)])
+    }
     function focusWindow(id) { action(["focus-window", "--id", String(id)]) }
     function closeWindow(id) { action(["close-window", "--id", String(id)]) }
     function toggleOverview() { action(["toggle-overview"]) }
