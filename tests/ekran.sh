@@ -31,7 +31,10 @@ default_border none
 focus_follows_mouse no
 SWAY
 
-sway -c "$HOME/sway.conf" >"$OUT/sway.log" 2>&1 &
+# Fedora'nın sway'i dosya yetenekleriyle (cap_sys_nice) gelir; yetkisiz bir kapsayıcıda
+# böyle bir ikili çalıştırılamaz. Kopyası yetenek taşımaz.
+install -m 0755 "$(command -v sway)" "$HOME/sway"
+"$HOME/sway" -c "$HOME/sway.conf" >"$OUT/sway.log" 2>&1 &
 for _ in $(seq 50); do
     sock="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'wayland-*' ! -name '*.lock' | head -1)"
     [[ -n "$sock" ]] && break
