@@ -19,3 +19,7 @@ Public repolarda desteklenen GitHub planlarında çalışır. Private repo için
 Gelecekte indirilen bir ISO, GitHub CLI kurulu bir sistemde `gh attestation verify DOSYA.iso --repo ii-las/vabu` ile doğrulanabilir. Bu komut bu çalışma sırasında çalıştırılmaz ve yayın başlatılmaz.
 
 Dayanaklar: [Kiwi imza anahtarı şeması](https://osinside.github.io/kiwi/image_description/elements.html), [GitHub imzalı kaynak doğrulama eylemi](https://github.com/actions/attest).
+
+## Gerçek test kaydı
+
+`v*` etiketli sürüm işleri imza şartından önce ayrıca kaynak commit, mimari ve Fedora ile eşleşen `RELEASE_VALIDATION_JSON` kaydını ister. Gerçek testler yapılmadığı için bu değer ayarlanmadı; sürüm yayını kapalı kalır. Kapsam ve kayıt biçimi: [RECOVERY.md](RECOVERY.md).

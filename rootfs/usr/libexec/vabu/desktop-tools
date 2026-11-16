@@ -18,26 +18,49 @@ def run(args, timeout=5):
         return 127, ''
 
 
+def service_check(key, label, unit, user=False, optional=False, timer=False):
+    command = ['systemctl'] + (['--user'] if user else [])
+    code, text = run(command + ['show', unit, '--property=LoadState,ActiveState,UnitFileState'])
+    props = dict(line.split('=', 1) for line in text.splitlines() if '=' in line)
+    load, active = props.get('LoadState'), props.get('ActiveState')
+    if code or not load:
+        state, detail = 'unknown', 'Hizmet durumu okunamadı.'
+    elif load == 'not-found':
+        state, detail = 'unconfigured', 'Bileşen kurulu değil.'
+    elif load != 'loaded' or active == 'failed':
+        state, detail = 'failed', 'Hizmet başarısız; günlüklerden incelenmeli.'
+    elif timer and props.get('UnitFileState') == 'disabled':
+        state, detail = 'unconfigured', 'Otomatik indirme kapalı.'
+    elif active in ('active', 'activating', 'reloading'):
+        state, detail = 'ok', 'Hizmet çalışıyor; işlevin uçtan uca denemesi ayrıca gerekir.'
+    elif optional:
+        state, detail = 'available', 'Bileşen hazır; şu anda kullanımda değil.'
+    else:
+        state, detail = 'attention', 'Hizmet çalışmıyor; yapılandırmayı denetle.'
+    return {'id': key, 'label': label, 'state': state, 'detail': detail}
+
+
 def diagnostics():
-    checks = []
-    for key, label, command in (
-        ('network', 'Ağ', ['nmcli', '-t', '-f', 'STATE', 'general']),
-        ('portal', 'Ekran paylaşımı', ['systemctl', '--user', 'is-active', 'xdg-desktop-portal.service']),
-        ('locking', 'Boşta kilitleme', ['systemctl', '--user', 'is-active', 'vabu-idle.service']),
-        ('audio', 'Ses', ['systemctl', '--user', 'is-active', 'pipewire.service']),
-        ('bluetooth', 'Bluetooth', ['systemctl', 'is-active', 'bluetooth.service']),
-        ('printing', 'Yazdırma', ['systemctl', 'is-active', 'cups.socket']),
-        ('updates', 'Güncellemeler', ['systemctl', 'is-enabled', 'vabu-update.timer']),
-        ('drivers', 'Ekran kartı sürücüsü', ['vabu-drivers', 'status', '--quiet']),
+    code, output = run(['nmcli', '-t', '-f', 'STATE', 'general'])
+    state = 'unknown' if code else 'ok' if output == 'connected' else 'inactive'
+    checks = [{'id': 'network', 'label': 'Ağ', 'state': state,
+               'detail': 'Bağlı' if state == 'ok' else 'Ağ durumu okunamadı.' if code else 'Etkin ağ bağlantısı yok.'}]
+    for key, label, unit, user, optional, timer in (
+        ('portal', 'Ekran paylaşımı', 'xdg-desktop-portal.service', True, True, False),
+        ('locking', 'Boşta kilitleme', 'vabu-idle.service', True, False, False),
+        ('audio', 'Ses', 'pipewire.service', True, True, False),
+        ('bluetooth', 'Bluetooth', 'bluetooth.service', False, True, False),
+        ('printing', 'Yazdırma', 'cups.socket', False, True, False),
+        ('updates', 'Güncellemeler', 'vabu-update.timer', False, False, True),
     ):
-        code, output = run(command)
-        good = code == 0 and (key != 'network' or output == 'connected')
-        checks.append({'id': key, 'label': label, 'state': 'ok' if good else 'attention',
-                       'detail': 'Hazır' if good else 'Denetim veya yapılandırma gerekiyor'})
+        checks.append(service_check(key, label, unit, user, optional, timer))
+    code, _ = run(['vabu-drivers', 'status', '--quiet'])
+    checks.append({'id':'drivers', 'label':'Ekran kartı sürücüsü', 'state':'ok' if code == 0 else 'attention',
+                   'detail':'Sürücü denetimi tamamlandı.' if code == 0 else 'Sürücü durumunu Sürücüler sayfasından incele.'})
     code, fs = run(['findmnt', '-no', 'FSTYPE', '/'])
     checks.append({'id': 'snapshots', 'label': 'Anlık görüntüler',
-                   'state': 'ok' if fs == 'btrfs' and Path('/etc/snapper/configs/root').exists() else 'attention',
-                   'detail': 'Tam sistem geri alma ayrıca doğrulanmalıdır; /boot kapsam dışındadır.'})
+                   'state': 'available' if code == 0 and fs == 'btrfs' and Path('/etc/snapper/configs/root').exists() else 'unconfigured',
+                   'detail': 'Kök dosya görüntüsü tam sistem yedeği değildir; /boot ve kullanıcı verileri ayrıca korunmalı.'})
     return {'checks': checks}
 
 

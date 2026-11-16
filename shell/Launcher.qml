@@ -36,7 +36,7 @@ OverlayWindow {
         { icon: "keyboard",           name: Lang.t("Kısayollar"),          sub: "Super + Shift + /",                  run: () => { Ui.shortcutsOpen = true } },
         { icon: "settings",           name: Lang.t("Ayarlar"),             sub: "Super + ,",                          run: () => Ui.settings() },
         { icon: "lock",               name: Lang.t("Ekranı kilitle"),      sub: "Super + Alt + L",                    run: () => Ui.lock() },
-        { icon: "bedtime",            name: Lang.t("Uyku"),                sub: "",                                   run: () => Ui.run(["systemctl", "suspend"]) },
+        { icon: "bedtime",            name: Lang.t("Uyku"),                sub: "",                                   run: () => Ui.suspend() },
         { icon: "logout",             name: Lang.t("Oturumu kapat"),       sub: "",                                   run: () => Niri.quit() },
         { icon: "restart_alt",        name: Lang.t("Yeniden başlat"),      sub: "",                                   run: () => Ui.run(["systemctl", "reboot"]) },
         { icon: "power_settings_new", name: Lang.t("Kapat"),               sub: "",                                   run: () => Ui.run(["systemctl", "poweroff"]) }

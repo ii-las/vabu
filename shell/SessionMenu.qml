@@ -16,7 +16,7 @@ OverlayWindow {
 
     readonly property var actions: [
         { icon: "lock",               label: Lang.t("Kilitle"),        run: () => Ui.lock() },
-        { icon: "bedtime",            label: Lang.t("Uyku"),           run: () => { Ui.lock(); Ui.run(["systemctl", "suspend"]) } },
+        { icon: "bedtime",            label: Lang.t("Uyku"),           run: () => { Ui.suspend() } },
         { icon: "logout",             label: Lang.t("Oturumu kapat"),  run: () => Niri.quit() },
         { icon: "restart_alt",        label: Lang.t("Yeniden başlat"), run: () => Ui.run(["systemctl", "reboot"]) },
         { icon: "power_settings_new", label: Lang.t("Kapat"),          run: () => Ui.run(["systemctl", "poweroff"]), danger: true }

@@ -14,6 +14,10 @@
 #
 # Çıkış kodları: 0 tamam · 2 doğrulama hatası (dosyaya dokunulmadı) · 3 dosya elle düzenlenmiş
 set -euo pipefail
+if [[ "${_VABU_NIRI_CONFIG_LOCKED:-}" != 1 ]]; then
+    exec python3 -I "$(dirname "$0")/niri-config-lock" "$@"
+fi
+unset _VABU_NIRI_CONFIG_LOCKED
 
 TEMPLATE="${VABU_NIRI_TEMPLATE:-/usr/share/vabu/niri/config.kdl.in}"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -122,9 +126,13 @@ perl -pe '
 ' "$TEMPLATE" > "$tmp"
 
 # Doğrula: hatalı bir ayar oturumu bozmasın
-if command -v niri >/dev/null && ! niri validate -c "$tmp" >/dev/null 2>&1; then
+if ((!defaults)) && ! command -v niri >/dev/null; then
+    echo "niri doğrulayıcısı eksik; mevcut ayar korunuyor." >&2
+    exit 2
+fi
+if command -v niri >/dev/null && ! timeout 10 niri validate -c "$tmp" >/dev/null 2>&1; then
     echo "Üretilen niri ayarı geçersiz, uygulanmadı:" >&2
-    niri validate -c "$tmp" >&2 || true
+    timeout 10 niri validate -c "$tmp" >&2 || true
     exit 2
 fi
 

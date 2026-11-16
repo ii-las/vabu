@@ -1,0 +1,194 @@
+#!/usr/bin/python3 -I
+"""Merge one settings patch under a process lock; retain the last valid document."""
+import fcntl
+import json
+import math
+import os
+import re
+from pathlib import Path
+import stat
+import sys
+import tempfile
+import time
+
+LIMIT = 2 * 1024 * 1024
+VERSION = 1
+
+
+def validate_outputs(outputs):
+    if not isinstance(outputs, list) or len(outputs) > 32: raise ValueError('Geçersiz ekran listesi.')
+    seen = set()
+    for item in outputs:
+        if not isinstance(item, dict): raise ValueError('Geçersiz ekran ayarı.')
+        name = item.get('name')
+        if not isinstance(name, str) or not name or len(name) > 256 or any(ord(c) < 32 for c in name) or name in seen:
+            raise ValueError('Geçersiz ekran adı.')
+        seen.add(name)
+        for key in ('off', 'vrr'):
+            if key in item and type(item[key]) is not bool: raise ValueError('Geçersiz ekran seçeneği.')
+        mode = item.get('mode', '')
+        if not isinstance(mode, str) or (mode and not re.fullmatch(r'\d+x\d+(@\d+(\.\d+)?)?', mode)):
+            raise ValueError('Geçersiz ekran kipi.')
+        for key, low, high in (('scale',0.5,4),('x',-100000,100000),('y',-100000,100000)):
+            if key in item and (type(item[key]) not in (int,float) or not math.isfinite(item[key]) or not low <= item[key] <= high):
+                raise ValueError('Geçersiz ekran ölçeği veya konumu.')
+
+
+def validate(document, data):
+    if not isinstance(data, dict):
+        raise ValueError('Ayar dosyası bir nesne olmalı.')
+    version = data.get('_schemaVersion', 1)
+    if type(version) is not int or version != VERSION:
+        raise ValueError('Bu ayar dosyasının sürümü desteklenmiyor.')
+    if document == 'shell':
+        boolean = ('showSeconds', 'showMedia', 'sidebarCompact', 'nightLight', 'focusMode', 'focusCompact',
+                   'clipboardEnabled', 'reducedMotion', 'highContrast', 'effects', 'restoreWorkspaceApps', 'onboardingDone')
+        enums = {'theme': ('acik', 'koyu', 'otomatik'), 'language': ('tr', 'en'),
+                 'sidebarSide': ('left', 'right'), 'accent': ('mavi', 'yesil', 'turuncu', 'pembe', 'grafit')}
+        ranges = {'sidebarWidth': (240, 360)}
+        for prefix in ('ac', 'battery'):
+            ranges.update({prefix + key: (0, 120) for key in ('Lock', 'Screen', 'Suspend')})
+        if 'textScale' in data and (type(data['textScale']) not in (int, float) or data['textScale'] not in (1, 1.15, 1.3, 1.5)):
+            raise ValueError('Geçersiz yazı ölçeği.')
+        if 'wallpaper' in data and not isinstance(data['wallpaper'], str):
+            raise ValueError('Geçersiz duvar kağıdı.')
+        if 'pinned' in data and (not isinstance(data['pinned'], list) or len(data['pinned']) > 12 or any(not isinstance(v, str) for v in data['pinned'])):
+            raise ValueError('Geçersiz sabitlenmiş uygulamalar.')
+        if 'displayProfiles' in data:
+            profiles = data['displayProfiles']
+            if not isinstance(profiles, list) or len(profiles) > 12: raise ValueError('Geçersiz ekran profilleri.')
+            names = set()
+            for profile in profiles:
+                if not isinstance(profile, dict): raise ValueError('Geçersiz ekran profili.')
+                name = profile.get('name')
+                if not isinstance(name, str) or not name.strip() or len(name) > 40 or name in names:
+                    raise ValueError('Geçersiz profil adı.')
+                names.add(name)
+                outputs = profile.get('outputs')
+                if not isinstance(outputs, dict) or any(not isinstance(value, dict) for value in outputs.values()):
+                    raise ValueError('Geçersiz profil ekranları.')
+                validate_outputs([dict(value, name=key) for key, value in outputs.items()])
+        if data.get('location') is not None:
+            location = data['location']
+            if not isinstance(location, dict) or any(type(location.get(k)) not in (int, float) or not math.isfinite(location[k]) or abs(location[k]) > bound for k, bound in (('lat',90), ('lon',180))):
+                raise ValueError('Geçersiz konum.')
+    elif document == 'niri':
+        boolean = ('naturalScroll', 'animations')
+        enums = {}
+        ranges = {'gaps': (0, 64), 'radius': (0, 64)}
+        for key in ('xkbLayout', 'xkbVariant', 'xkbOptions'):
+            if key in data and (not isinstance(data[key], str) or len(data[key]) > 512 or any(ord(c) < 32 for c in data[key])):
+                raise ValueError('Geçersiz klavye ayarı.')
+        if 'outputs' in data: validate_outputs(data['outputs'])
+        # Use the same workspace validator as the KDL renderer.
+        import runpy
+        runpy.run_path(str(Path(__file__).with_name('workspaces')), run_name='config_validation')['validate'](data)
+    else:
+        raise ValueError('Bilinmeyen ayar belgesi.')
+    for key in boolean:
+        if key in data and type(data[key]) is not bool:
+            raise ValueError('Geçersiz açma/kapama ayarı: ' + key)
+    for key, allowed in enums.items():
+        if key in data and data[key] not in allowed:
+            raise ValueError('Geçersiz seçenek: ' + key)
+    for key, (low, high) in ranges.items():
+        if key in data and (type(data[key]) not in (int, float) or not math.isfinite(data[key]) or not low <= data[key] <= high):
+            raise ValueError('Geçersiz sayısal ayar: ' + key)
+    # Existing unrecognized keys are preserved for forward/backward compatibility.
+    if len(json.dumps(data, allow_nan=False).encode()) > LIMIT:
+        raise ValueError('Ayar dosyası çok büyük.')
+    return data
+
+
+def read(path, document):
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        return {}
+    with os.fdopen(fd, 'r') as stream:
+        st = os.fstat(stream.fileno())
+        if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid() or st.st_size > LIMIT:
+            raise ValueError('Güvensiz veya büyük ayar dosyası.')
+        return validate(document, json.loads(stream.read(LIMIT + 1)))
+
+
+def atomic(path, data):
+    fd, temporary = tempfile.mkstemp(prefix='.vabu-settings-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(json.dumps(data, ensure_ascii=False, allow_nan=False, indent=2) + '\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        directory = os.open(path.parent, os.O_RDONLY)
+        try: os.fsync(directory)
+        finally: os.close(directory)
+    finally:
+        if os.path.exists(temporary): os.unlink(temporary)
+
+
+def transact(document, action, patch=None):
+    if document not in ('shell', 'niri') or action not in ('read', 'patch', 'recover'):
+        raise ValueError('Geçersiz ayar işlemi.')
+    folder = Path(os.environ.get('XDG_CONFIG_HOME', str(Path.home() / '.config'))) / 'vabu'
+    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path = folder / (document + '.json')
+    backup = folder / (document + '.json.bak')
+    lockfd = os.open(folder / ('.' + document + '.lock'), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(lockfd, 'r+') as lock:
+        if not stat.S_ISREG(os.fstat(lock.fileno()).st_mode) or os.fstat(lock.fileno()).st_uid != os.getuid():
+            raise ValueError('Güvensiz ayar kilidi.')
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            data = read(path, document)
+        except (ValueError, OSError, UnicodeError, RecursionError):
+            try:
+                if not backup.exists(): raise ValueError('Yedek yok.')
+                saved = read(backup, document)
+            except (ValueError, OSError, UnicodeError, RecursionError):
+                saved = None
+            if document == 'shell' and saved is not None:
+                # A malformed primary file cannot silently opt back into history/startup.
+                saved = {**saved, 'clipboardEnabled':False, 'restoreWorkspaceApps':False}
+            if action != 'recover' or saved is None:
+                return {'ok': False, 'values': saved or {}, 'writable': False, 'canRecover': saved is not None,
+                        'error': 'Ayar dosyası okunamadı; mevcut dosya korunuyor.'}
+            # Preserve the corrupt original before restoring a validated backup.
+            target = folder / (document + '.json.broken-' + str(time.time_ns()))
+            os.replace(path, target)
+            data = saved
+            atomic(path, data)
+        if action == 'patch':
+            if not isinstance(patch, dict) or '_schemaVersion' in patch:
+                raise ValueError('Geçersiz ayar değişikliği.')
+            merged = dict(data)
+            for key, value in patch.items():
+                if not isinstance(key, str) or not key or len(key) > 100:
+                    raise ValueError('Geçersiz ayar adı.')
+                if value is None: merged.pop(key, None)
+                else: merged[key] = value
+            merged['_schemaVersion'] = VERSION
+            validate(document, merged)
+            if path.exists(): atomic(backup, data)
+            atomic(path, merged)
+            data = merged
+        return {'ok': True, 'values': data, 'writable': True, 'canRecover': False, 'error': ''}
+
+
+def main():
+    if len(sys.argv) != 3: raise ValueError('Geçersiz ayar işlemi.')
+    patch = None
+    if sys.argv[2] == 'patch':
+        payload = sys.stdin.buffer.readline(LIMIT + 1)
+        if len(payload) > LIMIT: raise ValueError('Ayar değişikliği çok büyük.')
+        patch = json.loads(payload)
+    result = transact(sys.argv[1], sys.argv[2], patch)
+    print(json.dumps(result, ensure_ascii=False))
+    return 0 if result['ok'] else 1
+
+
+if __name__ == '__main__':
+    try: sys.exit(main())
+    except (ValueError, OSError, UnicodeError, RecursionError):
+        print(json.dumps({'ok': False, 'error': 'Ayar kaydı tamamlanamadı; dosyayı denetle.'}, ensure_ascii=False))
+        sys.exit(1)

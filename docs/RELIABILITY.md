@@ -38,3 +38,5 @@ GitHub ISO işi gerekli kaynak commit'ini imaj tanımına yazar; Kiwi config.sh 
 - Calamares ile şifreli/şifresiz kurulum, ISO çıkarıldıktan sonra açılış; x86_64 ve aarch64.
 
 Sonraki masaüstü geliştirmeleriyle ISO tanımında RPM imza doğrulaması açılmıştır. Doğrulanmış COPR anahtar özeti olmadan derleme durur; imzalı kaynak doğrulaması olmadan sürüm yayınlanmaz. Bu akış bu bilgisayarda çalıştırılmamıştır. Ayrıntılar: [ISO_TRUST.md](ISO_TRUST.md). Masaüstü özellikleri ve kalan gerçek sistem testleri: [DESKTOP_FEATURES.md](DESKTOP_FEATURES.md). Otomatik tam sistem geri alma hâlâ devre dışıdır.
+
+Yeni sağlamlaştırma değişiklikleri, test kapsamı ve açık kalan gerçek sistem işleri: [STABILIZATION.md](STABILIZATION.md). Kurtarma sınırı ve yayın öncesi test kaydı: [RECOVERY.md](RECOVERY.md).

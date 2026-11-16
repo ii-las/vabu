@@ -91,37 +91,46 @@ def serve():
                 except socket.timeout:
                     continue
                 with conn:
-                    conn.settimeout(2)
-                    payload = bytearray()
-                    while len(payload) <= LIMIT * 7:
-                        chunk = conn.recv(4096)
-                        if not chunk: break
-                        payload.extend(chunk)
                     try:
+                        conn.settimeout(2)
+                        payload = bytearray()
+                        maximum = LIMIT * 7 + 512
+                        while len(payload) <= maximum:
+                            chunk = conn.recv(min(4096, maximum + 1 - len(payload)))
+                            if not chunk: break
+                            payload.extend(chunk)
+                        if len(payload) > maximum:
+                            raise ValueError('request too large')
                         msg = json.loads(payload)
+                        if not isinstance(msg, dict): raise ValueError('object required')
                         now = time.monotonic()
                         entries = [e for e in entries if now - e['time'] < 600]
                         action = msg.get('action')
                         if action == 'add':
                             text = msg.get('text')
-                            if not isinstance(text, str) or not text or len(text.encode()) > LIMIT:
+                            if not isinstance(text, str) or not text or len(text.encode()) > LIMIT or '\x00' in text or re.search(r'-----BEGIN .*PRIVATE KEY-----', text):
                                 raise ValueError('invalid content')
                             key = hashlib.sha256(text.encode()).hexdigest()
                             entries = [{'id': key, 'text': text, 'time': now}] + [e for e in entries if e['id'] != key]
                             entries = entries[:20]
                         elif action == 'clear':
                             entries = []
-                        elif action == 'delete':
-                            entries = [e for e in entries if e['id'] != msg.get('id')]
-                        elif action == 'copy':
-                            item = next(e for e in entries if e['id'] == msg.get('id'))
-                            subprocess.run(['wl-copy', '--type', 'text/plain;charset=utf-8'], input=item['text'].encode(), timeout=3, check=True)
+                        elif action in ('delete', 'copy'):
+                            item_id = msg.get('id')
+                            if not isinstance(item_id, str) or not re.fullmatch(r'[a-f0-9]{64}', item_id):
+                                raise ValueError('invalid entry')
+                            if action == 'delete': entries = [e for e in entries if e['id'] != item_id]
+                            else:
+                                item = next(e for e in entries if e['id'] == item_id)
+                                subprocess.run(['wl-copy', '--type', 'text/plain;charset=utf-8'], input=item['text'].encode(), timeout=3, check=True)
                         else:
                             raise ValueError('invalid action')
                         conn.sendall(b'{"ok":true}')
-                        publish()
-                    except (ValueError, KeyError, StopIteration, subprocess.SubprocessError):
-                        conn.sendall(b'{"ok":false}')
+                    except (OSError, ValueError, KeyError, UnicodeError, StopIteration, subprocess.SubprocessError):
+                        # A disconnected, slow or malformed client cannot kill the watcher.
+                        try: conn.sendall(b'{"ok":false}')
+                        except OSError: pass
+                    publish()
     finally:
         if watcher is not None and watcher.poll() is None:
             watcher.terminate()

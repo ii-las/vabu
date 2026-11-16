@@ -1,21 +1,20 @@
-// Kabuktaki her QML dosyasını derler ve hataları tek seferde listeler.
-// tests/ekran.sh bunu kabuğun bir kopyasının içine koyup çalıştırır.
+// Runs inside a copy of the installed shell; generated singleton list is injected by CI.
 import QtQuick
 import Quickshell
-
 ShellRoot {
+    property var checkedSingletons: [] // VABU_SINGLETONS
     Component.onCompleted: {
+        const count = checkedSingletons.length
         const files = (Quickshell.env("VABU_QML_DOSYALARI") || "").split(",").filter(f => f)
         let bad = 0
-        for (const f of files) {
-            const c = Qt.createComponent(f)
-            if (c.status === Component.Error) {
-                const msg = c.errorString()
-                if (msg.includes("is not creatable")) continue      // singleton: derlendi, yeter
+        for (const file of files) {
+            const component = Qt.createComponent(file, Component.PreferSynchronous)
+            if (component.status !== Component.Ready) {
                 bad++
-                console.warn("DERLEME-HATASI " + f + "\n" + msg)
+                console.warn("DERLEME-HATASI " + file + "\n" + component.errorString())
             }
         }
-        console.warn("DERLEME-BITTI " + files.length + " dosya, " + bad + " hatalı")
+        console.warn("DERLEME-BITTI " + (files.length + count) + " dosya, " + bad + " hatalı")
+        Qt.exit(bad ? 1 : 0)
     }
 }

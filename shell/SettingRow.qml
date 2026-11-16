@@ -52,8 +52,11 @@ Item {
                 wrapMode: Text.Wrap
             }
         }
-        Row {
+        Flow {
             id: slot
+            readonly property string accessibleLabel: root.label
+            Layout.maximumWidth: rowLayout.width
+            Layout.fillWidth: rowLayout.columns === 1
             Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
             spacing: 8
         }

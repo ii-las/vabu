@@ -7,6 +7,8 @@
 # Vabu paketleri kurulu bir Fedora'da çalışır (CI bunu her derlemede yapar).
 # Gerekenler: sway grim wtype mesa-dri-drivers dbus-daemon libnotify
 set -uo pipefail
+# This script starts sessions and contains installer UI fixtures. Never run on a host.
+[[ "${VABU_TEST_ISOLATED:-}" == 1 ]] || { echo "Yalnızca ayrılmış CI/test ortamında çalışır." >&2; exit 2; }
 
 OUT="${1:-/tmp/ekran}"
 SHELL_DIR=/usr/share/vabu/shell
@@ -65,8 +67,17 @@ yaz()  { sleep 0.6; command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/n
 KOPYA="$HOME/kabuk"
 cp -r "$SHELL_DIR" "$KOPYA"
 cp "$(dirname "$0")/derle.qml" "$KOPYA/derle.qml"
-VABU_QML_DOSYALARI="$(cd "$KOPYA" && ls *.qml | grep -v '^derle.qml$' | paste -sd, -)" \
-    timeout 25 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1
+python3 - "$KOPYA" <<'QMLFILES'
+import sys
+from pathlib import Path
+folder = Path(sys.argv[1])
+singletons = [p.stem for p in folder.glob('*.qml') if p.read_text().startswith('pragma Singleton')]
+main = folder / 'derle.qml'
+main.write_text(main.read_text().replace('[] // VABU_SINGLETONS', '[' + ','.join(sorted(singletons)) + ']'))
+QMLFILES
+VABU_QML_DOSYALARI="$(cd "$KOPYA" && for f in *.qml; do [[ "$f" == derle.qml ]] || grep -q '^pragma Singleton' "$f" || echo "$f"; done | paste -sd, -)" \
+    timeout 25 qs -p "$KOPYA/derle.qml" >"$OUT/derle.log" 2>&1 || { cat "$OUT/derle.log"; exit 1; }
+grep -Eq 'DERLEME-BITTI [1-9][0-9]* dosya, 0 hatalı' "$OUT/derle.log" || { cat "$OUT/derle.log"; exit 1; }
 echo "=== derleme"
 sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/derle.log"
 
@@ -88,7 +99,13 @@ call welcome open;               shot 01b-hosgeldin
 call welcome next;               shot 01c-rehber
 call welcome close
 call clipboard toggle;           shot 01d-pano-kapali
-call clipboard toggle
+[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call clipboard isOpen)" == true ]] || touch "$OUT/test-failed"
+yaz -k Escape
+[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call clipboard isOpen)" == false ]] || touch "$OUT/test-failed"
+call appmenu open foot;          shot 01e-uygulama-menusu
+[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call appmenu isOpen)" == true ]] || touch "$OUT/test-failed"
+yaz -k Escape
+[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call appmenu isOpen)" == false ]] || touch "$OUT/test-failed"
 
 call panel toggle control;       shot 02-kontrol
 call panel toggle wifi;          shot 03-wifi
@@ -151,6 +168,25 @@ done
 gorunum koyu
 shot 29b-ayarlar-koyu 1
 gorunum acik
+# Narrow window + both languages + 150% text and reduced motion/high contrast.
+swaymsg output HEADLESS-1 resolution 1920x1280 scale 2 >/dev/null
+swaymsg '[title="Vabu Ayarlar"] resize set width 800 height 600'  >/dev/null
+for language in tr en; do
+    for scale in 1 1.5; do
+        printf '{"theme":"acik","onboardingDone":true,"language":"%s","textScale":%s,"reducedMotion":true,"highContrast":true}\n' "$language" "$scale" > "$HOME/.config/vabu/shell.json"
+        sleep 2
+        for page in look display network sound power health desktop accessibility devices drivers apps updates keyboard users about; do
+            vabu-settings "$page" >/dev/null 2>&1
+            sleep 0.7
+            audit="$(timeout 10 qs -p "$SHELL_DIR/settings.qml" ipc call settings audit 2>/dev/null)"
+            [[ "$audit" == ok ]] || { echo "::error::UI-AUDIT-FAIL $language $scale $page: $audit"; touch "$OUT/test-failed"; }
+            shot "narrow-$language-$scale-$page" 0.05
+        done
+        shot "narrow-$language-$scale" 0.2
+    done
+done
+gorunum acik
+swaymsg output HEADLESS-1 resolution 2880x1800 scale 2 >/dev/null
 swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6
@@ -206,7 +242,7 @@ if command -v niri >/dev/null && [[ -x /usr/libexec/vabu/niri-config ]]; then
         nm toggle-overview
         shot 42-niri-genel-bakis 1.5
     else
-        echo "::warning::niri iç içe açılamadı"
+        echo "::error::niri iç içe açılamadı"; touch "$OUT/test-failed"
         tail -20 "$OUT/niri.log"
     fi
 fi
@@ -232,23 +268,5 @@ for f in settings greeter shell-niri; do
 done
 ls -la "$OUT"
 
-# Yüklenmeyi engelleyen hatalar derlemeyi durdurur; diğerleri uyarı olarak görünür
-fatal='Failed to load|is not a type|non-existent property|Cannot assign to|is not installed|unavailable|Unexpected token|Syntax error'
-status=0
-[[ -e "$OUT/test-failed" ]] && status=1
-if grep -q "DERLEME-HATASI" "$OUT/derle.log" 2>/dev/null; then
-    echo "::error::derlenmeyen QML dosyaları var"
-    status=1
-fi
-for f in shell settings greeter shell-niri shell-kilit; do
-    [[ -f "$OUT/$f.log" ]] || continue
-    if grep -En "$fatal" "$OUT/$f.log"; then
-        echo "::error::$f: QML yüklenirken hata"
-        status=1
-    fi
-    if grep -Ec "ReferenceError|TypeError|Unable to assign|Binding loop" "$OUT/$f.log" >/dev/null; then
-        echo "::warning::$f: çalışma zamanı uyarıları var (ayrıntı kayıtta)"
-        grep -En "ReferenceError|TypeError|Unable to assign|Binding loop" "$OUT/$f.log" | sort | uniq -c | sort -rn | head -40
-    fi
-done
-exit "$status"
+# Compilation, missing logs and runtime binding/type errors are required gates.
+python3 "$(dirname "$0")/qml-check.py" "$OUT"

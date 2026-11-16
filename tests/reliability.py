@@ -237,6 +237,30 @@ class Reliability(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn('original', out.read_text())
 
+    def test_generator_waits_for_the_same_settings_lock_before_reading(self):
+        import fcntl
+        config = self.base / '.config/vabu'
+        config.mkdir(parents=True, exist_ok=True)
+        output = self.base / '.config/niri/config.kdl'
+        self.env['VABU_NIRI_TEMPLATE'] = str(ROOT / 'rootfs/usr/share/vabu/niri/config.kdl.in')
+        with (config / '.niri.lock').open('w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            proc = subprocess.Popen(['bash', str(ROOT/'rootfs/usr/libexec/vabu/niri-config')],
+                                    env=self.env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            try:
+                time.sleep(0.2)
+                self.assertIsNone(proc.poll())
+                self.assertFalse(output.exists())
+                (config / 'niri.json').write_text('{"gaps":20}')
+                fcntl.flock(lock, fcntl.LOCK_UN)
+                stdout, stderr = proc.communicate(timeout=15)
+                self.assertEqual(proc.returncode, 0, stderr)
+                self.assertIn('gaps 20', output.read_text())
+            finally:
+                if proc.poll() is None: proc.kill(); proc.wait()
+                if not proc.stdout.closed: proc.stdout.close()
+                if not proc.stderr.closed: proc.stderr.close()
+
     def test_generated_config_keeps_user_block_and_false_settings(self):
         config = self.config_setup()
         out = config / 'niri/config.kdl'

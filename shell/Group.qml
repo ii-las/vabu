@@ -14,6 +14,8 @@ ColumnLayout {
     Text { textFormat: Text.PlainText;
         visible: root.title !== ""
         Layout.leftMargin: 4
+        Layout.fillWidth: true
+        wrapMode: Text.Wrap
         text: root.title
         color: Theme.muted
         font.family: Theme.sans

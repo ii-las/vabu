@@ -1,0 +1,57 @@
+#!/usr/bin/python3 -I
+"""Read-only reboot and kernel/boot inventory; never mount, restore or regenerate."""
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+
+def run(args):
+    try:
+        result = subprocess.run(args, capture_output=True, text=True, timeout=15, env={**os.environ, 'LC_ALL':'C'})
+        return result.returncode, result.stdout[:65536]
+    except (OSError, subprocess.SubprocessError): return 127, ''
+
+
+def reboot():
+    if Path('/run/reboot-required').exists(): return 'required'
+    code, output = run(['dnf', 'needs-restarting', '--json'])
+    try:
+        data = json.loads(output)
+        value = data[0]['reboot_required'] if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict) else None
+        if type(value) is bool and code == int(value): return 'required' if value else 'not-required'
+    except (ValueError, KeyError, TypeError): pass
+    return 'unknown' 
+
+
+def recovery():
+    code, output = run(['rpm', '-q', 'kernel-core', '--qf', '%{VERSION}-%{RELEASE}.%{ARCH}\n'])
+    versions = output.splitlines() if code == 0 else []
+    versions = [v for v in versions if re.fullmatch(r'[A-Za-z0-9_.+-]{1,160}', v)]
+    running = os.uname().release
+    kernels = []
+    for version in versions:
+        kernels.append({'version':version, 'running':version == running,
+                        'image':Path('/boot', 'vmlinuz-' + version).is_file(),
+                        'initramfs':Path('/boot', 'initramfs-' + version + '.img').is_file(),
+                        'modules':Path('/usr/lib/modules', version).is_dir()})
+    mount_code, mount_text = run(['findmnt', '--json', '--target', '/boot', '-o', 'TARGET,FSTYPE'])
+    try:
+        filesystems = json.loads(mount_text)['filesystems'] if mount_code == 0 else []
+        separate_boot = any(item.get('target') == '/boot' for item in filesystems)
+    except (ValueError, KeyError, TypeError): separate_boot = None
+    present = any(all(k[key] for key in ('image','initramfs','modules')) for k in kernels)
+    return {'format':1, 'inventoryReadable':code == 0 and bool(versions), 'separateBoot':separate_boot,
+            'kernels':kernels, 'matchingKernelFiles':present,
+            'fullRestoreSupported':False,
+            'state':'files-present' if present else 'unknown' if not versions else 'attention',
+            'detail':'Dosya varlığı önyükleme veya tam sistem geri alma doğrulaması değildir.'}
+
+
+if __name__ == '__main__':
+    if sys.argv[1:] == ['reboot']: print(json.dumps({'reboot':reboot()}))
+    elif sys.argv[1:] == ['reboot-exit']: sys.exit({'not-required':0, 'required':1, 'unknown':2}[reboot()])
+    elif sys.argv[1:] == ['recovery']: print(json.dumps(recovery(), ensure_ascii=False))
+    else: sys.exit(2)

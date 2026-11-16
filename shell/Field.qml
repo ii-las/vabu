@@ -9,7 +9,7 @@ Rectangle {
     signal accepted()
 
     implicitWidth: 260
-    implicitHeight: 42
+    implicitHeight: Math.max(42, Math.ceil(input.implicitHeight + 18))
     radius: Theme.radiusRow
     color: input.activeFocus ? Theme.hover : Theme.well
     border.width: 1

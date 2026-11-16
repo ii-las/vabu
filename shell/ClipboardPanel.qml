@@ -4,6 +4,7 @@ OverlayWindow {
     id: root
     open: Ui.clipboardOpen
     onDismissed: Ui.clipboardOpen = false
+    onOpenChanged: if (open) Qt.callLater(() => query.focusField())
     Card {
         anchors.centerIn: parent
         width: Math.min(640, parent.width - 32); height: Math.min(560, parent.height - 32)

@@ -7,11 +7,14 @@ Singleton {
     id: root
 
     property var systemKeymap: ({})
-    property var values: ({})
+    readonly property var values: store.values
+    readonly property string storeError: store.error
+    readonly property bool canRecover: store.canRecover
+    function recover() { store.recover() }
     // ok | manual (dosya elle düzenlenmiş) | invalid | busy
     property string status: "ok"
     property string lastError: ""
-    property bool ready: false          // niri.json okundu (ya da yok)
+    readonly property bool ready: store.ready
 
     readonly property string xkbLayout: values.xkbLayout ?? (systemKeymap.layout || "us")
     readonly property string xkbVariant: values.xkbVariant ?? (systemKeymap.variant || "")
@@ -23,18 +26,14 @@ Singleton {
     readonly property var outputs: values.outputs ?? []
 
     function set(key, value) {
-        const v = Object.assign({}, values)
-        v[key] = value
-        values = v
-        file.setText(JSON.stringify(v, null, 2) + "\n")
-        debounce.restart()
+        const change = {}; change[key] = value === undefined ? null : value
+        store.patch(change)
     }
-    function setMany(obj) {
-        values = Object.assign({}, values, obj)
-        file.setText(JSON.stringify(values, null, 2) + "\n")
-        debounce.restart()
-    }
+    function setMany(obj) { store.patch(obj) }
+    property bool pendingApply: false
+    property bool pendingForce: false
     function apply(force) {
+        if (gen.running) { pendingApply = true; pendingForce = pendingForce || force; return }
         gen.command = force ? ["/usr/libexec/vabu/niri-config", "--force"] : ["/usr/libexec/vabu/niri-config"]
         gen.environment = { "VABU_KOYU": Theme.dark ? "1" : "0", "VABU_VURGU": Config.accentName }
         status = "busy"
@@ -49,16 +48,18 @@ Singleton {
         onExited: code => {
             root.status = code === 0 ? "ok" : code === 3 ? "manual" : "invalid"
             root.lastError = code === 0 ? "" : err.text.trim()
+            if (root.pendingApply) {
+                const force = root.pendingForce
+                root.pendingApply = false; root.pendingForce = false
+                Qt.callLater(() => root.apply(force))
+            }
         }
     }
 
     Process { running: true; command: ["/usr/libexec/vabu/desktop-tools", "keymap"]; stdout: StdioCollector { onStreamFinished: { try { root.systemKeymap = JSON.parse(text) } catch(e) {} } } }
 
-    FileView {
-        id: file
-        path: Config.dir + "/niri.json"
-        printErrors: false
-        onLoaded: { try { root.values = JSON.parse(text()) } catch (e) { root.values = {} } root.ready = true }
-        onLoadFailed: { root.values = {}; root.ready = true }
+    JsonStore {
+        id: store; document: "niri"
+        onCommitted: debounce.restart()
     }
 }

@@ -38,6 +38,7 @@ jobs:
         run: |
           python3 -B tests/reliability.py
           python3 -B tests/desktop.py
+          python3 -B tests/stability.py
 
       - name: Kaynak arşivleri
         run: |
@@ -98,7 +99,7 @@ jobs:
         timeout-minutes: 15
         run: |
           dnf -y install sway grim wtype mesa-dri-drivers dbus-daemon libnotify pipewire wireplumber procps-ng findutils calamares
-          bash tests/ekran.sh /tmp/ekran
+          VABU_TEST_ISOLATED=1 bash tests/ekran.sh /tmp/ekran
 
       - name: Önyükleme menüsünün görüntüsünü al
         timeout-minutes: 8
@@ -130,8 +131,7 @@ jobs:
           niri validate -c rootfs/usr/share/vabu/recovery/niri.kdl
 
       - name: QML denetimi (qmllint)
-        # Bilgi amaçlı: yanlış alarm paket gönderimini engellemesin, bulgular özet olarak işaretlenir
-        continue-on-error: true
+        # Runtime loading above is mandatory; static lint also rejects unresolved types/properties.
         run: |
           dnf -y install qt6-qtdeclarative-devel
           QMLLINT=$(command -v qmllint-qt6 || echo /usr/lib64/qt6/bin/qmllint)
@@ -145,7 +145,7 @@ jobs:
           $QMLLINT --unqualified disable -I /usr/lib64/qt6/qml -I . *.qml > /tmp/qmllint.txt 2>&1 || true
           grep -E "does not exist|non-existent|Could not find property|is not a type|Unknown component" /tmp/qmllint.txt | tee /tmp/qmllint-errors.txt || true
           if [ -s /tmp/qmllint-errors.txt ]; then
-            echo "::warning::QML denetimi olası hatalar buldu (ayrıntı: bu adımın günlüğü)"
+            echo "::error::QML denetimi hatalar buldu (ayrıntı: bu adımın günlüğü)"
             exit 1
           fi
 

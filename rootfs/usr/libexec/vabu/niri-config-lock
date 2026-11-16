@@ -1,0 +1,32 @@
+#!/usr/bin/python3 -I
+"""Hold the settings locks through the whole KDL read/validate/replace operation."""
+import fcntl
+import os
+from pathlib import Path
+import stat
+import sys
+import time
+
+folder = Path(os.environ.get('XDG_CONFIG_HOME', str(Path.home()/'.config'))) / 'vabu'
+folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+fds = []
+try:
+    deadline = time.monotonic() + 12
+    for document in ('niri', 'shell'):
+        fd = os.open(folder / ('.' + document + '.lock'), os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+        fds.append(fd)
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid(): raise ValueError('Güvensiz ayar kilidi.')
+        while True:
+            try: fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB); break
+            except BlockingIOError:
+                if time.monotonic() >= deadline: raise ValueError('Ayarlar meşgul; yeniden dene.')
+                time.sleep(0.05)
+        os.set_inheritable(fd, True)
+    script = Path(__file__).with_name('niri-config')
+    os.execve('/bin/bash', ['bash', str(script), *sys.argv[1:]], {**os.environ, '_VABU_NIRI_CONFIG_LOCKED':'1'})
+except (OSError, ValueError) as error:
+    print(str(error), file=sys.stderr)
+    sys.exit(2)
+finally:
+    for fd in fds: os.close(fd)

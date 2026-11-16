@@ -34,25 +34,23 @@ cmd_info() {
     printf '  Kabuk    : %s\n' "$(rpm -q --qf '%{NAME} %{VERSION}' vabu-shell 2>/dev/null || echo 'yedek kabuk (waybar)')"
     printf '  Paketler : %s rpm · %s flatpak\n' "$(rpm -qa | wc -l)" "$(flatpak list --app --columns=application 2>/dev/null | wc -l)"
     if command -v snapper >/dev/null; then
-        printf '  Geri alma: %s nokta\n' "$(as_root snapper -c root list --columns number 2>/dev/null | tail -n +3 | wc -l)"
+        printf '  Kök görüntüsü: %s nokta\n' "$(as_root snapper -c root list --columns number 2>/dev/null | tail -n +3 | wc -l)"
     fi
 }
 
 cmd_update() {
-    say "Paketler güncelleniyor (dnf). Yapılandırılmışsa Snapper anlık görüntüsü alınır…"
-    as_root dnf upgrade --refresh -y
-    say "Flatpak uygulamaları güncelleniyor…"
-    flatpak update -y --noninteractive || warn "Flatpak güncellemesi tamamlanamadı."
+    local result=0
+    /usr/libexec/vabu/update run || result=$?
     if [[ -e /run/reboot-required ]] || needs_reboot; then
-        say "Çekirdek veya sürücü güncellendi: yeniden başlatman önerilir."
+        say "Yeniden başlatman önerilir."
     fi
-    say "Tamam."
+    return "$result"
 }
 
 needs_reboot() {
     command -v dnf >/dev/null || return 1
     local result=0
-    dnf needs-restarting -r >/dev/null 2>&1 || result=$?
+    /usr/libexec/vabu/system-check reboot-exit >/dev/null 2>&1 || result=$?
     case "$result" in
         0) return 1 ;;
         1) return 0 ;;
@@ -104,11 +102,12 @@ ${C_SKY}vabu${C_OFF} - Vabu sistem aracı
 
   vabu info                  Sürüm, çekirdek, kabuk, paket sayısı
   vabu update                dnf + Flatpak güncellemesi
-  vabu snapshots             Geri alma noktalarını listele
+  vabu snapshots             Kök dosya görüntülerini listele
   vabu rollback <numara>     Tam sistem geri alma şu anda devre dışı
   vabu drivers [...]         Ekran kartı ve codec sürücüleri (vabu-drivers)
   vabu reset niri            niri ayarlarını varsayılana döndür
   vabu doctor                Sistem sağlık kontrolü
+  vabu recovery-check        Salt okunur çekirdek ve /boot denetimi
 
 Paket kurmak için her zamanki yollar geçerli:
   sudo dnf install <paket>        Fedora / RPM Fusion / Vabu deposu
@@ -125,6 +124,7 @@ case "${1:-help}" in
     drivers)    shift; exec vabu-drivers "$@" ;;
     reset)      shift; cmd_reset "${1:-}" ;;
     doctor)     cmd_doctor ;;
+    recovery-check) exec /usr/libexec/vabu/system-check recovery ;;
     --version)  echo "vabu $(vabu_version)" ;;
     help|-h|--help) usage ;;
     *) usage; exit 1 ;;

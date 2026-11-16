@@ -62,6 +62,8 @@ Requires:       fastfetch
 # Geri alma noktaları
 Requires:       snapper
 Requires:       libdnf5-plugin-actions
+Requires:       dnf5
+Requires:       dnf5-plugins
 # Sürücü aracı
 Requires:       pciutils
 Requires:       mokutil

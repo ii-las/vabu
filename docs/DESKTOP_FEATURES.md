@@ -42,6 +42,7 @@ Bu değişiklikler ayrı Codex dalında kaynak koduna eklendi. Yerel macOS üzer
 ```sh
 python3 -B tests/reliability.py
 python3 -B tests/desktop.py
+python3 -B tests/stability.py
 ```
 
 İlk paket güvenilirlik testlerini, ikincisi yeni masaüstü özelliklerini denetler. Gerçek sistem komutlarının yerine taklit araçlar kullanılır. Pano sunucusu özel geçici soket ve taklit Wayland araçlarıyla sınanır. QML içindeki JavaScript işlevleri ayrıca derlenir; bu kontrol Qt/Quickshell bileşenlerinin çalıştığı anlamına gelmez. Fedora görsel test akışına yeni sayfalar ve rehber ekranları da eklenmiştir; bu akış burada çalıştırılmamıştır.
@@ -58,3 +59,5 @@ python3 -B tests/desktop.py
 | Calamares kurulumu ve yeniden açılış | ISO çıkarıldıktan sonra kurulan sistem açılır | Kullanıcı talebiyle yapılmadı |
 | Güncelleme sonrası açılış ve kurtarma | Çekirdek/modül/açılış zinciri tutarlı kalır | Yapılmadı; otomatik tam sistem geri alma kapalı |
 | Performans/pil karşılaştırması | Aynı donanımda tekrarlanabilir ölçüm | Ölçüm aracı eklendi, kıyaslama yapılmadı |
+
+Sonraki hata düzeltmeleri: [STABILIZATION.md](STABILIZATION.md). Çalışma alanlarında gerçek pencere kimliği ayrı seçilebilir; ayarlar kilitli ve atomik ortak yardımcıdan yazılır. Fedora/Qt/donanım testlerinin durumu bu belgelerde açıkça ayrılır.

@@ -22,7 +22,7 @@ ShellRoot {
         { key: "devices", icon: "devices", title: Lang.t("Cihazlar ve paylaşım"), file: "SettingsDevices.qml" },
         { key: "sound",    icon: "volume_up",         title: Lang.t("Ses"),                        file: "SettingsSound.qml" },
         { key: "keyboard", icon: "keyboard",          title: Lang.t("Klavye ve dokunmatik yüzey"), file: "SettingsKeyboard.qml" },
-        { key: "apps",     icon: "apps",              title: "Uygulamalar ve kaynaklar",   file: "SettingsApps.qml" },
+        { key: "apps",     icon: "apps",              title: Lang.t("Uygulamalar ve kaynaklar"),   file: "SettingsApps.qml" },
         { key: "updates",  icon: "system_update_alt", title: Lang.t("Güncellemeler"),              file: "SettingsUpdates.qml" },
         { key: "drivers",  icon: "memory",            title: Lang.t("Sürücüler"),                  file: "SettingsDrivers.qml" },
         { key: "users",    icon: "group",             title: Lang.t("Kullanıcılar"),               file: "SettingsUsers.qml" },
@@ -45,6 +45,23 @@ ShellRoot {
 
     IpcHandler {
         target: "settings"
+        function audit(): string {
+            if (Quickshell.env("VABU_TEST_ISOLATED") !== "1" || !loader.item) return "unavailable"
+            let failed = false
+            function visit(item) {
+                if (!item.visible) return
+                if (item.activeFocusOnTab && item.enabled && item.width > 0) {
+                    const point = item.mapToItem(loader.item, 0, 0)
+                    if (point.x < -1 || point.x + item.width > loader.item.width + 1) {
+                        console.warn("UI-AUDIT-FAIL horizontal overflow " + item)
+                        failed = true
+                    }
+                }
+                for (const child of item.children || []) visit(child)
+            }
+            visit(loader.item)
+            return failed ? "failed" : "ok"
+        }
         function open(page: string): void {
             if (root.pages.some(x => x.key === page)) root.page = page
         }
@@ -218,12 +235,14 @@ ShellRoot {
 
                 ColumnLayout {
                     id: content
-                    x: Math.max(36, (flick.width - width) / 2)
+                    x: (flick.width - width) / 2
                     y: 28
-                    width: Math.min(720, flick.width - 72)
+                    width: Math.max(1, Math.min(720, flick.width - (flick.width < 500 ? 24 : 72)))
                     spacing: 18
 
                     Text { textFormat: Text.PlainText;
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
                         text: root.pages[root.pageIndex].title
                         color: Theme.paper
                         font.family: Theme.sans
@@ -232,6 +251,13 @@ ShellRoot {
                         font.letterSpacing: -0.4
                     }
 
+                    Group {
+                        visible: Config.error !== "" || NiriConf.storeError !== ""
+                        title: Lang.t("Ayarlar korunuyor")
+                        note: [Config.error, NiriConf.storeError].filter(s => s).join("\n")
+                        PillButton { visible: Config.canRecover; label: Lang.t("Masaüstü ayarlarını son sağlam yedekten kurtar"); onClicked: Config.recover() }
+                        PillButton { visible: NiriConf.canRecover; label: Lang.t("Pencere ayarlarını son sağlam yedekten kurtar"); onClicked: NiriConf.recover() }
+                    }
                     Loader {
                         id: loader
                         Layout.fillWidth: true

@@ -1,0 +1,95 @@
+#!/usr/bin/python3 -I
+"""User-initiated updates with honest phase results and one per-user invocation."""
+import fcntl
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+
+
+def folder():
+    return Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'vabu'
+
+
+def status():
+    path = folder() / 'update-result.json'
+    try:
+        if path.stat().st_size > 65536: return None
+        data = json.loads(path.read_text())
+        if not isinstance(data, dict) or data.get('format') != 1: return None
+        if data.get('state') == 'running':
+            # A power loss/kill must not look like an active or successful update.
+            lock = folder() / '.update.lock'
+            fd = os.open(lock, os.O_RDWR | os.O_NOFOLLOW)
+            with os.fdopen(fd, 'r+') as stream:
+                try:
+                    fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    data['state'] = 'interrupted'
+                except BlockingIOError: pass
+        return data
+    except (OSError, ValueError): return None
+
+
+def save(data):
+    target = folder()
+    target.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix='.update-', dir=target)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(data, stream); stream.write('\n'); stream.flush(); os.fsync(stream.fileno())
+        os.replace(temporary, target / 'update-result.json')
+    finally:
+        if os.path.exists(temporary): os.unlink(temporary)
+
+
+def privileged(command):
+    if os.geteuid() == 0: return command
+    return (['sudo', '--'] if sys.stdin.isatty() else ['pkexec']) + command
+
+
+def update():
+    folder().mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(folder() / '.update.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'r+') as lock:
+        if not stat.S_ISREG(os.fstat(lock.fileno()).st_mode) or os.fstat(lock.fileno()).st_uid != os.getuid():
+            raise ValueError('Güvensiz güncelleme kilidi.')
+        try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print('Bu kullanıcı için güncelleme zaten çalışıyor.', file=sys.stderr); return 1
+        data = {'format':1, 'state':'running', 'startedAt':int(time.time()), 'phases':[]}
+        save(data)
+        phases = [('rpm', privileged(['/usr/bin/dnf', 'upgrade', '--refresh', '-y'])),
+                  ('flatpak-user', ['flatpak', 'update', '--user', '-y', '--noninteractive']),
+                  ('flatpak-system', privileged(['/usr/bin/flatpak', 'update', '--system', '-y', '--noninteractive']))]
+        failed = False
+        try:
+            for name, command in phases:
+                print('Güncelleme aşaması: ' + name, flush=True)
+                try: code = subprocess.run(command).returncode
+                except OSError: code = 127
+                data['phases'].append({'phase':name, 'exitCode':code})
+                failed = failed or code != 0
+                save(data)
+                if name == 'rpm' and code != 0: break
+            data['state'] = 'failed' if failed else 'success'
+        except KeyboardInterrupt:
+            data['state'] = 'interrupted'
+        finally:
+            data['finishedAt'] = int(time.time())
+            save(data)
+        print('Güncelleme tamamlandı.' if data['state'] == 'success' else 'Güncelleme tamamlanamadı; aşama sonuçlarını incele.', flush=True)
+        return 0 if data['state'] == 'success' else 1
+
+
+if __name__ == '__main__':
+    try:
+        if sys.argv[1:] == ['run']: sys.exit(update())
+        elif sys.argv[1:] == ['status']: print(json.dumps({'result':status()}))
+        else: sys.exit(2)
+    except (OSError, ValueError):
+        print('Güncelleme durumu kaydedilemedi; işlem durduruldu.', file=sys.stderr)
+        sys.exit(1)

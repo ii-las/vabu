@@ -14,6 +14,7 @@ Item {
     implicitHeight: 28
     activeFocusOnTab: true
     Accessible.role: Accessible.Slider
+    Accessible.name: parent && parent.accessibleLabel !== undefined ? parent.accessibleLabel : ""
 
     readonly property real ratio: to > from ? Math.max(0, Math.min(1, (value - from) / (to - from))) : 0
     readonly property bool engaged: mouse.pressed || mouse.containsMouse || activeFocus

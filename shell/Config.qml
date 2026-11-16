@@ -20,7 +20,10 @@ Singleton {
         { name: "Gece", path: "/usr/share/vabu/assets/wallpaper-gece.jpg" }
     ]
 
-    property var values: ({})
+    readonly property var values: store.values
+    readonly property string error: store.error
+    readonly property bool canRecover: store.canRecover
+    function recover() { store.recover() }
     readonly property string dir: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/vabu"
 
     // acik | koyu | otomatik (gün batımında koyu)
@@ -58,27 +61,9 @@ Singleton {
 
     function set(key, value) {
         if (key === "sidebarCompact" && focusMode) key = "focusCompact"
-        const v = Object.assign({}, values)
-        if (value === null || value === undefined) delete v[key]
-        else v[key] = value
-        values = v
-        file.setText(JSON.stringify(v, null, 2) + "\n")
+        const change = {}
+        change[key] = value === undefined ? null : value
+        store.patch(change)
     }
-
-    // Klasör yoksa dosya izlenemez; oluşturunca izlemeyi yeniden kur
-    Process { running: true; command: ["mkdir", "-p", root.dir]; onExited: file.reload() }
-
-    FileView {
-        id: file
-        path: root.dir + "/shell.json"
-        // Pencereler açılmadan önce okunsun: ilk karede doğru görünüm
-        blockLoading: true
-        watchChanges: true
-        printErrors: false
-        onLoaded: {
-            try { root.values = JSON.parse(text()) } catch (e) { root.values = {} }
-        }
-        onLoadFailed: root.values = {}
-        onFileChanged: reload()
-    }
+    JsonStore { id: store; document: "shell" }
 }

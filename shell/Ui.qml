@@ -53,6 +53,10 @@ Singleton {
     }
 
     // Önce açık katmanlar kapanır ki görüntüde çıkmasınlar
+    function suspend() {
+        closeAll()
+        Quickshell.execDetached(["sh", "-c", "/usr/libexec/vabu/lock && systemctl suspend"])
+    }
     function screenshot() { closeAll(); shot.start() }
     Timer { id: shot; interval: 320; onTriggered: Quickshell.execDetached(["niri", "msg", "action", "screenshot"]) }
 

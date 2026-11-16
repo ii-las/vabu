@@ -16,6 +16,12 @@ ColumnLayout {
     readonly property bool checkFailed: rpmError !== "" || flatError !== ""
     property bool autoDownload: true
     property var snapshots: []
+    property var lastUpdate: null
+    property string rebootState: "unknown"
+    function refreshResult() { if (!resultProbe.running) resultProbe.running = true; if (!rebootProbe.running) rebootProbe.running = true }
+    Process { id: resultProbe; command: ["/usr/libexec/vabu/update","status"]; stdout: StdioCollector { onStreamFinished: { try { page.lastUpdate = JSON.parse(text).result } catch(e) { page.lastUpdate = null } } } }
+    Process { id: rebootProbe; command: ["/usr/libexec/vabu/system-check","reboot"]; stdout: StdioCollector { onStreamFinished: { try { page.rebootState = JSON.parse(text).reboot } catch(e) { page.rebootState = "unknown" } } } }
+    Timer { interval: 10000; running: true; repeat: true; onTriggered: page.refreshResult() }
 
     readonly property int total: rpm.length + flat.length
 
@@ -27,7 +33,7 @@ ColumnLayout {
         dnfCheck.running = true
         flatCheck.running = true
     }
-    Component.onCompleted: { check(false); timer.running = true; snaps.running = true }
+    Component.onCompleted: { check(false); timer.running = true; snaps.running = true; refreshResult() }
 
     Process {
         id: dnfCheck
@@ -158,6 +164,15 @@ ColumnLayout {
         font.pixelSize: Math.round((13) * Config.textScale)
     }
 
+    Group {
+        title: Lang.t("Son güncelleme sonucu")
+        note: page.lastUpdate ? Lang.t(({success:"Tamamlandı",failed:"Başarısız",interrupted:"Kesildi",running:"Çalışıyor"})[page.lastUpdate.state] || "Bilinmiyor") : Lang.t("Henüz kayıt yok")
+        Repeater {
+            model: page.lastUpdate?.phases ?? []
+            delegate: SettingRow { required property var modelData; label: modelData.phase; sub: Lang.t("Çıkış kodu") + ": " + modelData.exitCode }
+        }
+        SettingRow { label: Lang.t("Yeniden başlatma"); sub: Lang.t(({required:"Öneriliyor", "not-required":"Gerekmiyor",unknown:"Denetlenemedi"})[page.rebootState] || "Denetlenemedi") }
+    }
     // Paket satırı: ad solda, sürüm sağda
     component PackageRow: Item {
         id: pr

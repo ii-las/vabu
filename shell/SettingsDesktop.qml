@@ -30,13 +30,39 @@ ColumnLayout {
                 PillButton { label: Lang.t("Kaldır"); onClicked: NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).filter(w => w.name !== workspaceGroup.modelData.name)) }
                 Repeater {
                     model: workspaceGroup.modelData.apps ?? []
-                    delegate: SettingRow {
+                    delegate: Group {
+                        id: assignment
                         required property var modelData
-                        label: Apps.byId(modelData)?.name || modelData
-                        IconButton {
-                            icon: "close"; tooltip: Lang.t("Kaldır")
-                            onClicked: NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).map(w => w.name === workspaceGroup.modelData.name ? Object.assign({},w,{apps:(w.apps ?? []).filter(a => a !== modelData)}) : w))
+                        readonly property string desktopId: typeof modelData === "string" ? modelData : modelData.desktopId
+                        property bool editing: false
+                        title: Apps.byId(desktopId)?.name || desktopId
+                        note: typeof modelData === "string" ? Lang.t("Otomatik pencere eşleştirmesi") : modelData.appId
+                        function saveMapping() {
+                            const replacement = {desktopId:desktopId, appId:appIdInput.text.trim(), title:titleInput.text.trim()}
+                            NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).map(w => w.name === workspaceGroup.modelData.name ? Object.assign({}, w, {apps:w.apps.map(a => (typeof a === "string" ? a : a.desktopId) === desktopId ? replacement : a)}) : w))
+                            editing = false
                         }
+                        Flow {
+                            Layout.fillWidth: true; spacing: 8
+                            PillButton { label: Lang.t("Pencere kimliğini düzenle"); onClicked: assignment.editing = !assignment.editing }
+                            PillButton {
+                                label: Lang.t("Kaldır")
+                                onClicked: NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).map(w => w.name === workspaceGroup.modelData.name ? Object.assign({},w,{apps:(w.apps ?? []).filter(a => (typeof a === "string" ? a : a.desktopId) !== assignment.desktopId)}) : w))
+                            }
+                        }
+                        Field { id: appIdInput; visible: assignment.editing; Layout.fillWidth: true; placeholder: Lang.t("Pencere uygulama kimliği (app_id)"); text: typeof assignment.modelData === "string" ? assignment.desktopId : assignment.modelData.appId }
+                        Field { id: titleInput; visible: assignment.editing; Layout.fillWidth: true; placeholder: Lang.t("Tam pencere başlığı (isteğe bağlı)"); text: typeof assignment.modelData === "string" ? "" : (assignment.modelData.title || "") }
+                        Text { visible: assignment.editing; Layout.fillWidth: true; wrapMode: Text.Wrap; textFormat: Text.PlainText; color: Theme.soft; text: Lang.t("Açık bir pencereyi seç veya kimliği elle gir. Paylaşılan org.quickshell kimliğinde başlık da gerekir.") }
+                        Repeater {
+                            model: assignment.editing ? Niri.windows.filter(w => w.app_id).slice(0,16) : []
+                            delegate: PillButton {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                label: modelData.app_id + " · " + (modelData.title || "")
+                                onClicked: { appIdInput.text = modelData.app_id; titleInput.text = modelData.app_id === "org.quickshell" ? (modelData.title || "") : "" }
+                            }
+                        }
+                        PillButton { visible: assignment.editing; label: Lang.t("Eşleştirmeyi kaydet"); enabled: appIdInput.text.trim() !== ""; onClicked: assignment.saveMapping() }
                     }
                 }
             }
@@ -61,7 +87,7 @@ ColumnLayout {
                         label: modelData.name
                         onClicked: {
                             const app = candidate.modelData.id.replace(/\.desktop$/, "")
-                            NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).map(w => Object.assign({},w,{apps:(w.name === modelData.name ? [...new Set((w.apps ?? []).concat([app]))] : (w.apps ?? []).filter(a => a !== app))})))
+                            NiriConf.set("workspaces", (NiriConf.values.workspaces ?? []).map(w => Object.assign({},w,{apps:(w.name === modelData.name ? (w.apps ?? []).some(a => (typeof a === "string" ? a : a.desktopId) === app) ? w.apps : (w.apps ?? []).concat([app]) : (w.apps ?? []).filter(a => (typeof a === "string" ? a : a.desktopId) !== app))})))
                             appSearch.text = ""
                         }
                     }

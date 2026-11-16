@@ -103,7 +103,16 @@ ShellRoot {
         function close(): void { Ui.welcomeOpen = false }
         function next(): void { welcome.step = Math.min(welcome.steps.length - 1, welcome.step + 1) }
     }
-    IpcHandler { target: "clipboard"; function toggle(): void { const next = !Ui.clipboardOpen; Ui.closeAll(); Ui.clipboardOpen = next } }
+    IpcHandler {
+        target: "clipboard"
+        function isOpen(): bool { return Ui.clipboardOpen }
+        function toggle(): void { const next = !Ui.clipboardOpen; Ui.closeAll(); Ui.clipboardOpen = next }
+    }
+    IpcHandler {
+        target: "appmenu"
+        function open(id: string): bool { const entry = Apps.byId(id); if (!entry) return false; Ui.appMenu(entry); return true }
+        function isOpen(): bool { return Ui.appMenuEntry !== null }
+    }
     // IPC
     IpcHandler {
         target: "launcher"

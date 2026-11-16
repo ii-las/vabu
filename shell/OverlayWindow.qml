@@ -37,5 +37,13 @@ PanelWindow {
         acceptedButtons: Qt.AllButtons
         onPressed: root.dismissed()
     }
-    Item { id: holder; anchors.fill: parent }
+    onOpenChanged: if (open) Qt.callLater(() => { if (root.open && !holder.activeFocus) holder.forceActiveFocus(Qt.PopupFocusReason) })
+    FocusScope {
+        id: holder
+        anchors.fill: parent
+        focus: root.open
+        // Child controls receive keys first; Escape bubbles here from any child.
+        Keys.priority: Keys.AfterItem
+        Keys.onEscapePressed: event => { event.accepted = true; root.dismissed() }
+    }
 }

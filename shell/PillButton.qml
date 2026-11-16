@@ -13,7 +13,7 @@ Rectangle {
     property bool primary: false
     signal clicked()
 
-    implicitHeight: 42
+    implicitHeight: Math.max(42, Math.ceil(row.implicitHeight + 20))
     implicitWidth: row.implicitWidth + 32
     radius: Theme.radiusRow + 2
     color: primary ? Theme.accent
@@ -58,6 +58,6 @@ Rectangle {
         hoverEnabled: true
         enabled: root.enabled
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.clicked()
+        onClicked: { root.forceActiveFocus(Qt.MouseFocusReason); root.clicked() }
     }
 }

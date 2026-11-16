@@ -19,6 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Sürüm yayını için gerçek test kaydını denetle
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VABU_VALIDATION_RECORD: ${{ vars.RELEASE_VALIDATION_JSON }}
+          SOURCE: ${{ github.sha }}
+          ARCH: ${{ inputs.arch }}
+          REQUESTED_FEDORA: ${{ inputs.fedora }}
+        run: |
+          fedora="${REQUESTED_FEDORA:-$(cat FEDORA_VERSION)}"
+          python3 -B tools/validate-release.py "$SOURCE" "$ARCH" "$fedora"
+
       - name: Disk alanı aç
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 

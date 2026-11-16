@@ -26,6 +26,7 @@ Rectangle {
     }
 
     Accessible.role: Accessible.CheckBox
+    Accessible.name: parent && parent.accessibleLabel !== undefined ? parent.accessibleLabel : ""
     Accessible.checked: checked
 
     Rectangle {
@@ -40,6 +41,6 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.toggled()
+        onClicked: { root.forceActiveFocus(Qt.MouseFocusReason); root.toggled() }
     }
 }

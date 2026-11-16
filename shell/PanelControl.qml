@@ -206,7 +206,7 @@ ColumnLayout {
             Layout.fillHeight: true
             spacing: 10
             SessionButton { icon: "lock"; tip: Lang.t("Kilitle"); onClicked: Ui.lock() }
-            SessionButton { icon: "bedtime"; tip: Lang.t("Uyku"); onClicked: { Ui.closeAll(); Ui.run(["systemctl", "suspend"]) } }
+            SessionButton { icon: "bedtime"; tip: Lang.t("Uyku"); onClicked: { Ui.closeAll(); Ui.suspend() } }
             SessionButton { icon: "power_settings_new"; tip: "Oturum menüsü"; tone: Theme.danger; onClicked: { Ui.closeAll(); Ui.sessionMenuOpen = true } }
         }
     }
