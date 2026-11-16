@@ -23,6 +23,8 @@ jobs:
   x86_64:
     if: ${{ inputs.arch != 'aarch64' }}
     uses: ./.github/workflows/iso-build.yml
+    secrets:
+      COPR_KEY_SHA256: ${{ secrets.COPR_KEY_SHA256 }}
     permissions:
       contents: write
       id-token: write
@@ -35,6 +37,8 @@ jobs:
   aarch64:
     if: ${{ !github.event.repository.private && inputs.arch != 'x86_64' }}
     uses: ./.github/workflows/iso-build.yml
+    secrets:
+      COPR_KEY_SHA256: ${{ secrets.COPR_KEY_SHA256 }}
     permissions:
       contents: write
       id-token: write

@@ -3,6 +3,9 @@ name: ISO (derleme)
 
 on:
   workflow_call:
+    secrets:
+      COPR_KEY_SHA256:
+        required: false
     inputs:
       arch: { type: string, required: true }
       runner: { type: string, required: true }
@@ -18,6 +21,16 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Açık anahtar özetinin yapılandırıldığını denetle
+        env:
+          COPR_KEY_SHA256: ${{ vars.COPR_KEY_SHA256 || secrets.COPR_KEY_SHA256 }}
+        run: |
+          python3 - <<'PYTHON'
+          import os, re
+          if not re.fullmatch(r'[0-9a-fA-F]{64}', os.environ.get('COPR_KEY_SHA256', '')):
+              raise SystemExit('COPR_KEY_SHA256: Variable veya Secret içinde 64 haneli SHA-256 gerekli.')
+          PYTHON
 
       - name: Sürüm yayını için gerçek test kaydını denetle
         if: startsWith(github.ref, 'refs/tags/v')
@@ -48,7 +61,7 @@ jobs:
 
       - name: Kiwi ile ISO üret
         env:
-          COPR_KEY_SHA256: ${{ vars.COPR_KEY_SHA256 }}
+          COPR_KEY_SHA256: ${{ vars.COPR_KEY_SHA256 || secrets.COPR_KEY_SHA256 }}
         run: |
           sudo podman run --rm --privileged \
             -v "$PWD":/work:Z -v /dev:/dev -w /work -e COPR_KEY_SHA256 -e FEDORA \

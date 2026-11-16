@@ -9,6 +9,16 @@ on:
     paths-ignore: ["docs/**", "**.md", "packaging/quickshell.spec", ".github/workflows/quickshell.yml"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish_copr:
+        description: "Bu dalın doğrulanan paketlerini COPR'a gönder"
+        type: boolean
+        default: false
+      copr_arch:
+        description: "Elle COPR gönderiminin hedef mimarisi"
+        type: choice
+        default: both
+        options: [both, aarch64, x86_64]
 
 jobs:
   target:
@@ -160,16 +170,23 @@ jobs:
             ~/rpmbuild/SRPMS/*.rpm
 
       - name: COPR'a gönder
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || inputs.publish_copr))
         env:
           COPR_CONFIG: ${{ secrets.COPR_CONFIG }}
+          COPR_ARCH: ${{ inputs.copr_arch || 'both' }}
         run: |
           if [[ -z "${COPR_CONFIG}" ]]; then
-            echo "::warning::COPR_CONFIG tanımlı değil, COPR gönderimi atlanıyor."
-            exit 0
+            echo "::error::COPR_CONFIG tanımlı değil; istenen paket gönderimi yapılamaz."
+            exit 1
           fi
+          args=()
+          case "$COPR_ARCH" in
+            both) ;;
+            aarch64|x86_64) args+=(--chroot "fedora-$(cat FEDORA_VERSION)-${COPR_ARCH}") ;;
+            *) echo "::error::Geçersiz COPR mimarisi"; exit 1 ;;
+          esac
           mkdir -p ~/.config && printf '%s' "${COPR_CONFIG}" > ~/.config/copr
           owner="$(cat COPR_OWNER)"
           for srpm in ~/rpmbuild/SRPMS/vabu-*.src.rpm; do
-            copr-cli build "${owner}/vabu" "$srpm"
+            copr-cli build "${args[@]}" "${owner}/vabu" "$srpm"
           done

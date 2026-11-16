@@ -30,13 +30,13 @@ python3 "/Users/salihgokce/Documents/VabuDistro-Codex/tools/copr-key-info.py" --
 | Name | `COPR_KEY_SHA256` |
 | Value | Doğru açık anahtara ait doğruladığın `fileSHA256` alanındaki 64 haneli değer |
 
-Bu bir **variable**; secret değil. `COPR_CONFIG` secret'ına dokunma. Buraya parmak izi, URL veya anahtarın tamamı yazılmaz. `fileSHA256` ile OpenPGP parmak izi farklı değerlerdir.
+Normal tercih **variable** kullanmaktır. `COPR_KEY_SHA256` değerini zaten Secret olarak eklediysen akış bunu da kabul eder; değeri taşımana gerek yok. İkisi birden varsa Variable önceliklidir. `COPR_CONFIG` secret'ına dokunma. Buraya parmak izi, URL veya anahtarın tamamı yazılmaz. `fileSHA256` ile OpenPGP parmak izi farklı değerlerdir.
 
 Bana yalnızca doğru COPR proje bağlantısı, doğrulanmış açık parmak izi/özet veya değişkeni eklediğin bilgisi gerekir. Parola, özel anahtar, COPR API secret, GitHub token veya disk şifresi gönderme.
 
 ## Sonraki adımların sırası
 
-- Yerel Codex değişiklikleri incelenip GitHub'da derlenecek dala aktarılmalı. Bu çalışma push veya merge yapmaz.
+- Kaynak değişiklikleri incelenip GitHub'da derlenecek dala aktarılmalı. Ana dala birleştirme gerekmeden, seçilen dalda elle RPM workflow'u `publish_copr=true` ve `copr_arch=aarch64` ile çalıştırılabilir. COPR gönderimi ancak tüm RPM/QML kontrollerinden sonra yapılır. Dal push'u tek başına COPR göndermez.
 - O kaynak commit'i için RPM kontrolleri ve COPR hedef mimari derlemeleri bitmeli. ISO'nun beklediği commit ile RPM Provides commit'i eşleşmezse imaj işi durur.
 - Sen hazır olduğunu söylediğinde ilk VM denemesi için **Actions → ISO → Run workflow** ile geliştirme ISO'su üretilebilir; mimari bu Mac için `aarch64`, Fedora alanı boş bırakılırsa dosyadaki `45` kullanılır. Bu adım şu anda başlatılmaz.
 - İlk deneme için `v*` etiketi veya resmi sürüm yayını oluşturulmaz. `RELEASE_VALIDATION_JSON` henüz doldurulmaz; gerçek VM/donanım testlerinden sonra sürüm yayını içindir. Deneme ISO'sunu başlatan manuel akış bu test kaydını istemez; anahtar özeti yine gereklidir.
