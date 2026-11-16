@@ -144,7 +144,8 @@ def main():
         time.sleep(.2)
 
     def entries():
-        return [n for n in nodes() if n.getRole() in (pyatspi.ROLE_ENTRY, pyatspi.ROLE_PASSWORD_TEXT)
+        return [n for n in nodes() if n.getRole() in (pyatspi.ROLE_TEXT, pyatspi.ROLE_ENTRY, pyatspi.ROLE_PASSWORD_TEXT)
+                and n.getState().contains(pyatspi.STATE_EDITABLE)
                 and n.getState().contains(pyatspi.STATE_SHOWING)
                 and n.getState().contains(pyatspi.STATE_ENABLED)]
 
@@ -234,7 +235,7 @@ quit-at-end: false
                     shot('failed-calamares-input.png')
                     print((out / 'calamares-input.log').read_text()[-6000:])
                     print('Accessible controls:', [(n.getRoleName(), n.name) for n in nodes()
-                           if n.getRole() in (pyatspi.ROLE_PUSH_BUTTON, pyatspi.ROLE_ENTRY)])
+                           if n.getRole() in (pyatspi.ROLE_PUSH_BUTTON, pyatspi.ROLE_TEXT, pyatspi.ROLE_ENTRY, pyatspi.ROLE_PASSWORD_TEXT)])
                 finally:
                     raise
             finally:
