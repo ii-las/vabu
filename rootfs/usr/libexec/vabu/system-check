@@ -23,7 +23,7 @@ def reboot():
         value = data[0]['reboot_required'] if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict) else None
         if type(value) is bool and code == int(value): return 'required' if value else 'not-required'
     except (ValueError, KeyError, TypeError): pass
-    return 'unknown' 
+    return 'unknown'
 
 
 def recovery():
