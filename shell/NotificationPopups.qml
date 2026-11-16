@@ -52,9 +52,9 @@ PanelWindow {
             onClosed: Notifs.dismissPopup(modelData)
 
             Timer {
-                // Süre saniye gelir. 0: uygulama "kendiliğinden kapanmasın" dedi; eksi: varsayılan 6 sn
+                // Süre milisaniye gelir. 0: uygulama "kendiliğinden kapanmasın" dedi; eksi: varsayılan 6 sn
                 running: !card.critical && card.notif.expireTimeout !== 0
-                interval: card.notif.expireTimeout > 0 ? Math.max(2500, card.notif.expireTimeout * 1000) : 6000
+                interval: card.notif.expireTimeout > 0 ? Math.max(2500, card.notif.expireTimeout) : 6000
                 onTriggered: Notifs.dismissPopup(card.modelData)
             }
         }

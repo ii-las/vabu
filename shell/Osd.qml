@@ -51,7 +51,7 @@ PanelWindow {
 
     Connections {
         target: root.sink?.audio ?? null
-        function onVolumeChanged() { root.show("volume", root.sink.audio.volume, root.sink.audio.muted) }
+        function onVolumesChanged() { root.show("volume", root.sink.audio.volume, root.sink.audio.muted) }
         function onMutedChanged() { root.show("volume", root.sink.audio.volume, root.sink.audio.muted) }
     }
 

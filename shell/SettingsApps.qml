@@ -39,8 +39,8 @@ ColumnLayout {
     }
     function setFlathub(isOn) {
         changer.command = isOn
-            ? ["sh", "-c", "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; flatpak remote-modify --user --enable flathub 2>/dev/null; true"]
-            : ["flatpak", "remote-modify", "--user", "--disable", "flathub"]
+            ? ["sh", "-c", "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo; flatpak remote-modify --enable flathub 2>/dev/null; true"]
+            : ["flatpak", "remote-modify", "--disable", "flathub"]
         changer.running = true
     }
 

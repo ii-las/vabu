@@ -87,7 +87,8 @@ ShellRoot {
                 id: win
                 required property var modelData
                 screen: modelData
-                readonly property bool primary: modelData === Quickshell.screens[0]
+                // niri klavyeyi etkin ekrandakine verir; her ekran giriş alabilir
+                readonly property bool primary: true
                 anchors { top: true; bottom: true; left: true; right: true }
                 exclusionMode: ExclusionMode.Ignore
                 color: Theme.night

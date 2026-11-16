@@ -76,7 +76,7 @@ Singleton {
         const src = source ?? item.sources[0]
         const s = Object.assign({}, states); s[item.key] = "installing"; states = s
         const cmd = src.kind === "flathub"
-            ? ["flatpak", "install", "--user", "-y", "--noninteractive", "flathub", src.ref]
+            ? ["flatpak", "install", "-y", "--noninteractive", "flathub", src.ref]
             : ["pkexec", "dnf", "install", "-y", src.ref]
         const proc = installer.createObject(root, { command: cmd, itemKey: item.key, itemName: item.name })
         proc.running = true

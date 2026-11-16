@@ -61,7 +61,7 @@ ColumnLayout {
             Quickshell.execDetached(base.concat(["on"]))
             if (s.mode) Quickshell.execDetached(base.concat(["mode", s.mode]))
             Quickshell.execDetached(base.concat(["scale", String(s.scale)]))
-            Quickshell.execDetached(base.concat(["position", "set", String(Math.round(s.x)), String(Math.round(s.y))]))
+            Quickshell.execDetached(base.concat(["position", "set", "--", String(Math.round(s.x)), String(Math.round(s.y))]))
             Quickshell.execDetached(base.concat(["vrr", s.vrr ? "on" : "off"]))
         }
     }
@@ -251,8 +251,8 @@ ColumnLayout {
         title: "Gece ışığı"
         SettingRow {
             label: "Gece ışığı"
-            sub: NightLight.isOn ? NightLight.label : ""
-            Toggle { checked: NightLight.isOn; onToggled: NightLight.toggle() }
+            sub: Config.nightLight ? "Gün batımından gün doğumuna" : ""
+            Toggle { checked: Config.nightLight; onToggled: Config.set("nightLight", !Config.nightLight) }
         }
     }
 

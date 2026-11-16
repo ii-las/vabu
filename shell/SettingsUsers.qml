@@ -31,7 +31,7 @@ ColumnLayout {
         stderr: StdioCollector { id: addErr }
         onExited: code => {
             if (code === 0) {
-                page.message = "Kullanıcı eklendi. İlk girişte şifresini kendisi belirleyecek."
+                page.message = "Kullanıcı eklendi."
                 newName.text = ""; newUser.text = ""; newPass.text = ""
                 page.refresh()
             } else page.message = addErr.text.trim() || "Kullanıcı eklenemedi."
@@ -73,7 +73,7 @@ ColumnLayout {
                 placeholder: "Kullanıcı adı"
                 onTextChanged: { const t = text.toLowerCase().replace(/[^a-z0-9_-]/g, ""); if (t !== text) text = t }
             }
-            Field { id: newPass; Layout.fillWidth: true; echoMode: TextInput.Password; placeholder: "Geçici şifre (en az 6 karakter)" }
+            Field { id: newPass; Layout.fillWidth: true; echoMode: TextInput.Password; placeholder: "Şifre (en az 6 karakter)" }
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
@@ -93,11 +93,10 @@ ColumnLayout {
                 icon: "person_add"
                 enabled: newUser.text.length > 1 && newPass.text.length >= 6
                 onClicked: {
-                    // Geçici şifre standart girdiden okunur (süreç listesinde görünmez);
-                    // ilk girişte değiştirilmesi zorunlu tutulur.
+                    // Şifre standart girdiden okunur, süreç listesinde görünmez.
                     adder.command = ["pkexec", "sh", "-c",
                         "IFS= read -r p && useradd -m -c \"$1\" " + (adminToggle.checked ? "-G wheel " : "") + "\"$2\" && " +
-                        "printf '%s:%s\\n' \"$2\" \"$p\" | chpasswd && passwd -e \"$2\" >/dev/null",
+                        "printf '%s:%s\\n' \"$2\" \"$p\" | chpasswd",
                         "vabu-useradd", newName.text || newUser.text, newUser.text]
                     adder.stdinEnabled = true
                     adder.running = true

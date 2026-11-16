@@ -16,16 +16,20 @@ ColumnLayout {
         Text { Layout.leftMargin: 4; text: "Duvar kağıdı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13; font.weight: Font.Medium }
         GridLayout {
             Layout.fillWidth: true
-            columns: 4
+            columns: 5
             columnSpacing: 12
             uniformCellWidths: true
             Repeater {
-                model: Config.wallpapers.concat([{ name: "Kendi resmin", path: "" }])
+                // "auto": görünüme göre gündüz ya da alacakaranlık
+                model: [{ name: "Otomatik", path: "auto" }].concat(Config.wallpapers).concat([{ name: "Kendi resmin", path: "" }])
                 delegate: ColumnLayout {
                     id: wp
                     required property var modelData
                     readonly property bool custom: modelData.path === ""
-                    readonly property bool isOn: custom ? !Config.wallpapers.some(w => w.path === Config.wallpaper) : Config.wallpaper === modelData.path
+                    readonly property bool auto: modelData.path === "auto"
+                    readonly property string choice: Config.wallpaperChoice
+                    readonly property bool isOn: custom ? (choice !== "auto" && !Config.wallpapers.some(w => w.path === choice))
+                        : choice === modelData.path
                     Layout.fillWidth: true
                     spacing: 8
                     Item {
@@ -35,10 +39,27 @@ ColumnLayout {
                             anchors.fill: parent
                             radius: 14
                             color: Theme.well
+                            // otomatik: yarısı gündüz, yarısı alacakaranlık
+                            Row {
+                                visible: wp.auto
+                                anchors.fill: parent
+                                Repeater {
+                                    model: wp.auto ? [Config.wallpapers[0].path, Config.wallpapers[1].path] : []
+                                    delegate: Image {
+                                        required property string modelData
+                                        width: parent.width / 2
+                                        height: parent.height
+                                        source: modelData
+                                        sourceSize: Qt.size(240, 300)
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                    }
+                                }
+                            }
                             Image {
                                 anchors.fill: parent
-                                visible: !wp.custom || wp.isOn
-                                source: wp.custom ? (wp.isOn ? Config.wallpaper : "") : wp.modelData.path
+                                visible: !wp.auto && (!wp.custom || wp.isOn)
+                                source: wp.auto ? "" : wp.custom ? (wp.isOn ? Config.wallpaper : "") : wp.modelData.path
                                 sourceSize: Qt.size(480, 300)
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
@@ -59,7 +80,7 @@ ColumnLayout {
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: wp.custom ? picker.open() : Config.set("wallpaper", wp.modelData.path)
+                            onClicked: wp.custom ? picker.open() : Config.set("wallpaper", wp.auto ? null : wp.modelData.path)
                         }
                     }
                     Text {

@@ -54,11 +54,14 @@ Singleton {
         file.setText(JSON.stringify(v, null, 2) + "\n")
     }
 
-    Process { running: true; command: ["mkdir", "-p", root.dir] }
+    // Klasör yoksa dosya izlenemez; oluşturunca izlemeyi yeniden kur
+    Process { running: true; command: ["mkdir", "-p", root.dir]; onExited: file.reload() }
 
     FileView {
         id: file
         path: root.dir + "/shell.json"
+        // Pencereler açılmadan önce okunsun: ilk karede doğru görünüm
+        blockLoading: true
         watchChanges: true
         printErrors: false
         onLoaded: {

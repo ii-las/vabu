@@ -54,7 +54,7 @@ koyu="${VABU_KOYU:-}"
 if [[ -z "$koyu" ]]; then
     [[ "$(j "$SHELL_SETTINGS" .theme otomatik)" == "koyu" ]] && koyu=1 || koyu=0
 fi
-case "$(j "$SHELL_SETTINGS" .accent mavi)" in
+case "${VABU_VURGU:-$(j "$SHELL_SETTINGS" .accent mavi)}" in
     yesil)   light="#1F7F58" dark="#86D4AC" ;;
     turuncu) light="#B5601A" dark="#EDB483" ;;
     pembe)   light="#B23A6E" dark="#EFA9C6" ;;

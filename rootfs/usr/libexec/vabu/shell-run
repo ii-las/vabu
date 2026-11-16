@@ -3,7 +3,7 @@
 # hata kaydını bir terminal penceresinde gösterir; böylece neyin bozulduğu hemen görünür.
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/vabu"
 LOG="$STATE/shell.log"
-mkdir -p "$STATE"
+mkdir -p "$STATE" "${XDG_CONFIG_HOME:-$HOME/.config}/vabu"
 [[ -f "$LOG" ]] && mv -f "$LOG" "$LOG.1"
 
 start=$(date +%s)

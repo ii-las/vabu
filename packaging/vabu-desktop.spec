@@ -98,20 +98,19 @@ mkdir -p grub
 magick wallpaper.png -resize '1920x1080^' -gravity center -extent 1920x1080 \
     -blur 0x22 -fill '#0C0B0F' -colorize 42 -depth 8 grub/background.png
 rsvg-convert -w 104 -h 104 branding/logo-mark.svg -o grub/logo.png
-# seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür.
+# seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür. Köşe parçaları
+# satırın üstüne ve altına taşar; tema satır yüksekliğini buna göre ayarlar (30 + 2 × 12).
 # GRUB yalnızca 8 bit RGBA PNG okur; PNG32: biçimi paletli yazılmasını önler.
-magick -size 48x48 xc:none -fill '#8FB2FF' -draw 'roundrectangle 0,0 47,47 15,15' PNG32:pill.png
+magick -size 36x36 xc:none -fill '#8FB2FF' -draw 'roundrectangle 0,0 35,35 12,12' PNG32:pill.png
 i=0
 for part in nw n ne w c e sw s se; do
-    magick pill.png -crop "16x16+$(( (i % 3) * 16 ))+$(( (i / 3) * 16 ))" +repage PNG32:grub/select_$part.png
+    magick pill.png -crop "12x12+$(( (i % 3) * 12 ))+$(( (i / 3) * 12 ))" +repage PNG32:grub/select_$part.png
     i=$(( i + 1 ))
 done
 fonttools varLib.instancer -q -o HG-Medium.ttf %{SOURCE1} wght=500
 fonttools varLib.instancer -q -o HG-Regular.ttf %{SOURCE1} wght=400
 grub2-mkfont -n Vabu -s 22 -o grub/vabu-22.pf2 HG-Medium.ttf
 grub2-mkfont -n Vabu -s 15 -o grub/vabu-15.pf2 HG-Regular.ttf
-# geri sayım çizgisi: GRUB çubuğun en küçük boyunu yazı tipinden alır; küçük bir yazı tipi ince çizgi verir
-grub2-mkfont -n Vabu -s 3 -o grub/vabu-3.pf2 HG-Regular.ttf
 # komut satırı eşit aralıklı yazı ister
 jbm="$(fc-match -f '%%{file}' 'JetBrains Mono:style=Regular')"
 fonttools varLib.instancer -q -o JBM.ttf "$jbm" wght=400 || cp "$jbm" JBM.ttf
@@ -126,7 +125,7 @@ done
 # temada geçen yazı tipi adı .pf2 içindeki adla birebir aynı olmalı
 pf2name() { python3 -c 'import sys, struct; d = open(sys.argv[1], "rb").read(); i = d.index(b"NAME"); n = struct.unpack(">I", d[i + 4:i + 8])[0]; print(d[i + 8:i + 8 + n].rstrip(b"\0").decode())' "$1"; }
 sed -e "s/@FONT_L@/$(pf2name grub/vabu-22.pf2)/" -e "s/@FONT_S@/$(pf2name grub/vabu-15.pf2)/" \
-    -e "s/@FONT_XS@/$(pf2name grub/vabu-3.pf2)/" -e "s/@FONT_MONO@/$(pf2name grub/vabu-mono-16.pf2)/" \
+    -e "s/@FONT_MONO@/$(pf2name grub/vabu-mono-16.pf2)/" \
     branding/grub/theme.txt.in > grub/theme.txt
 grep -n font grub/theme.txt
 # niri varsayılan ayarı şablondan (Vabu Ayarlar da aynı üreticiyi kullanır)

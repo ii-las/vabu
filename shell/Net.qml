@@ -61,20 +61,30 @@ Singleton {
         Quickshell.execDetached(["nmcli", "connection", "delete", "id", ssid])
     }
 
-    // Bağlan. Şifre komut satırına yazılmaz: geçici bir dosyadan okunur ve hemen silinir.
+    // Bağlan. Şifre komut satırına yazılmaz: standart girdiden okunur, geçici bir dosyaya
+    // yazılır ve "connection up" ona passwd-file ile verilir; dosya hemen silinir.
+    // Yeni bir şifreli ağ için önce şifresiz bir bağlantı kaydı açılır, olmazsa geri silinir.
+    readonly property string withSecret:
+        "umask 077; f=$(mktemp -p \"${XDG_RUNTIME_DIR:-/tmp}\" vabu-ag.XXXXXX) || exit 1; " +
+        "IFS= read -r p; printf '802-11-wireless-security.psk:%s\\n' \"$p\" > \"$f\"; " +
+        "if [ \"$2\" = yeni ]; then " +
+        "  nmcli connection add type wifi con-name \"$1\" ifname '*' ssid \"$1\" wifi-sec.key-mgmt wpa-psk >/dev/null || { rm -f \"$f\"; exit 1; }; " +
+        "fi; " +
+        "nmcli -w 25 connection up id \"$1\" passwd-file \"$f\"; r=$?; rm -f \"$f\"; " +
+        "if [ $r -ne 0 ] && [ \"$2\" = yeni ]; then nmcli connection delete id \"$1\" >/dev/null 2>&1; fi; " +
+        "exit $r"
+
     function connect(net, password) {
         connecting = net.ssid
         error = ""
-        if (known[net.ssid]) {
+        connector.target = net
+        connector.usedPassword = password !== ""
+        if (password !== "") {
+            connector.pending = password
+            connector.command = ["sh", "-c", withSecret, "sh", net.ssid, known[net.ssid] ? "kayitli" : "yeni"]
+        } else if (known[net.ssid]) {
             connector.pending = ""
             connector.command = ["nmcli", "-w", "25", "connection", "up", "id", net.ssid]
-        } else if (net.secure) {
-            connector.pending = password
-            connector.command = ["sh", "-c",
-                "umask 077; f=$(mktemp -p \"${XDG_RUNTIME_DIR:-/tmp}\" vabu-ag.XXXXXX) || exit 1; " +
-                "IFS= read -r p; printf '802-11-wireless-security.psk:%s\\n' \"$p\" > \"$f\"; " +
-                "nmcli -w 25 device wifi connect \"$1\" passwd-file \"$f\"; r=$?; rm -f \"$f\"; exit $r",
-                "sh", net.ssid]
         } else {
             connector.pending = ""
             connector.command = ["nmcli", "-w", "25", "device", "wifi", "connect", net.ssid]
@@ -156,12 +166,16 @@ Singleton {
     Process {
         id: connector
         property string pending: ""
+        property var target: null
+        property bool usedPassword: false
         stdinEnabled: true
         stderr: StdioCollector { id: connErr }
         onStarted: { if (pending !== "") { write(pending + "\n"); pending = "" } }
         onExited: code => {
             root.error = code === 0 ? "" : root.friendly(connErr.text)
             if (code === 0) root.askPassword = ""
+            // Kayıtlı ağın şifresi değişmiş olabilir: şifre alanını aç ki yenisi girilebilsin
+            else if (target && target.secure) root.askPassword = target.ssid
             root.connecting = ""
             root.refresh()
             root.scan()

@@ -31,6 +31,11 @@ ShellRoot {
         Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", d ? "adw-gtk3-dark" : "adw-gtk3"])
         Quickshell.execDetached(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", d ? "Papirus-Dark" : "Papirus"])
     }
+    // Odak halkası rengi ilk açılışta da güncel görünüme uysun
+    Connections {
+        target: NiriConf
+        function onReadyChanged() { if (NiriConf.ready) NiriConf.apply(false) }
+    }
     Connections {
         target: Theme
         function onDarkChanged() {
@@ -69,8 +74,8 @@ ShellRoot {
             color: Theme.night
             LockSurface {
                 anchors.fill: parent
-                // Şifre alanı ilk ekranda; diğer ekranlar sadece saat + duvar kağıdı gösterir
-                primary: surface.screen === Quickshell.screens[0]
+                // niri klavyeyi imlecin olduğu ekrana verir; her ekran şifre alabilir
+                primary: true
                 onUnlocked: Ui.locked = false
             }
         }

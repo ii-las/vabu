@@ -64,7 +64,11 @@ Item {
                 anchors.centerIn: parent
                 width: 24; height: 24
                 visible: status === Image.Ready && pic.status !== Image.Ready
-                source: root.appIcon !== "" ? Quickshell.iconPath(root.appIcon, true) : ""
+                // simge adı ya da doğrudan bir dosya yolu gelebilir
+                source: root.appIcon === "" ? ""
+                    : root.appIcon.startsWith("/") ? "file://" + root.appIcon
+                    : root.appIcon.startsWith("file://") ? root.appIcon
+                    : Quickshell.iconPath(root.appIcon, true)
                 sourceSize: Qt.size(48, 48)
                 asynchronous: true
             }

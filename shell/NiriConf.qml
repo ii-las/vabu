@@ -35,7 +35,7 @@ Singleton {
     }
     function apply(force) {
         gen.command = force ? ["/usr/libexec/vabu/niri-config", "--force"] : ["/usr/libexec/vabu/niri-config"]
-        gen.environment = { "VABU_KOYU": Theme.dark ? "1" : "0" }
+        gen.environment = { "VABU_KOYU": Theme.dark ? "1" : "0", "VABU_VURGU": Config.accentName }
         status = "busy"
         gen.running = true
     }
