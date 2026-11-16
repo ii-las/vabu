@@ -22,12 +22,20 @@ TOML
 
 install -d -o liveuser -g liveuser /home/liveuser/.config /home/liveuser/.config/niri
 cp /etc/niri/config.kdl /home/liveuser/.config/niri/config.kdl
-cat >> /home/liveuser/.config/niri/config.kdl <<'KDL'
-
-// Canlı oturum: Vabu kurulumunu başlat.
-spawn-at-startup "sh" "-c" "sudo -E calamares"
-KDL
-chown liveuser:liveuser /home/liveuser/.config/niri/config.kdl
+# Canlı oturumda kurulum kendiliğinden açılsın. Satır "kendi eklemelerin" bölümüne yazılır;
+# Vabu Ayarlar dosyayı yeniden üretirken o bölümü korur.
+sed -i 's|^// VABU-KULLANICI-SON|// Canlı oturum: Vabu kurulumunu başlat.\nspawn-at-startup "sh" "-c" "sudo -E calamares"\n// VABU-KULLANICI-SON|' \
+    /home/liveuser/.config/niri/config.kdl
+grep -q 'sudo -E calamares' /home/liveuser/.config/niri/config.kdl || \
+    printf '\nspawn-at-startup "sh" "-c" "sudo -E calamares"\n' >> /home/liveuser/.config/niri/config.kdl
+# Yan panelde ilk sırada "Vabu'yu kur": kurulum kapatılsa da bir tıkla yeniden açılır
+install -d -o liveuser -g liveuser /home/liveuser/.config/vabu
+cat > /home/liveuser/.config/vabu/shell.json <<'JSON'
+{
+  "pinned": ["vabu-kur", "org.mozilla.firefox", "foot", "org.gnome.Nautilus", "so.vabu.Settings"]
+}
+JSON
+chown -R liveuser:liveuser /home/liveuser/.config/niri /home/liveuser/.config/vabu
 
 # Flathub kurulum sonrası ilk açılışta eklenir (vabu-flatpak-setup); canlıda gerek yok.
 systemctl disable vabu-flatpak-setup.service vabu-update.timer vabu-snapper-setup.service || true
