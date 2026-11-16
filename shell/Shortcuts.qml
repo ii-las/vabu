@@ -3,115 +3,142 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
-PanelWindow {
+// Kısayol tablosu (Super + Shift + /). Herhangi bir tuş kapatır.
+OverlayWindow {
     id: root
-    visible: Ui.shortcutsOpen
-    color: Qt.rgba(12 / 255, 13 / 255, 18 / 255, 0.45)
-    anchors { top: true; bottom: true; left: true; right: true }
-    exclusionMode: ExclusionMode.Ignore
+    open: Ui.shortcutsOpen
+    dim: 0.5
+    onDismissed: Ui.shortcutsOpen = false
     WlrLayershell.namespace: "vabu-shortcuts"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    onOpenChanged: if (open) keys.forceActiveFocus()
 
     readonly property var groups: [
-        { title: "Pencereler ve kolonlar", color: Theme.sky, items: [
-            ["Kolonlar arasında gez", ["v", "← →"]],
-            ["Kolon içinde gez", ["v", "↑ ↓"]],
-            ["Pencereyi taşı", ["v", "shift", "← →"]],
-            ["Genişliği değiştir", ["v", "R"]],
-            ["Kolonu büyüt / küçült", ["v", "+ −"]],
-            ["Tam ekran", ["v", "shift", "F"]],
-            ["Yüzen pencere", ["v", "V"]],
-            ["Pencereyi kapat", ["v", "Q"]]
-        ]},
-        { title: "Vabu", color: Theme.mint, items: [
-            ["Ara ve başlat", ["v", "space"]],
-            ["Uygulama kur", ["v", "I"]],
+        { title: "Gezinme", items: [
+            ["Kolonlar arasında", ["v", "←", "→"]],
+            ["Pencereler ve alanlar arasında", ["v", "↑", "↓"]],
+            ["Çalışma alanına git", ["v", "1…9"]],
+            ["Pencere değiştir", ["Alt", "Tab"]],
             ["Genel bakış", ["v", "O"]],
-            ["Çalışma alanına git", ["v", "1–9"]],
+            ["Ekranlar arasında", ["v", "Ctrl", "←", "→"]]
+        ]},
+        { title: "Pencereler", items: [
+            ["Taşı", ["v", "Shift", "yön"]],
+            ["Başka alana taşı", ["v", "Shift", "1…9"]],
+            ["Genişliği değiştir", ["v", "R"]],
+            ["Kolonu büyüt", ["v", "F"]],
+            ["Tam ekran", ["v", "Shift", "F"]],
+            ["Yüzen pencere", ["v", "V"]],
+            ["Kolona al ya da çıkar", ["v", "[", "]"]],
+            ["Kapat", ["v", "Q"]]
+        ]},
+        { title: "Vabu", items: [
+            ["Ara ve başlat", ["v", "Boşluk"]],
+            ["Uygulama kur", ["v", "I"]],
             ["Terminal", ["v", "⏎"]],
-            ["Ekran görüntüsü", ["print"]],
-            ["Ekranı kilitle", ["v", "alt", "L"]],
-            ["Ayarlar", ["v", ","]]
+            ["Dosyalar", ["v", "E"]],
+            ["Kontrol merkezi", ["v", "A"]],
+            ["Bildirimler", ["v", "N"]],
+            ["Ayarlar", ["v", ","]],
+            ["Ekranı kilitle", ["v", "Alt", "L"]],
+            ["Ekran görüntüsü", ["Print"]]
         ]}
     ]
 
-    MouseArea { anchors.fill: parent; onClicked: Ui.shortcutsOpen = false }
-
     Card {
         id: panel
-        strong: true
-        radius: 30
-        marks: true
-        width: Math.min(1040, parent.width - 80)
-        height: Math.min(820, parent.height - 80)
-        anchors.centerIn: parent
-        focus: root.visible
-        Keys.onPressed: event => { Ui.shortcutsOpen = false; event.accepted = true }
+        tint: Theme.panelDeep
+        radius: Theme.radiusPanel
+        shadow: true
+        width: Math.min(1120, parent.width - 80)
+        height: Math.min(body.implicitHeight + 56, parent.height - 80)
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
 
-        MouseArea { anchors.fill: parent }
+        opacity: Math.min(1, root.shown * 1.5)
+        transform: Scale {
+            origin.x: panel.width / 2; origin.y: panel.height / 2
+            xScale: 0.96 + 0.04 * root.shown; yScale: 0.96 + 0.04 * root.shown
+        }
+
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
+        Item {
+            id: keys
+            anchors.fill: parent
+            focus: true
+            Keys.onPressed: event => { Ui.shortcutsOpen = false; event.accepted = true }
+        }
 
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 36
+            id: body
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 28
             spacing: 22
 
             RowLayout {
                 Layout.fillWidth: true
-                ColumnLayout {
-                    spacing: 6
-                    Text { text: "SUPER + SHIFT + /"; color: Theme.muted; font.family: Theme.mono; font.pixelSize: 11; font.letterSpacing: 1.6 }
-                    Text { text: "Kısayollar"; color: Theme.paper; font.family: Theme.serif; font.pixelSize: 48 }
+                spacing: 10
+                Text {
+                    Layout.fillWidth: true
+                    text: "Kısayollar"
+                    color: Theme.paper
+                    font.family: Theme.sans
+                    font.pixelSize: 22
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: -0.3
                 }
-                Item { Layout.fillWidth: true }
                 Keycap { label: "v" }
-                Text { text: " = Super tuşu"; color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13 }
-                IconButton { Layout.leftMargin: 16; icon: "close"; tooltip: "Kapat"; onClicked: Ui.shortcutsOpen = false }
+                Text { text: "Super tuşu"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13 }
+                IconButton { Layout.leftMargin: 10; icon: "close"; tooltip: "Kapat"; onClicked: Ui.shortcutsOpen = false }
             }
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 40
+                spacing: 36
                 Repeater {
                     model: root.groups
                     delegate: ColumnLayout {
                         id: group
                         required property var modelData
                         Layout.fillWidth: true
+                        Layout.preferredWidth: 1
                         Layout.alignment: Qt.AlignTop
                         spacing: 0
                         Text {
-                            Layout.bottomMargin: 8
+                            Layout.bottomMargin: 10
                             text: group.modelData.title
-                            color: group.modelData.color
-                            font.family: Theme.serif
-                            font.italic: true
-                            font.pixelSize: 24
+                            color: Theme.muted
+                            font.family: Theme.sans
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
                         }
-                        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.dash }
+                        DashLine { Layout.fillWidth: true }
                         Repeater {
                             model: group.modelData.items
                             delegate: ColumnLayout {
+                                id: line
                                 required property var modelData
                                 Layout.fillWidth: true
                                 spacing: 0
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 55
+                                    Layout.preferredHeight: 48
+                                    spacing: 5
                                     Text {
                                         Layout.fillWidth: true
-                                        text: modelData[0]
+                                        text: line.modelData[0]
                                         color: Theme.paper
                                         font.family: Theme.sans
-                                        font.pixelSize: 15
+                                        font.pixelSize: 14
+                                        elide: Text.ElideRight
                                     }
                                     Repeater {
-                                        model: modelData[1]
+                                        model: line.modelData[1]
                                         delegate: Keycap { required property var modelData; label: modelData }
                                     }
                                 }
-                                Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Theme.dash }
+                                DashLine { Layout.fillWidth: true }
                             }
                         }
                     }

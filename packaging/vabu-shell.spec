@@ -17,6 +17,7 @@ Requires:       vabu-fonts
 Requires:       niri
 Requires:       swayidle
 Requires:       brightnessctl
+Requires:       wlsunset
 Requires:       NetworkManager
 Requires:       wl-clipboard
 Requires:       libnotify
@@ -35,10 +36,10 @@ Recommends:     pavucontrol
 Recommends:     nm-connection-editor
 
 %description
-Vabu'nun kendi masaüstü kabuğu (Quickshell/QML): gün yayılı saat, kolon haritalı
-çalışma alanları, sabitlenmiş uygulamalar, medya, bildirim merkezi; ara/kur/komut
-kipli başlatıcı; eş yükselti halkalı kilit ve giriş ekranı; ses/parlaklık göstergesi,
-kısayollar ve oturum menüsü.
+Vabu'nun kendi masaüstü kabuğu (Quickshell/QML): buzlu cam yan panel (saat, çalışma
+alanları, uygulamalar, medya, durum), yan panelden açılan Wi-Fi, Bluetooth, ses, takvim,
+bildirim ve kontrol merkezi panelleri; ara/kur/komut kipli başlatıcı; kilit ve giriş
+ekranı; ses/parlaklık göstergesi, kısayollar ve oturum menüsü.
 
 %prep
 %autosetup -n vabu-%{version}

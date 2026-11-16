@@ -17,10 +17,10 @@ Singleton {
     property var installedFlatpaks: ({})
 
     readonly property var sourceInfo: ({
-        "fedora":  { label: "FEDORA",     color: Theme.mint },
-        "fusion":  { label: "RPM FUSION", color: Theme.peach },
-        "vabu":    { label: "VABU",       color: Theme.rose },
-        "flathub": { label: "FLATHUB",    color: Theme.sky }
+        "fedora":  { label: "Fedora",     color: Theme.sky },
+        "fusion":  { label: "RPM Fusion", color: Theme.warn },
+        "vabu":    { label: "Vabu",       color: Theme.paper },
+        "flathub": { label: "Flathub",    color: Theme.ok }
     })
 
     // Uygulama olmayan paketleri gizle (kütüphane, geliştirme, dil paketleri…)

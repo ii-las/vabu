@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 
+// Durum satırı. Her düğme kendi panelini yan panelin hemen yanında açar.
 Card {
     id: root
-    implicitHeight: 52
-    radius: 18
+    property string screenName: ""
+    implicitHeight: 54
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property real volume: sink?.audio?.volume ?? 0
@@ -17,90 +17,101 @@ Card {
     readonly property bool hasBattery: battery?.isLaptopBattery ?? false
     // Quickshell sürümüne göre yüzde 0–1 ya da 0–100 gelebilir
     readonly property int batteryPct: hasBattery ? Math.round(battery.percentage > 1 ? battery.percentage : battery.percentage * 100) : 0
-
-    property string netKind: "none"   // wifi | ethernet | none
-    property string netName: ""
+    readonly property bool charging: hasBattery && (battery.state === UPowerDeviceState.Charging || battery.state === UPowerDeviceState.FullyCharged || battery.state === UPowerDeviceState.PendingCharge)
+    readonly property string batteryIcon: batteryPct >= 95 ? "battery_full" : "battery_" + Math.max(0, Math.min(6, Math.round(batteryPct / 100 * 6))) + "_bar"
 
     PwObjectTracker { objects: [root.sink] }
 
-    Process {
-        id: nm
-        command: ["nmcli", "-t", "-f", "TYPE,STATE,CONNECTION", "device"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let kind = "none", name = ""
-                for (const l of text.split("\n")) {
-                    const [type, state, conn] = l.split(":")
-                    if (state !== "connected") continue
-                    if (type === "ethernet") { kind = "ethernet"; name = conn; break }
-                    if (type === "wifi") { kind = "wifi"; name = conn }
-                }
-                root.netKind = kind
-                root.netName = name
-            }
-        }
-    }
-    Timer { interval: 8000; running: true; repeat: true; triggeredOnStart: true; onTriggered: nm.running = true }
+    function isOpen(name) { return Ui.popover === name && Ui.popoverScreen === screenName }
+    function toggle(name) { Ui.togglePopover(name, screenName) }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
-        spacing: 0
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        spacing: 2
 
         IconButton {
-            icon: root.netKind === "ethernet" ? "ethernet" : root.netKind === "wifi" ? "wifi" : "wifi-off"
-            iconColor: root.netKind === "none" ? Theme.faint : Theme.paper
-            tooltip: root.netKind === "none" ? "Ağ bağlı değil" : "Ağ: " + root.netName
-            onClicked: Ui.settings("network")
+            icon: Net.icon
+            iconColor: Net.kind === "none" ? Theme.muted : Theme.paper
+            tooltip: "Ağ: " + Net.label
+            active: root.isOpen("wifi")
+            onClicked: root.toggle("wifi")
         }
-
         IconButton {
-            icon: root.muted || root.volume === 0 ? "mute" : root.volume < 0.4 ? "volume-low" : "volume"
+            visible: Bt.available
+            icon: Bt.icon
+            iconColor: Bt.isOn ? Theme.paper : Theme.muted
+            tooltip: "Bluetooth: " + Bt.label
+            active: root.isOpen("bluetooth")
+            onClicked: root.toggle("bluetooth")
+        }
+        IconButton {
+            icon: root.muted || root.volume === 0 ? "volume_off" : root.volume < 0.4 ? "volume_down" : "volume_up"
+            iconColor: root.muted ? Theme.muted : Theme.paper
             tooltip: root.muted ? "Ses kapalı" : "Ses %" + Math.round(root.volume * 100)
-            onClicked: if (root.sink) root.sink.audio.muted = !root.sink.audio.muted
+            active: root.isOpen("sound")
+            onClicked: root.toggle("sound")
             WheelHandler {
                 onWheel: event => {
-                    if (!root.sink) return
+                    if (!root.sink?.audio) return
                     const step = event.angleDelta.y > 0 ? 0.05 : -0.05
                     root.sink.audio.volume = Math.max(0, Math.min(1, root.sink.audio.volume + step))
                 }
             }
         }
+        IconButton {
+            id: bell
+            icon: Notifs.dnd ? "notifications_off" : "notifications"
+            iconColor: Notifs.dnd ? Theme.muted : Theme.paper
+            tooltip: "Bildirimler: " + Notifs.count
+            active: root.isOpen("notifications")
+            onClicked: root.toggle("notifications")
+            Rectangle {
+                visible: Notifs.count > 0 && !bell.active
+                width: 7; height: 7; radius: 3.5
+                x: parent.width - 13
+                y: 9
+                color: Theme.ok
+            }
+        }
 
+        Item { Layout.fillWidth: true }
+
+        // Pil: yalnızca dizüstünde
         Item {
-            Layout.fillWidth: true
-            implicitHeight: 40
             visible: root.hasBattery
+            implicitWidth: batt.implicitWidth + 12
+            implicitHeight: 40
             Row {
+                id: batt
                 anchors.centerIn: parent
-                spacing: 6
-                Rectangle {
+                spacing: 3
+                Icon {
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 22; height: 12; radius: 3.5
-                    color: "transparent"
-                    border.color: Theme.paper
-                    border.width: 1.5
-                    Rectangle {
-                        x: 2.5; y: 2.5
-                        height: parent.height - 5
-                        width: (parent.width - 5) * root.batteryPct / 100
-                        radius: 1.5
-                        color: root.batteryPct <= 15 ? Theme.coral : Theme.paper
-                    }
+                    name: root.charging ? "bolt" : root.batteryIcon
+                    size: 19
+                    filled: root.charging
+                    color: !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
                 }
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.batteryPct
-                    color: Theme.paper
-                    font.family: Theme.mono
-                    font.pixelSize: 12
+                    color: !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
+                    font.family: Theme.sans
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                    font.features: ({ "tnum": 1 })
                 }
             }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggle("control") }
         }
-        Item { Layout.fillWidth: true; visible: !root.hasBattery }
 
-        IconButton { icon: "sliders"; tooltip: "Ayarlar"; onClicked: Ui.settings() }
-        IconButton { icon: "power"; iconColor: Theme.coral; tooltip: "Oturum menüsü"; onClicked: Ui.sessionMenuOpen = true }
+        IconButton {
+            icon: "tune"
+            tooltip: "Kontrol merkezi"
+            active: root.isOpen("control")
+            onClicked: root.toggle("control")
+        }
     }
 }

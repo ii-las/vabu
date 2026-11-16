@@ -1,90 +1,83 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
+import Quickshell.Widgets
 
+// Çalışma alanları. Her satır bir alandır ve içindeki pencereleri, şeritteki sırasıyla
+// (soldan sağa kolonlar, üst üste binenler bitişik) uygulama simgeleriyle gösterir.
+// Satıra tıklamak o alana, simgeye tıklamak o pencereye götürür; tekerlek alanlar arasında gezer.
 Card {
     id: root
     property string output: ""
-    property real screenWidth: 1920
-    visible: Niri.available && workspaces.length > 0
-    implicitHeight: col.implicitHeight + 24
+    visible: Niri.available && rows.length > 0
+    implicitHeight: col.implicitHeight + 16
 
-    readonly property var workspaces: Niri.workspacesOn(output)
+    readonly property var rows: Niri.rowsFor(output)
+    readonly property int activeIndex: rows.findIndex(r => r.ws.is_active)
+    readonly property int maxIcons: 6
+
+    function rowHeight(r) { return r.spare && !r.ws.is_active ? 34 : 42 }
+    readonly property real activeY: {
+        let y = 0
+        for (let i = 0; i < activeIndex; i++) y += rowHeight(rows[i]) + col.spacing
+        return y
+    }
+
+    // Seçili satırın zemini: satırdan satıra kayarak geçer
+    Rectangle {
+        id: pill
+        visible: root.activeIndex >= 0
+        x: 8
+        y: col.y + root.activeY
+        width: parent.width - 16
+        height: 42
+        radius: Theme.radiusRow
+        color: Theme.accent
+        Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+    }
 
     ColumnLayout {
         id: col
-        anchors.fill: parent
-        anchors.margins: 12
-        spacing: 4
+        x: 8
+        y: 8
+        width: parent.width - 16
+        spacing: 2
 
-        Text {
-            Layout.leftMargin: 6
-            Layout.bottomMargin: 4
-            text: "ÇALIŞMA ALANLARI"
-            color: Theme.muted
-            font.family: Theme.mono
-            font.pixelSize: 10
-            font.letterSpacing: 1.4
-        }
-
+        // Satırlar sayıya bağlıdır, içerik sıra numarasıyla okunur: niri'den gelen her olayda
+        // satırlar yeniden kurulmaz, sadece değişen yer güncellenir.
         Repeater {
-            model: root.workspaces
-            delegate: Rectangle {
+            model: root.rows.length
+            delegate: Item {
                 id: row
-                required property var modelData
-                readonly property bool isOn: modelData.is_active
-                readonly property var cols: Niri.columnsFor(modelData.id)
+                required property int index
+                readonly property var modelData: root.rows[index] ?? ({ ws: {}, columns: [], count: 0, spare: false })
+                readonly property var ws: modelData.ws
+                readonly property bool isOn: ws.is_active === true
+                readonly property bool spare: modelData.spare && !isOn
+                readonly property color fg: isOn ? Theme.accentInk : Theme.paper
+                readonly property var wins: {
+                    const out = []
+                    for (const c of modelData.columns)
+                        for (let i = 0; i < c.windows.length; i++)
+                            out.push({ win: c.windows[i], first: i === 0 })
+                    return out
+                }
+                readonly property string label: {
+                    if (ws.name) return ws.name
+                    if (modelData.count === 0) return "Boş"
+                    const act = wins.find(x => x.win.id === ws.active_window_id) ?? wins[0]
+                    return act ? Apps.nameFor(act.win.app_id) : ""
+                }
 
                 Layout.fillWidth: true
-                implicitHeight: 38
-                radius: Theme.radiusRow
-                color: isOn ? Theme.accent : (mouse.containsMouse ? Theme.hover : "transparent")
-                Behavior on color { ColorAnimation { duration: Theme.normal } }
+                implicitHeight: spare ? 34 : 42
 
-                RowLayout {
+                Rectangle {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    spacing: 10
-
-                    Text {
-                        Layout.preferredWidth: 22
-                        text: row.modelData.idx
-                        color: row.isOn ? Theme.accentInk : Theme.paper
-                        font.family: Theme.serif
-                        font.pixelSize: 20
-                    }
-
-                    Row {
-                        Layout.fillWidth: true
-                        spacing: 3
-                        Repeater {
-                            model: row.cols
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: Math.max(8, Math.min(40, modelData.width / root.screenWidth * 64))
-                                height: 14
-                                radius: 4
-                                color: modelData.focused ? (row.isOn ? Theme.accentInk : Theme.paper) : "transparent"
-                                border.width: 1
-                                border.color: row.isOn ? Qt.rgba(20 / 255, 36 / 255, 63 / 255, 0.55) : Qt.rgba(1, 1, 1, 0.32)
-                                Behavior on width { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } }
-                            }
-                        }
-                        Text {
-                            visible: row.cols.length === 0
-                            text: "boş"
-                            color: row.isOn ? Theme.accentInk : Theme.faint
-                            font.family: Theme.mono
-                            font.pixelSize: 10
-                        }
-                    }
-
-                    Text {
-                        text: row.modelData.name || (row.cols.length ? row.cols.length + " kolon" : "")
-                        color: row.isOn ? Theme.accentInk : Theme.muted
-                        font.family: Theme.mono
-                        font.pixelSize: 10
-                    }
+                    radius: Theme.radiusRow
+                    visible: !row.isOn
+                    color: mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : "transparent"
+                    Behavior on color { ColorAnimation { duration: Theme.fast } }
                 }
 
                 MouseArea {
@@ -92,9 +85,135 @@ Card {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Niri.focusWorkspace(row.modelData)
+                    onClicked: Niri.focusWorkspace(row.ws)
+                }
+
+                // Yedek alan: yeni pencereler için hazır bekleyen boş alan
+                RowLayout {
+                    visible: row.spare
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 4
+                    spacing: 10
+                    Icon { name: "add"; size: 17; color: Theme.faint }
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Yeni alan"
+                        color: Theme.faint
+                        font.family: Theme.sans
+                        font.pixelSize: 13
+                    }
+                    IconButton {
+                        implicitWidth: 28; implicitHeight: 28
+                        radius: 9
+                        icon: "overview_key"
+                        iconSize: 17
+                        iconColor: Theme.muted
+                        active: Niri.overviewOpen
+                        tooltip: "Genel bakış"
+                        onClicked: Niri.toggleOverview()
+                    }
+                }
+
+                RowLayout {
+                    visible: !row.spare
+                    anchors.fill: parent
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 12
+                    spacing: 10
+
+                    Text {
+                        Layout.preferredWidth: 10
+                        text: row.ws.idx ?? ""
+                        color: row.fg
+                        opacity: row.isOn ? 1 : 0.75
+                        font.family: Theme.sans
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                        font.features: ({ "tnum": 1 })
+                        Behavior on color { ColorAnimation { duration: Theme.state } }
+                    }
+
+                    Row {
+                        spacing: 0
+                        Repeater {
+                            model: Math.min(row.wins.length, root.maxIcons)
+                            delegate: Item {
+                                id: cell
+                                required property int index
+                                readonly property var entry: row.wins[index] ?? null
+                                readonly property var win: entry ? entry.win : ({})
+                                // aynı kolondaki pencereler bitişik, yeni kolon biraz aralıklı
+                                width: 22 + (index === 0 ? 0 : entry && entry.first ? 7 : 1)
+                                height: 26
+                                IconImage {
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    implicitSize: 22
+                                    source: Apps.iconFor(cell.win.app_id ?? "")
+                                    opacity: cell.win.id === row.ws.active_window_id || iconMouse.containsMouse ? 1 : 0.55
+                                    scale: iconMouse.pressed ? 0.88 : 1
+                                    Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+                                    Behavior on scale { NumberAnimation { duration: Theme.fast } }
+                                }
+                                // dikkat isteyen pencere
+                                Rectangle {
+                                    visible: cell.win.is_urgent === true
+                                    width: 6; height: 6; radius: 3
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    color: Theme.warn
+                                }
+                                MouseArea {
+                                    id: iconMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                                    onClicked: e => {
+                                        if (cell.win.id === undefined) return
+                                        if (e.button === Qt.MiddleButton) Niri.closeWindow(cell.win.id)
+                                        else Niri.focusWindow(cell.win.id)
+                                    }
+                                }
+                            }
+                        }
+                        Text {
+                            visible: row.wins.length > root.maxIcons
+                            anchors.verticalCenter: parent.verticalCenter
+                            leftPadding: 6
+                            text: "+" + (row.wins.length - root.maxIcons)
+                            color: row.fg
+                            opacity: 0.7
+                            font.family: Theme.sans
+                            font.pixelSize: 12
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignRight
+                        text: row.label
+                        color: row.fg
+                        opacity: row.isOn ? 0.72 : 0.6
+                        font.family: Theme.sans
+                        font.pixelSize: 12.5
+                        elide: Text.ElideRight
+                        Behavior on color { ColorAnimation { duration: Theme.state } }
+                    }
                 }
             }
+        }
+    }
+
+    // Tekerlek: alanlar arasında gez
+    WheelHandler {
+        property double last: 0
+        onWheel: event => {
+            const now = Date.now()
+            if (now - last < 160) return
+            last = now
+            Niri.action([event.angleDelta.y > 0 ? "focus-workspace-up" : "focus-workspace-down"])
         }
     }
 }

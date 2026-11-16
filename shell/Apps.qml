@@ -14,6 +14,28 @@ Singleton {
         return all.find(e => e.id.toLowerCase() === low || e.id.toLowerCase() === low + ".desktop") ?? null
     }
 
+    // Pencereden uygulamaya: app_id çoğu zaman .desktop adıyla aynıdır ama her zaman değil
+    property var windowCache: ({})
+    function forWindow(appId) {
+        if (!appId) return null
+        if (appId in windowCache) return windowCache[appId]
+        const e = byId(appId) ?? DesktopEntries.heuristicLookup(appId) ?? null
+        windowCache[appId] = e
+        return e
+    }
+    function iconFor(appId) {
+        const e = forWindow(appId)
+        return Quickshell.iconPath(e?.icon || appId || "application-x-executable", "application-x-executable")
+    }
+    function nameFor(appId) {
+        const e = forWindow(appId)
+        if (e) return e.name
+        if (!appId) return ""
+        const last = appId.split(".").pop().replace(/[-_]/g, " ")
+        return last.charAt(0).toUpperCase() + last.slice(1)
+    }
+    onAllChanged: windowCache = ({})
+
     readonly property var pinnedEntries: Config.pinned.map(id => byId(id)).filter(e => e)
 
     readonly property var frequent: all.slice()

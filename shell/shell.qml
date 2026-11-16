@@ -5,7 +5,7 @@
 //   qs -p /usr/share/vabu/shell ipc call lock lock
 //   qs -p /usr/share/vabu/shell ipc call shortcuts toggle
 //   qs -p /usr/share/vabu/shell ipc call session toggle
-//   qs -p /usr/share/vabu/shell ipc call notifications toggle
+//   qs -p /usr/share/vabu/shell ipc call panel toggle wifi|bluetooth|sound|calendar|control|notifications
 //   qs -p /usr/share/vabu/shell ipc call osd brightness 60
 import QtQuick
 import Quickshell
@@ -15,10 +15,15 @@ import Quickshell.Wayland
 ShellRoot {
     id: root
 
-    // Ekranları doğal çözünürlük + en yüksek yenileme hızında aç (ayarı olmayanlar için)
-    Component.onCompleted: DisplayAuto.run()
+    Component.onCompleted: {
+        // Ekranları doğal çözünürlük + en yüksek yenileme hızında aç (ayarı olmayanlar için)
+        DisplayAuto.run()
+        // Arka plan servisleri ilk kullanımda değil, oturumla birlikte başlasın
+        Net.refresh()
+        NightLight.failed = false
+    }
 
-    // Her ekran: duvar kağıdı, yan çubuk, bildirim merkezi
+    // Her ekran: duvar kağıdı, yan panel, yan panelden açılan paneller
     Variants {
         model: Quickshell.screens
         delegate: Component { Wallpaper {} }
@@ -29,7 +34,7 @@ ShellRoot {
     }
     Variants {
         model: Quickshell.screens
-        delegate: Component { NotificationCenter {} }
+        delegate: Component { Popover {} }
     }
 
     // Tek örnekler (odaktaki ekranda açılır)
@@ -75,14 +80,26 @@ ShellRoot {
         target: "session"
         function toggle(): void { Ui.sessionMenuOpen = !Ui.sessionMenuOpen }
     }
+    // Paneller klavyeden açılınca odaktaki ekranda belirir
+    function panelScreen(): string {
+        return Niri.focusedOutput || (Quickshell.screens[0]?.name ?? "")
+    }
+    IpcHandler {
+        target: "panel"
+        function toggle(name: string): void { Ui.togglePopover(name, root.panelScreen()) }
+        function close(): void { Ui.closePopover() }
+    }
     IpcHandler {
         target: "notifications"
-        function toggle(): void { Ui.notifCenterOpen = !Ui.notifCenterOpen }
+        function toggle(): void { Ui.togglePopover("notifications", root.panelScreen()) }
         function dnd(isOn: bool): void { Notifs.dnd = isOn }
         function clear(): void { Notifs.clearAll() }
     }
     IpcHandler {
         target: "osd"
-        function brightness(percent: int): void { osd.show("brightness", percent / 100, false) }
+        function brightness(percent: int): void {
+            Brightness.noteExternal(percent / 100)
+            osd.show("brightness", percent / 100, false)
+        }
     }
 }

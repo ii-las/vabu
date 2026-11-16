@@ -3,25 +3,23 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
-PanelWindow {
+// Oturum menüsü: kilitle, uyku, oturumu kapat, yeniden başlat, kapat.
+OverlayWindow {
     id: root
-    visible: Ui.sessionMenuOpen
-    color: Qt.rgba(12 / 255, 13 / 255, 18 / 255, 0.55)
-    anchors { top: true; bottom: true; left: true; right: true }
-    exclusionMode: ExclusionMode.Ignore
+    open: Ui.sessionMenuOpen
+    dim: 0.5
+    onDismissed: Ui.sessionMenuOpen = false
     WlrLayershell.namespace: "vabu-session"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     property int selected: 0
-    onVisibleChanged: if (visible) { selected = 0; row.forceActiveFocus() }
+    onOpenChanged: if (open) { selected = 0; keys.forceActiveFocus() }
 
     readonly property var actions: [
-        { icon: "lock",    label: "Kilitle",        run: () => Ui.lock() },
-        { icon: "logout",  label: "Oturumu kapat",  run: () => Niri.quit() },
-        { icon: "moon",    label: "Uyku",           run: () => { Ui.lock(); Ui.run(["systemctl", "suspend"]) } },
-        { icon: "restart", label: "Yeniden başlat", run: () => Ui.run(["systemctl", "reboot"]) },
-        { icon: "power",   label: "Kapat",          run: () => Ui.run(["systemctl", "poweroff"]), danger: true }
+        { icon: "lock",               label: "Kilitle",        run: () => Ui.lock() },
+        { icon: "bedtime",            label: "Uyku",           run: () => { Ui.lock(); Ui.run(["systemctl", "suspend"]) } },
+        { icon: "logout",             label: "Oturumu kapat",  run: () => Niri.quit() },
+        { icon: "restart_alt",        label: "Yeniden başlat", run: () => Ui.run(["systemctl", "reboot"]) },
+        { icon: "power_settings_new", label: "Kapat",          run: () => Ui.run(["systemctl", "poweroff"]), danger: true }
     ]
 
     function activate(i) {
@@ -29,34 +27,43 @@ PanelWindow {
         actions[i].run()
     }
 
-    MouseArea { anchors.fill: parent; onClicked: Ui.sessionMenuOpen = false }
+    Card {
+        id: panel
+        tint: Theme.panelDeep
+        radius: Theme.radiusPanel
+        shadow: true
+        width: row.implicitWidth + 28
+        height: row.implicitHeight + hint.implicitHeight + 52
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
 
-    ColumnLayout {
-        anchors.centerIn: parent
-        spacing: 28
-
-        Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: "Görüşmek üzere"
-            color: Theme.paper
-            font.family: Theme.serif
-            font.italic: true
-            font.pixelSize: 52
+        opacity: Math.min(1, root.shown * 1.5)
+        transform: Scale {
+            origin.x: panel.width / 2; origin.y: panel.height / 2
+            xScale: 0.95 + 0.05 * root.shown; yScale: 0.95 + 0.05 * root.shown
         }
 
-        RowLayout {
-            id: row
-            spacing: 12
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
+
+        Item {
+            id: keys
+            anchors.fill: parent
             focus: true
             Keys.onPressed: event => {
                 const n = root.actions.length
                 if (event.key === Qt.Key_Escape) Ui.sessionMenuOpen = false
-                else if (event.key === Qt.Key_Left) root.selected = (root.selected - 1 + n) % n
+                else if (event.key === Qt.Key_Left || event.key === Qt.Key_Backtab) root.selected = (root.selected - 1 + n) % n
                 else if (event.key === Qt.Key_Right || event.key === Qt.Key_Tab) root.selected = (root.selected + 1) % n
                 else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.activate(root.selected)
-                else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_5) root.activate(event.key - Qt.Key_1)
                 event.accepted = true
             }
+        }
+
+        RowLayout {
+            id: row
+            x: 14
+            y: 14
+            spacing: 8
 
             Repeater {
                 model: root.actions
@@ -65,60 +72,59 @@ PanelWindow {
                     required property var modelData
                     required property int index
                     readonly property bool isOn: root.selected === index
-                    implicitWidth: 156
-                    implicitHeight: 156
-                    radius: 28
-                    color: isOn ? (modelData.danger ? Theme.coral : Theme.accent) : Theme.glassStrong
-                    border.color: Theme.line
+                    readonly property bool danger: modelData.danger === true
+                    readonly property color fg: isOn ? (danger ? "#3A1512" : Theme.accentInk) : Theme.paper
+                    // sırayla belirme: açılış ilerledikçe her düğme biraz gecikmeli gelir
+                    readonly property real t: Math.max(0, Math.min(1, root.shown * 1.7 - index * 0.11))
+
+                    implicitWidth: 124
+                    implicitHeight: 118
+                    radius: Theme.radiusTile
+                    color: isOn ? (danger ? Theme.danger : Theme.accent) : Theme.well
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
+                    opacity: t
+                    transform: Translate { y: 10 * (1 - btn.t) }
                     Accessible.role: Accessible.Button
                     Accessible.name: modelData.label
 
-                    scale: 0.9
-                    opacity: 0
-                    Connections {
-                        target: root
-                        function onVisibleChanged() { if (root.visible) popIn.restart(); else { btn.opacity = 0; btn.scale = 0.9 } }
-                    }
-                    SequentialAnimation {
-                        id: popIn
-                        PauseAnimation { duration: btn.index * 40 }
-                        ParallelAnimation {
-                            NumberAnimation { target: btn; property: "opacity"; to: 1; duration: 220 }
-                            NumberAnimation { target: btn; property: "scale"; to: 1; duration: 320; easing.type: Easing.OutBack }
-                        }
-                    }
-
-                    Text {
-                        anchors { left: parent.left; top: parent.top; margins: 16 }
-                        text: "0" + (btn.index + 1)
-                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.muted
-                        font.family: Theme.mono
-                        font.pixelSize: 11
-                    }
                     Icon {
-                        anchors.centerIn: parent
-                        anchors.verticalCenterOffset: -12
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: 28
                         name: btn.modelData.icon
-                        size: 30
-                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
+                        size: 28
+                        filled: btn.isOn
+                        color: btn.fg
                     }
                     Text {
-                        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 20 }
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 20
                         text: btn.modelData.label
-                        color: btn.isOn ? (btn.modelData.danger ? "#3B1414" : Theme.accentInk) : Theme.paper
-                        font.family: Theme.serif
-                        font.pixelSize: 20
+                        color: btn.fg
+                        font.family: Theme.sans
+                        font.pixelSize: 13.5
+                        font.weight: Font.DemiBold
                     }
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: root.selected = btn.index
+                        onPositionChanged: root.selected = btn.index
                         onClicked: root.activate(btn.index)
                     }
                 }
             }
+        }
+
+        Text {
+            id: hint
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 14
+            text: "← →  seç     ⏎  onayla     Esc  vazgeç"
+            color: Theme.faint
+            font.family: Theme.sans
+            font.pixelSize: 12
         }
     }
 }

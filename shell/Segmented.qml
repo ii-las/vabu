@@ -6,6 +6,7 @@ Rectangle {
     property var options: []
     property int currentIndex: 0
     property bool mono: false
+    property bool stretch: false          // parçalar genişliği eşit paylaşır
     signal picked(int index)
 
     implicitWidth: row.implicitWidth + 8
@@ -29,7 +30,8 @@ Rectangle {
 
     Row {
         id: row
-        anchors.centerIn: parent
+        x: root.stretch ? 4 : (root.width - width) / 2
+        anchors.verticalCenter: parent.verticalCenter
         Repeater {
             id: repeater
             model: root.options
@@ -37,7 +39,7 @@ Rectangle {
                 required property var modelData
                 required property int index
                 readonly property bool isOn: root.currentIndex === index
-                width: label.implicitWidth + 28
+                width: root.stretch ? (root.width - 8) / Math.max(1, root.options.length) : label.implicitWidth + 28
                 height: root.height - 8
                 Accessible.role: Accessible.RadioButton
                 Accessible.checked: isOn

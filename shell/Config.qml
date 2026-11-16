@@ -28,6 +28,7 @@ Singleton {
     readonly property string sidebarSide: values.sidebarSide ?? "left"
     readonly property bool showSeconds: values.showSeconds ?? false
     readonly property bool showMedia: values.showMedia ?? true
+    readonly property bool nightLight: values.nightLight ?? false
     readonly property var pinned: values.pinned ?? [
         "org.mozilla.firefox", "foot", "org.gnome.Nautilus",
         "steam", "so.vabu.Settings", "org.gnome.TextEditor"

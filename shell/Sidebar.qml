@@ -3,12 +3,15 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
+// Yan panel: saat, çalışma alanları, uygulamalar, medya, durum.
 PanelWindow {
     id: root
     required property var modelData
     screen: modelData
 
     readonly property bool onRight: Config.sidebarSide === "right"
+    readonly property string screenName: screen?.name ?? ""
+    readonly property real originX: onRight ? (screen?.width ?? 0) - width : 0
 
     anchors {
         top: true
@@ -17,78 +20,49 @@ PanelWindow {
         right: onRight
     }
     implicitWidth: Theme.sidebarWidth
-    exclusiveZone: Theme.sidebarWidth
+    // Pencerelerle kartlar arasındaki boşluğu niri'nin kendi aralığı verir
+    exclusiveZone: Theme.sidebarWidth - Theme.gap
     color: "transparent"
 
     WlrLayershell.namespace: "vabu-sidebar"
     WlrLayershell.layer: WlrLayer.Top
 
+    // Boş yere tıklamak açık paneli kapatır
+    MouseArea {
+        anchors.fill: parent
+        onPressed: Ui.closePopover()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.gap
-        spacing: 10
+        spacing: 8
 
-        SidebarClock { Layout.fillWidth: true }
+        SidebarClock {
+            Layout.fillWidth: true
+            originX: root.originX
+            screenName: root.screenName
+        }
         SidebarWorkspaces {
             Layout.fillWidth: true
-            output: root.screen?.name ?? ""
-            screenWidth: root.screen?.width ?? 1920
+            originX: root.originX
+            output: root.screenName
         }
-        SidebarApps { Layout.fillWidth: true }
-        SidebarMedia { Layout.fillWidth: true }
-
-        // Bildirimler düğmesi
-        Card {
+        SidebarApps {
             Layout.fillWidth: true
-            implicitHeight: 48
-            radius: 16
-            color: Ui.notifCenterOpen ? Theme.accent : Theme.glass
-            Behavior on color { ColorAnimation { duration: Theme.normal } }
-            Accessible.role: Accessible.Button
-            Accessible.name: "Bildirimler: " + Notifs.count
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 12
-                spacing: 10
-                Icon {
-                    name: Notifs.dnd ? "bell-off" : "bell"
-                    color: Ui.notifCenterOpen ? Theme.accentInk : Theme.paper
-                    size: 16
-                }
-                Text {
-                    Layout.fillWidth: true
-                    text: Notifs.dnd ? "Rahatsız etme" : "Bildirimler"
-                    color: Ui.notifCenterOpen ? Theme.accentInk : Theme.paper
-                    font.family: Theme.sans
-                    font.pixelSize: 13
-                }
-                Rectangle {
-                    visible: Notifs.count > 0
-                    implicitWidth: Math.max(22, countText.implicitWidth + 12)
-                    implicitHeight: 22
-                    radius: 11
-                    color: Ui.notifCenterOpen ? Theme.accentInk : Theme.accent
-                    Text {
-                        id: countText
-                        anchors.centerIn: parent
-                        text: Notifs.count
-                        color: Ui.notifCenterOpen ? Theme.accent : Theme.accentInk
-                        font.family: Theme.mono
-                        font.pixelSize: 11
-                    }
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: Ui.notifCenterOpen = !Ui.notifCenterOpen
-            }
+            originX: root.originX
         }
 
         Item { Layout.fillHeight: true }
 
-        SidebarStatus { Layout.fillWidth: true }
+        SidebarMedia {
+            Layout.fillWidth: true
+            originX: root.originX
+        }
+        SidebarStatus {
+            Layout.fillWidth: true
+            originX: root.originX
+            screenName: root.screenName
+        }
     }
 }
