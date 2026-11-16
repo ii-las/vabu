@@ -10,6 +10,8 @@ import os
 from pathlib import Path
 import runpy
 import shutil
+import stat
+from types import SimpleNamespace
 import subprocess
 import sys
 import tempfile
@@ -352,6 +354,21 @@ class Recovery(unittest.TestCase):
   with patch.object(self.backend,'layout',return_value={**IDS,'encryption':{'kind':'luks2','uuid':'changed'}}):
    with self.assertRaises(ValueError):self.engine.apply(point,'a'*64,True)
   self.assertFalse((self.engine.store/'operations').exists())
+
+ def test_luks_identity_uses_block_device_number_not_btrfs_mount_number(self):
+  backend=FS['LinuxBackend']();expected='/sys/dev/block/37:7/dm/uuid'
+  information=SimpleNamespace(st_mode=stat.S_IFBLK,st_rdev=os.makedev(37,7))
+  commands=[]
+  def command(args):
+   commands.append(args)
+   if args[:2]==['cryptsetup','status']:return 'device: /dev/test-underlying\n'
+   if args[:2]==['cryptsetup','luksUUID']:return '11111111-1111-1111-1111-111111111111\n'
+   if args[:2]==['cryptsetup','luksDump']:return '{"keyslots":{}}'
+   raise AssertionError(args)
+  with patch.object(Path,'stat',return_value=information),patch.object(Path,'is_file',lambda path:str(path)==expected),patch.object(Path,'read_text',return_value='CRYPT-LUKS2-test'),patch.object(Path,'is_block_device',return_value=True),patch.object(backend,'command',side_effect=command):
+   result=backend.encryption({'source':'/dev/mapper/test','maj:min':'0:123'})
+  self.assertEqual(result['kind'],'luks2')
+  self.assertEqual(commands[0],['cryptsetup','status','/dev/mapper/test'])
 
  def test_relabel_marker_refuses_special_files_and_links(self):
   backend=FS['LinuxBackend']();marker=self.root/'.autorelabel'

@@ -194,7 +194,12 @@ class LinuxBackend:
  def encryption(self,mount):
   source=mount['source']
   if not source.startswith('/dev/mapper/') and not re.fullmatch(r'/dev/dm-[0-9]+',source):return None
-  dm=Path('/sys/dev/block')/mount['maj:min']/'dm/uuid'
+  device_info=Path(source).stat()
+  require(stat.S_ISBLK(device_info.st_mode),'LUKS eşleyicisi blok aygıtı olmalı.')
+  # Btrfs mountinfo can use an anonymous filesystem device number. Sysfs dm
+  # identity belongs to the SOURCE block node's st_rdev, not mountinfo st_dev.
+  device_number=str(os.major(device_info.st_rdev))+':'+str(os.minor(device_info.st_rdev))
+  dm=Path('/sys/dev/block')/device_number/'dm/uuid'
   require(dm.is_file() and dm.read_text().strip().startswith('CRYPT-LUKS2-'),'Yalnızca doğrudan LUKS2 eşleyicisi desteklenir; LVM/dm düzeni ayrıca doğrulanmalı.')
   status=self.command(['cryptsetup','status',source])
   match=re.search(r'^\s*device:\s+(/dev/[A-Za-z0-9_./+-]+)\s*$',status,re.M)
