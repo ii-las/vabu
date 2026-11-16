@@ -211,6 +211,10 @@ swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6
 
+# Katman pencereleri ve ayrılmış kenar boşlukları hesap testinin imlecini
+# etkilemesin. Kabuk senaryoları bitti; sonraki oturumlar kendi kabuğunu açar.
+pkill -x qs; sleep 1
+
 # Gerçek hesap formu: izole, exec adımı olmayan yapılandırmada fare/klavye ve
 # parola doğrulaması denenir. Disk modülleri yüklenmez, kurulum başlatılamaz.
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -220,8 +224,6 @@ if command -v calamares >/dev/null; then
         touch "$OUT/test-failed"
     }
 fi
-
-pkill -x qs; sleep 1
 
 # Giriş ekranı (greetd olmadan sadece görünüm)
 if [[ -e "$SHELL_DIR/greeter.qml" ]]; then
