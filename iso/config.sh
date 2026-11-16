@@ -32,7 +32,7 @@ grep -q 'sudo -E calamares' /home/liveuser/.config/niri/config.kdl || \
 install -d -o liveuser -g liveuser /home/liveuser/.config/vabu
 cat > /home/liveuser/.config/vabu/shell.json <<'JSON'
 {
-  "pinned": ["vabu-kur", "org.mozilla.firefox", "foot", "org.gnome.Nautilus", "so.vabu.Settings"]
+  "pinned": ["vabu-kur", "org.mozilla.firefox", "foot", "org.gnome.Nautilus", "so.vabu.Settings", "org.gnome.TextEditor"]
 }
 JSON
 chown -R liveuser:liveuser /home/liveuser/.config/niri /home/liveuser/.config/vabu
