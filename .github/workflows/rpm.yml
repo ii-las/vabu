@@ -170,6 +170,7 @@ jobs:
             ~/rpmbuild/SRPMS/*.rpm
 
       - name: COPR'a gönder
+        shell: bash
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || inputs.publish_copr))
         env:
           COPR_CONFIG: ${{ secrets.COPR_CONFIG }}
@@ -185,6 +186,8 @@ jobs:
             aarch64|x86_64) args+=(--chroot "fedora-$(cat FEDORA_VERSION)-${COPR_ARCH}") ;;
             *) echo "::error::Geçersiz COPR mimarisi"; exit 1 ;;
           esac
+          umask 077
+          trap 'rm -f -- "$HOME/.config/copr"' EXIT
           mkdir -p ~/.config && printf '%s' "${COPR_CONFIG}" > ~/.config/copr
           owner="$(cat COPR_OWNER)"
           for srpm in ~/rpmbuild/SRPMS/vabu-*.src.rpm; do

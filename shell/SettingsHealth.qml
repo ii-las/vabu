@@ -89,7 +89,29 @@ ColumnLayout {
         title: Lang.t("Paylaşılabilir rapor")
         note: Lang.t("Yalnızca paket sürümleri ve sabit durum etiketleri toplanır. Kullanıcı adı, ağ adı, IP adresi, seri numarası ve günlük içerikleri eklenmez. Önce aşağıdaki raporu incele.")
         PillButton { label: Lang.t("Raporu hazırla"); enabled: !report.running; onClicked: report.running = true }
-        TextEdit { textFormat: TextEdit.PlainText; Layout.fillWidth: true; implicitHeight: Math.min(320, contentHeight + 16); text: page.reportText; readOnly: true; selectByMouse: true; wrapMode: TextEdit.Wrap; color: Theme.paper; font.family: Theme.mono; font.pixelSize: Math.round((12) * Config.textScale)}
+        Flickable {
+            id: reportViewport
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(320, reportEditor.contentHeight + 16)
+            contentHeight: reportEditor.height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            TextEdit {
+                id: reportEditor
+                width: reportViewport.width
+                height: Math.max(reportViewport.height, contentHeight)
+                textFormat: TextEdit.PlainText
+                text: page.reportText
+                readOnly: true
+                selectByMouse: true
+                activeFocusOnTab: true
+                Accessible.name: Lang.t("Paylaşılabilir rapor")
+                wrapMode: TextEdit.Wrap
+                color: Theme.paper
+                font.family: Theme.mono
+                font.pixelSize: Math.round(12 * Config.textScale)
+            }
+        }
         PillButton { label: Lang.t("İncelediğim raporu kopyala"); enabled: page.reportText !== ""; onClicked: Quickshell.clipboardText = page.reportText }
     }
     Process { id: report; command: ["/usr/libexec/vabu/desktop-tools", "report"]; stdout: StdioCollector { onStreamFinished: { try { page.reportText = JSON.stringify(JSON.parse(text), null, 2) } catch(e) { page.error = "Rapor hazırlanamadı." } } } }
