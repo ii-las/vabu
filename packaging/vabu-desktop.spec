@@ -61,6 +61,9 @@ Requires:       flatpak
 Requires:       fastfetch
 # Geri alma noktaları
 Requires:       snapper
+Requires:       btrfs-progs
+Requires:       cryptsetup
+Requires:       util-linux
 Requires:       libdnf5-plugin-actions
 Requires:       dnf5
 Requires:       dnf5-plugins

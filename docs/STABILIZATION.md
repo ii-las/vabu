@@ -30,7 +30,7 @@ Fedora ekran akışında 960×640 mantıksal ekran, 800×600 Ayarlar, Türkçe/�
 
 ## Güncelleme ve kurtarma sınırı
 
-`vabu recovery-check` kurulu çekirdek sürümlerinin `/boot/vmlinuz-*`, initramfs ve modül dizinlerini salt okunur olarak karşılaştırır. Dosyaların bulunması açılışın başarılı olacağı anlamına gelmez. Kök anlık görüntüsü ayrı `/boot`, EFI ve kullanıcı verilerinin tam yedeği değildir. Otomatik tam sistem geri alma **hâlâ desteklenmiyor ve kapalıdır**; bu çalışmayla tamamlandığı iddia edilmez. Ayrıntılar [RECOVERY.md](RECOVERY.md).
+`vabu recovery-check` kurulu çekirdek sürümlerinin `/boot/vmlinuz-*`, initramfs ve modül dizinlerini salt okunur olarak karşılaştırır. Dosyaların bulunması açılışın başarılı olacağı anlamına gelmez. Kök anlık görüntüsü ayrı `/boot`, EFI ve kullanıcı verilerinin tam yedeği değildir. Otomatik tam sistem geri alma **hâlâ desteklenmiyor ve kapalıdır**; bu çalışmayla tamamlandığı iddia edilmez. Sonraki çalışmada çevrimdışı deneysel motor eklendi; gerçek VM doğrulaması bekliyor. Ayrıntılar [RECOVERY_ENGINE.md](RECOVERY_ENGINE.md) ve [RECOVERY.md](RECOVERY.md).
 
 Gerçek donanım denemeleri ve kök + /boot birlikte geri yükleme eksikleri burada kapanmış sayılmaz. İlgili testler geçene kadar bir `v*` sürüm yayını için kaynak commit'i, Fedora sürümü ve mimariyle eşleşen `RELEASE_VALIDATION_JSON` kaydı gerekir. Geliştirme amaçlı elle başlatılan ISO işi bu kayıtla karıştırılmaz; mevcut COPR anahtar özeti şartı ayrıca devam eder. Bu çalışmada ISO başlatılmaz.
 

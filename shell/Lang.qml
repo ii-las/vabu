@@ -442,7 +442,9 @@ Singleton {
     "Boş alan hedefi": "Free space target",
     "Son elle güncelleme sonucu": "Last manual update result",
     "Tam sistem geri alma": "Full system rollback",
-    "Desteklenmiyor; kök ve /boot birlikte geri yüklenmiyor.": "Unsupported; root and /boot are not restored together."
+    "Desteklenmiyor; kök ve /boot birlikte geri yüklenmiyor.": "Unsupported; root and /boot are not restored together.",
+    "Canlı ISO için deneysel motor mevcut; VM doğrulaması bekliyor.": "An experimental live-ISO engine is available; VM validation is pending.",
+    "Tam geri alma aracı bulunamadı.": "The full recovery tool is unavailable."
 })
     function t(text) { return language === "en" ? (english[text] ?? text) : text }
     function date(date, format) { return date.toLocaleString(Qt.locale(language === "en" ? "en_GB" : "tr_TR"), format) }

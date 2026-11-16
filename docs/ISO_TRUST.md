@@ -23,3 +23,5 @@ Dayanaklar: [Kiwi imza anahtarı şeması](https://osinside.github.io/kiwi/image
 ## Gerçek test kaydı
 
 `v*` etiketli sürüm işleri imza şartından önce ayrıca kaynak commit, mimari ve Fedora ile eşleşen `RELEASE_VALIDATION_JSON` kaydını ister. Gerçek testler yapılmadığı için bu değer ayarlanmadı; sürüm yayını kapalı kalır. Kapsam ve kayıt biçimi: [RECOVERY.md](RECOVERY.md).
+
+Kullanıcının nereden ne alacağı ve hangi GitHub alanına yazacağı: [ISO_SETUP.md](ISO_SETUP.md). Bu çalışmada gerçek açık anahtar alınmadı ve GitHub değişkeni ayarlanmadı.

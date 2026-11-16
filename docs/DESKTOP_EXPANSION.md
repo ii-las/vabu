@@ -33,7 +33,7 @@ Yeni ekranların Türkçe/İngilizce metinleri eklendi. Ayar aktarımı, bildiri
 - Güncelleme kanalları ortak geçmişe bağlandı. Başka araçların RPM dışındaki her işlemini gözlemleme garantisi yoktur.
 - Performans için tekrarlanabilir sınırlı örnekleme vardır; gerçek karşılaştırma sonucu yoktur.
 - Görsel/erişilebilirlik senaryoları hazırlanmıştır; insan incelemesi, ekran okuyucu ve donanım doğrulaması yapılmış sayılmaz.
-- **Kök + /boot birlikte geri yükleme motoru yazılmadı; otomatik tam sistem geri alma kapalıdır.** Bu, kalan büyük bir iştir. Snapshot listesi veya dosya envanteri bu eksikliği kapatmaz. [Kurtarma kapsamı](RECOVERY.md).
+- Sonraki çalışmada kök + `/boot` + yönetilen EFI dizini için çevrimdışı, günlük tutan deneysel motor uygulandı. Otomatik tam sistem geri alma kapalıdır; gerçek Btrfs/EFI/LUKS ve VM açılış doğrulaması bekleniyor. [Motor kapsamı ve sınırları](RECOVERY_ENGINE.md).
 - Kullanıcının istediği sıra korunur: önce kaynak çalışması, sonra kullanıcının ISO hazırlığı, ardından sanal makine doğrulaması. [VM doğrulama planı](VM_VALIDATION.md).
 
 ## Çevrimdışı testler

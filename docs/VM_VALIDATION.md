@@ -16,7 +16,7 @@ Bu belge bir test planıdır; test sonucu değildir. Bu çalışma ISO üretmez 
 6. **Bildirim/odak:** göster/sessiz/engelle ve kritik bildirimleri dene. Odak süresi bitince önceki panel tercihi gelmeli; engellemenin kritik bildirimleri de gizlediği açık olmalı.
 7. **Güncelleme:** çevrimdışı depo, iptal edilen yetkilendirme, RPM hatası ve kısmi Flatpak hatası başarı sayılmamalı. Zamanlayıcı ve DNF kayıtları görünmeli; DNF son kancası kesin başarı gibi gösterilmemeli.
 8. **Ekran profili:** yükleme kendiliğinden uygulamamalı. Deneme onaysız kalınca bağımsız koruyucu geri dönmeli; Ayarlar'ın kapanması bunu durdurmamalı. Gerçek kimlik/bağlantı değişimi fiziksel veya uygun sanal ekran ortamında ayrıca denenmeli.
-9. **Kilit/kurtarma:** kilit onayı ve uyku/uyanma; kabuk kapanınca bağımsız kilitleme. Temel kurtarma oturumu ve önceki çekirdek denenmeli. Tam sistem geri alma desteklenmediği için bu işlevin geçerli olduğu kaydedilmemeli.
+9. **Kilit/kurtarma:** kilit onayı ve uyku/uyanma; kabuk kapanınca bağımsız kilitleme. Temel kurtarma oturumu ve önceki çekirdek denenmeli. Deneysel çevrimdışı motor [RECOVERY_ENGINE.md](RECOVERY_ENGINE.md) sırasıyla ayrı disk yedeği üzerinde denenmeli; gerçek apply/resume/undo ve kesintiler geçmeden offline-rollback başarılı yazılmamalı.
 10. **Disk/ölçüm:** Snapper alanı bilinmiyorsa sıfır görünmemeli; bu sayfa temizlik yapmamalı. Ölçüm yoksa bilinmiyor denmeli; VM pil verisi gerçek donanım sonucu sayılmamalı.
 
 Başarısızlıkta VM'nin ayrı yedeğinden dönülmeli; çalışan köke gelişigüzel snapshot uygulanmamalı. Tam kök + /boot geri yükleme için ayrıca tasarım, uygulama ve kesinti senaryoları gerekir.

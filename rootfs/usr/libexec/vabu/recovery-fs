@@ -1,0 +1,315 @@
+#!/usr/bin/python3 -I
+"""Linux-only primitives for explicit, offline Vabu recovery. No auto-mount or chroot."""
+import ctypes
+import errno
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import stat
+import subprocess
+import sys
+
+UUID=re.compile(r'[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}|[a-fA-F0-9]{4}-[a-fA-F0-9]{4}')
+SAFE_VERSION=re.compile(r'[A-Za-z0-9_.+-]{1,160}')
+EXCLUDED={'efi','lost+found','.vabu-recovery'}
+
+
+class RecoveryError(ValueError):pass
+
+
+def require(condition,message):
+ if not condition:raise RecoveryError(message)
+
+
+def digest(data):
+ return hashlib.sha256(json.dumps(data,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+
+
+def sha(path):
+ h=hashlib.sha256()
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(fd,'rb') as stream:
+  require(stat.S_ISREG(os.fstat(stream.fileno()).st_mode),'Normal dosya gerekli.')
+  for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
+ return h.hexdigest()
+
+
+def directory(path,private=False,create=False):
+ path=Path(path)
+ require(path.is_absolute() and str(path)==os.path.normpath(str(path)),'Mutlak ve normalleştirilmiş yol gerekli.')
+ for parent in reversed((path,*path.parents)):
+  if parent.exists() or parent.is_symlink():
+   info=parent.lstat()
+   require(stat.S_ISDIR(info.st_mode) and not stat.S_ISLNK(info.st_mode),'Dizin yolu sembolik bağlantı içeriyor.')
+   require(info.st_uid in (0,os.getuid()) and (not info.st_mode & 0o022 or info.st_uid==0 and info.st_mode & stat.S_ISVTX),'Üst dizin başka kullanıcı tarafından değiştirilebilir.')
+ if create:path.mkdir(mode=0o700,parents=False,exist_ok=True)
+ info=path.lstat()
+ require(stat.S_ISDIR(info.st_mode) and info.st_uid==os.getuid() and not info.st_mode & 0o022,'Dizin sahibi veya izinleri uygun değil.')
+ if private:require(not info.st_mode & 0o077,'Kurtarma deposu yalnızca root tarafından okunabilmeli.')
+ return path
+
+
+def inventory(path,exclude=()):
+ path=Path(path);result={};total=0
+ if not path.exists():return result
+ directory(path)
+ require(path.is_dir() and not path.is_symlink(),'Envanter dizini geçersiz.')
+ def walk(folder,prefix=''):
+  nonlocal total
+  for entry in sorted(os.scandir(folder),key=lambda item:item.name):
+   if not prefix and entry.name in exclude:continue
+   name=prefix+entry.name;info=entry.stat(follow_symlinks=False)
+   require(len(result)<50000 and len(name)<4096,'Önyükleme ağacı sınırı aşıldı.')
+   require(info.st_uid==os.getuid() and (stat.S_ISLNK(info.st_mode) or not info.st_mode & 0o022),'Önyükleme dosyası root dışında yazılabilir.')
+   if stat.S_ISDIR(info.st_mode):
+    result[name]={'kind':'dir'};walk(entry.path,name+'/')
+   elif stat.S_ISREG(info.st_mode):
+    total+=info.st_size;require(total<=4*1024**3,'Önyükleme verisi sınırı aşıldı.')
+    result[name]={'kind':'file','size':info.st_size,'sha256':sha(entry.path)}
+   elif stat.S_ISLNK(info.st_mode):
+    result[name]={'kind':'link','target':os.readlink(entry.path)}
+   else:raise RecoveryError('Önyükleme ağacında özel dosya var.')
+ walk(path)
+ return result
+
+
+def tree(path):return digest(inventory(path)) if Path(path).exists() else None
+
+
+def copy_tree(source,target,exclude=()):
+ source=Path(source);target=Path(target)
+ require(not target.exists() and not target.is_symlink(),'Hazırlama hedefi boş olmalı.')
+ expected=inventory(source,exclude)
+ target.mkdir(mode=0o700)
+ for item in sorted(os.scandir(source),key=lambda entry:entry.name):
+  if item.name in exclude:continue
+  destination=target/item.name
+  if item.is_symlink():os.symlink(os.readlink(item.path),destination)
+  elif item.is_dir(follow_symlinks=False):shutil.copytree(item.path,destination,symlinks=True)
+  else:shutil.copy2(item.path,destination,follow_symlinks=False)
+ require(inventory(target)==expected,'Kopya bütünlüğü doğrulanamadı.')
+ for folder,dirs,files in os.walk(target,followlinks=False):
+  for name in files:
+   path=Path(folder)/name
+   if not path.is_symlink():
+    with path.open('rb') as stream:os.fsync(stream.fileno())
+ return expected
+
+
+def local_text(base,relative,limit=1048576):
+ base=Path(base);path=base/relative
+ require(path.resolve().is_relative_to(base.resolve()) and not path.is_symlink(),'Yapılandırma yolu hedefin dışına işaret ediyor.')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(fd) as stream:
+  info=os.fstat(stream.fileno())
+  require(stat.S_ISREG(info.st_mode) and info.st_size<=limit,'Yapılandırma dosyası geçersiz veya çok büyük.')
+  return stream.read(limit+1)
+
+
+def read_json(path):
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(fd) as stream:
+  info=os.fstat(stream.fileno())
+  require(stat.S_ISREG(info.st_mode) and info.st_uid==os.getuid() and not info.st_mode & 0o022 and info.st_size<=32*1024**2,'Kurtarma kaydı güvenilir değil.')
+  return json.loads(stream.read(32*1024**2+1))
+
+
+def atomic_json(path,data):
+ import tempfile
+ path=Path(path);fd,name=tempfile.mkstemp(prefix='.journal-',dir=path.parent)
+ try:
+  with os.fdopen(fd,'w') as stream:
+   json.dump(data,stream,ensure_ascii=False,sort_keys=True,allow_nan=False);stream.write('\n');stream.flush();os.fsync(stream.fileno())
+  os.replace(name,path)
+  fd=os.open(path.parent,os.O_RDONLY|os.O_DIRECTORY)
+  try:os.fsync(fd)
+  finally:os.close(fd)
+ finally:
+  if os.path.exists(name):os.unlink(name)
+
+
+class LinuxBackend:
+ def guard(self):
+  require(sys.platform=='linux' and os.geteuid()==0,'Bu araç yalnızca Linux canlı kurtarma ortamında root olarak çalışır.')
+  require(not Path('/.dockerenv').exists() and not Path('/run/.containerenv').exists(),'Konteyner içinde disk geri alma çalıştırılmaz.')
+  cmdline=Path('/proc/cmdline').read_text().split()
+  require(any(item.startswith('root=live:') for item in cmdline) or 'rd.live.image' in cmdline,'Kurulu sistemde geri alma çalıştırılmaz; canlı ISO ile aç.')
+  require(Path('/proc/1/ns/mnt').readlink()==Path('/proc/self/ns/mnt').readlink(),'Farklı mount namespace içinde çalıştırılmaz.')
+
+ def command(self,args):
+  executable=shutil.which(args[0],path='/usr/sbin:/usr/bin:/sbin:/bin')
+  require(executable is not None,'Gerekli sistem aracı eksik: '+args[0])
+  info=Path(executable).stat()
+  require(info.st_uid==0 and not info.st_mode & 0o022,'Sistem aracı izinleri uygun değil.')
+  result=subprocess.run([executable,*map(str,args[1:])],capture_output=True,text=True,timeout=180,env={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C'})
+  require(result.returncode==0,'Sistem işlemi tamamlanamadı: '+args[0])
+  return result.stdout
+
+ def mounts(self):
+  data=json.loads(self.command(['findmnt','--json','--list','-o','TARGET,SOURCE,FSTYPE,FSROOT,UUID,OPTIONS,MAJ:MIN']))
+  require(isinstance(data,dict) and isinstance(data.get('filesystems'),list),'Mount listesi okunamadı.')
+  return data['filesystems']
+
+ def layout(self,top,boot,efi,write=False):
+  self.guard();paths=[directory(p) for p in (top,boot,efi)]
+  require(len(set(paths))==3 and all(not a.is_relative_to(b) for a in paths for b in paths if a!=b),'Üç ayrı, iç içe olmayan mount dizini gerekli.')
+  mounts=self.mounts();selected=[]
+  for path,fs in zip(paths,('btrfs','ext4','vfat')):
+   matches=[m for m in mounts if m.get('target')==str(path)]
+   require(len(matches)==1,'Seçilen yol bağımsız bir mount değil.')
+   mount=matches[0]
+   require(mount.get('fstype')==fs and mount.get('fsroot')=='/' and isinstance(mount.get('uuid'),str) and UUID.fullmatch(mount['uuid']),'Desteklenen düzen: btrfs üst hacim, ayrı ext4 /boot, vfat EFI.')
+   if write:require('rw' in mount.get('options','').split(','),'Yazma için hedef mount salt okunur olmamalı.')
+   require(isinstance(mount.get('maj:min'),str) and re.fullmatch(r'[0-9]+:[0-9]+',mount['maj:min']) and str(mount.get('source','')).startswith('/dev/'),'Yerel aygıt kimliği doğrulanamadı.')
+   selected.append(mount)
+  uuids=[m['uuid'].lower() for m in selected]
+  require(len(set(uuids))==3,'Dosya sistemi kimlikleri ayrı olmalı.')
+  for mount in mounts:
+   target=mount.get('target','')
+   require(not any(target.startswith(str(path)+'/') for path in paths),'Hedef altında ek mount var; önce ayır.')
+   uid=(mount.get('uuid') or '').lower()
+   if uid in uuids:
+    expected=selected[uuids.index(uid)]
+    require(mount.get('target')==expected['target'] and mount.get('fsroot')=='/','Hedef kurulum başka yerde bağlı veya kullanılıyor; önce ayır.')
+  # Also inspect other processes' namespaces, not just the caller's mount list.
+  for process in Path('/proc').iterdir():
+   if not process.name.isdigit():continue
+   try:
+    for line in (process/'mountinfo').read_text().splitlines():
+     parts=line.split();separator=parts.index('-');source=parts[separator+2]
+     target=re.sub(r'\\([0-7]{3})',lambda match:chr(int(match[1],8)),parts[4])
+     require(not any(target.startswith(str(path)+'/') for path in paths),'Başka süreç hedef altında ek mount kullanıyor.')
+     if parts[2] in [m.get('maj:min') for m in selected]:
+      require(target in [str(p) for p in paths] and parts[3]=='/','Hedef disk başka süreç mount alanında kullanılıyor.')
+   except (FileNotFoundError,ProcessLookupError):continue
+   except PermissionError:raise RecoveryError('Tüm süreç mount alanları denetlenemedi.')
+  require(self.command(['btrfs','inspect-internal','rootid',paths[0]]).strip()=='5','Btrfs subvolid=5 üst hacmi gerekli.')
+  root=paths[0]/'root';directory(root)
+  self.subvolume(root)
+  return {'root':uuids[0],'boot':uuids[1],'efi':uuids[2],'encryption':self.encryption(selected[0])}
+
+ def encryption(self,mount):
+  source=mount['source']
+  if not source.startswith('/dev/mapper/') and not re.fullmatch(r'/dev/dm-[0-9]+',source):return None
+  dm=Path('/sys/dev/block')/mount['maj:min']/'dm/uuid'
+  require(dm.is_file() and dm.read_text().strip().startswith('CRYPT-LUKS2-'),'Yalnızca doğrudan LUKS2 eşleyicisi desteklenir; LVM/dm düzeni ayrıca doğrulanmalı.')
+  status=self.command(['cryptsetup','status',source])
+  match=re.search(r'^\s*device:\s+(/dev/[A-Za-z0-9_./+-]+)\s*$',status,re.M)
+  require(match is not None and Path(match[1]).is_block_device(),'LUKS kaynak aygıtı okunamadı.')
+  device=match[1]
+  luks_uuid=self.command(['cryptsetup','luksUUID',device]).strip().lower()
+  require(bool(UUID.fullmatch(luks_uuid)),'LUKS kimliği geçersiz.')
+  metadata=json.loads(self.command(['cryptsetup','luksDump','--dump-json-metadata',device]))
+  require(isinstance(metadata,dict),'LUKS2 başlık bilgisi okunamadı.')
+  # No passphrase, key material or header is saved; only a change-detection digest.
+  return {'kind':'luks2','uuid':luks_uuid,'metadataSHA256':digest(metadata)}
+
+ def subvolume(self,path):
+  fields={}
+  for line in self.command(['btrfs','subvolume','show',path]).splitlines():
+   key,separator,value=line.strip().partition(':')
+   if separator:fields[key.strip()]=value.strip()
+  uid=fields.get('UUID','').lower();parent=fields.get('Parent UUID','').lower()
+  require(len(uid)==36 and bool(UUID.fullmatch(uid)) and str(fields.get('Generation','')).isdigit(),'Alt hacim kimliği veya nesli okunamadı.')
+  return {'uuid':uid,'parent':parent,'generation':fields.get('Generation','')}
+
+ def readonly(self,path):return self.command(['btrfs','property','get','-ts',path,'ro']).strip()=='ro=true'
+
+ def snapshot(self,source,target,readonly):
+  self.command(['btrfs','subvolume','snapshot',*(['-r'] if readonly else []),source,target])
+
+ def prepare_root(self,path):
+  snap=Path(path)/'.snapshots'
+  require(not snap.is_symlink(),'Snapshot dizini sembolik bağlantı olamaz.')
+  if snap.exists():
+   if snap.stat().st_ino==256:return self._relabel(path)
+   require(snap.is_dir() and not snap.is_symlink() and not any(snap.iterdir()),'Hazırlanan kökte bilinmeyen snapshot dizini var.')
+   snap.rmdir()
+  self.command(['btrfs','subvolume','create',snap]);self._relabel(path)
+
+ def _relabel(self,path):
+  fd=os.open(Path(path)/'.autorelabel',os.O_WRONLY|os.O_CREAT|os.O_NOFOLLOW,0o600)
+  try:os.fsync(fd)
+  finally:os.close(fd)
+
+ def validate_installation(self,root,boot,efi,layout):
+  root=Path(root);boot=Path(boot);efi=Path(efi)
+  require(re.search(r'^ID=vabu$',local_text(root,'usr/lib/os-release'),re.M),'Vabu kökü doğrulanamadı.')
+  require(all((root/name).resolve().is_relative_to(root.resolve()) for name in ('etc/machine-id','etc/fstab')),'Kurulum kaydı kök dışına işaret ediyor.')
+  machine=local_text(root,'etc/machine-id',64).strip()
+  require(bool(re.fullmatch(r'[a-f0-9]{32}',machine)),'Makine kimliği geçersiz.')
+  fstab={}
+  for line in local_text(root,'etc/fstab').splitlines():
+   if not line.strip() or line.lstrip().startswith('#'):continue
+   fields=line.split()
+   if len(fields)>=4:
+    require(fields[1] not in fstab,'fstab içinde yinelenen bağlama noktası var.')
+    fstab[fields[1]]=fields
+  for point,key,fs in (('/','root','btrfs'),('/boot','boot','ext4'),('/boot/efi','efi','vfat')):
+   row=fstab.get(point,[])
+   require(len(row)>=4 and row[0].lower()=='uuid='+layout[key] and row[2]==fs,'fstab hedef disklerle uyuşmuyor.')
+  require(any(option in ('subvol=root','subvol=/root') for option in fstab['/'][3].split(',')) and 'subvolid=' not in fstab['/'][3],'Kök subvol=root yoluyla açılmalı; sabit subvolid desteklenmiyor.')
+  for point,subvol in (('/home','home'),('/var/log','var/log')):
+   row=fstab.get(point,[])
+   require(len(row)>=4 and row[0].lower()=='uuid='+layout['root'] and row[2]=='btrfs' and any(v in ('subvol='+subvol,'subvol=/'+subvol) for v in row[3].split(',')),'Ayrı /home ve /var/log alt hacimleri gerekli.')
+  nested=self.command(['btrfs','subvolume','list','-o',root])
+  for line in nested.splitlines():
+   name=line.partition(' path ')[2]
+   require(name=='root/.snapshots' or name.startswith('root/.snapshots/'),'Kök altında desteklenmeyen iç içe alt hacim var.')
+  for point in ('home','var/log'):
+   require((root/point).is_dir() and not (root/point).is_symlink() and (root/point).resolve().is_relative_to(root.resolve()),'Kullanıcı veri bağlama noktası geçersiz.')
+  require((efi/'EFI/fedora').is_dir() and not (efi/'EFI/fedora').is_symlink() and (efi/'EFI/fedora').resolve().is_relative_to(efi.resolve()),'EFI/fedora önyükleyicisi bulunamadı.')
+  require(not (efi/'EFI/fedora/grub.cfg').is_symlink(),'EFI yapılandırması sembolik bağlantı olamaz.')
+  require(any((efi/'EFI/fedora'/name).is_file() and not (efi/'EFI/fedora'/name).is_symlink() for name in ('grubx64.efi','grubaa64.efi')),'EFI GRUB ikilisi gerekli.')
+  stub=local_text(efi,'EFI/fedora/grub.cfg')
+  require(layout['boot'] in stub.lower(),'EFI grub.cfg doğru /boot kimliğine bağlı değil.')
+  kernels=[]
+  entries=boot/'loader/entries'
+  require(entries.is_dir() and not entries.is_symlink() and entries.resolve().is_relative_to(boot.resolve()),'BLS girdileri gerekli.')
+  bls=list(entries.glob('*.conf'));require(len(bls)<=128,'BLS girdi sınırı aşıldı.')
+  for entry in bls:
+   require(not entry.is_symlink(),'BLS girdisi sembolik bağlantı olamaz.')
+   values={}
+   for line in local_text(boot,str(entry.relative_to(boot))).splitlines():
+    key,_,value=line.partition(' ');values[key]=value.strip()
+   linux=values.get('linux','')
+   if '0-rescue-' in linux:continue
+   require(linux.startswith('/vmlinuz-'),'BLS çekirdek yolu desteklenmiyor.')
+   version=linux.removeprefix('/vmlinuz-');require(bool(SAFE_VERSION.fullmatch(version)),'Çekirdek sürümü geçersiz.')
+   options=values.get('options','')
+   roots=[word.partition('=')[2] for word in options.split() if word.startswith('root=')]
+   require(len(roots)==1,'BLS tek bir kurulu kök belirtmeli.')
+   if roots[0].lower().startswith('uuid='):
+    require(roots[0].lower()=='uuid='+layout['root'],'BLS başka bir kurulumun köküne işaret ediyor.')
+   else:
+    require(bool(re.fullmatch(r'/dev/(?:mapper/[A-Za-z0-9_.+-]+|disk/by-uuid/[A-Za-z0-9-]+|[A-Za-z0-9]+)',roots[0])),'BLS kök aygıt yolu desteklenmiyor.')
+    require(Path(roots[0]).is_block_device(),'BLS eşleyici aygıtı canlı ortamda açık olmalı.')
+    require(self.command(['blkid','-s','UUID','-o','value','--',roots[0]]).strip().lower()==layout['root'],'BLS eşleyici aygıtı doğru kök değil.')
+   rootflags=[word.partition('=')[2] for word in options.split() if word.startswith('rootflags=')]
+   require(len(rootflags)==1,'BLS tek bir rootflags alanı içermeli.')
+   flags=rootflags[0]
+   require('subvolid=' not in options and any(v in ('subvol=root','subvol=/root') for v in flags.split(',')),'BLS rootflags=subvol=root içermeli.')
+   image=boot/('vmlinuz-'+version);module=root/'usr/lib/modules'/version/'vmlinuz'
+   require(module.resolve().is_relative_to(root.resolve()) and sha(module)==sha(image),'Kök ve /boot çekirdekleri uyuşmuyor.')
+   require(values.get('initrd')=='/initramfs-'+version+'.img' and (boot/values['initrd'].lstrip('/')).is_file() and not (boot/values['initrd'].lstrip('/')).is_symlink(),'Çekirdeğin initramfs dosyası eksik veya desteklenmiyor.')
+   kernels.append(version)
+  require(bool(kernels),'En az bir tutarlı normal çekirdek gerekli.')
+  return {'machine':machine,'kernels':sorted(set(kernels))}
+
+ def exchange(self,left,right):
+  libc=ctypes.CDLL(None,use_errno=True)
+  function=getattr(libc,'renameat2',None)
+  require(function is not None,'Atomik alt hacim değişimi desteklenmiyor.')
+  function.argtypes=[ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint];function.restype=ctypes.c_int
+  if function(-100,os.fsencode(left),-100,os.fsencode(right),2):
+   value=ctypes.get_errno();raise OSError(value,os.strerror(value))
+
+ def sync(self,path):
+  fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY)
+  try:
+   libc=ctypes.CDLL(None,use_errno=True);function=getattr(libc,'syncfs',None)
+   require(function is not None and function(fd)==0,'Dosya sistemi diske eşitlenemedi.')
+  finally:os.close(fd)

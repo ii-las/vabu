@@ -67,7 +67,7 @@ ColumnLayout {
         note: Lang.t("niri sıfırlama kişisel niri ayarlarını varsayılana döndürür. Eski kullanıcı ayarları yedeklenir. Tam sistem geri alma burada uygulanmaz.")
         SettingRow { label: Lang.t("niri ayarlarını sıfırla"); Toggle { checked: page.resetConfirmed; onToggled: page.resetConfirmed = !checked } }
         PillButton { label: Lang.t("Yedekleyip sıfırla"); enabled: page.resetConfirmed; onClicked: { page.resetConfirmed = false; Ui.terminal(["vabu","reset","niri"]) } }
-        SettingRow { label: Lang.t("Tam sistem geri alma"); sub: Lang.t("Desteklenmiyor; kök ve /boot birlikte geri yüklenmiyor.") }
+        SettingRow { label: Lang.t("Tam sistem geri alma"); sub: Lang.t(page.boot.offlineRestoreAvailable ? "Canlı ISO için deneysel motor mevcut; VM doğrulaması bekliyor." : "Tam geri alma aracı bulunamadı.") }
         SettingRow { label: Lang.t("Çekirdek ve önyükleme dosyaları"); sub: Lang.t(page.boot.state === "files-present" ? "Eşleşen dosyalar bulundu; açılış doğrulanmadı." : "Dosya tutarlılığı doğrulanamadı.") }
         Repeater {
             model: page.boot.kernels ?? []

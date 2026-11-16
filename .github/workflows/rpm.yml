@@ -40,6 +40,8 @@ jobs:
           python3 -B tests/desktop.py
           python3 -B tests/stability.py
           python3 -B tests/expansion.py
+          python3 -B tests/recovery.py
+          python3 -B tests/iso-setup.py
 
       - name: Kaynak arşivleri
         run: |

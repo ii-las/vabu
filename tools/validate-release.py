@@ -8,7 +8,7 @@ import re
 import sys
 
 REQUIRED = ('rpm-qml', 'small-screen-accessibility', 'lock-suspend', 'display-hotplug',
-            'network-bluetooth', 'portal-sharing', 'install-boot', 'update-recovery')
+            'network-bluetooth', 'portal-sharing', 'install-boot', 'update-recovery', 'offline-rollback')
 
 
 def validate(record, source, arch, fedora):

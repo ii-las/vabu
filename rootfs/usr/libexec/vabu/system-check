@@ -45,7 +45,8 @@ def recovery():
     present = any(all(k[key] for key in ('image','initramfs','modules')) for k in kernels)
     return {'format':1, 'inventoryReadable':code == 0 and bool(versions), 'separateBoot':separate_boot,
             'kernels':kernels, 'matchingKernelFiles':present,
-            'fullRestoreSupported':False,
+            'offlineRestoreAvailable':Path('/usr/libexec/vabu/recovery').is_file(),
+            'fullRestoreSupported':False, 'recoveryValidation':'vm-pending',
             'state':'files-present' if present else 'unknown' if not versions else 'attention',
             'detail':'Dosya varlığı önyükleme veya tam sistem geri alma doğrulaması değildir.'}
 

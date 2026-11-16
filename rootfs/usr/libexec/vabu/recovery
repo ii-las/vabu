@@ -1,0 +1,320 @@
+#!/usr/bin/python3 -I
+"""Offline checkpoints and resumable root + boot + managed EFI recovery.
+Writes require explicit target mounts and confirmation. Never mounts, formats,
+rewrites partitions, invokes chroot, changes NVRAM or reboots the machine.
+"""
+import argparse
+import contextlib
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import shutil
+import stat
+import subprocess
+import sys
+import time
+import uuid
+
+FS=runpy.run_path(str(Path(__file__).with_name('recovery-fs')),run_name='recovery_primitives')
+require=FS['require'];Error=FS['RecoveryError'];inventory=FS['inventory'];digest=FS['digest'];tree=FS['tree'];directory=FS['directory'];read_json=FS['read_json'];write_json=FS['atomic_json'];copy_tree=FS['copy_tree']
+TOKEN=re.compile(r'[a-f0-9]{32}')
+EXCLUDED=FS['EXCLUDED']
+
+
+def identifier(value):
+ require(isinstance(value,str) and TOKEN.fullmatch(value),'Geçerli kurtarma kimliği gerekli.')
+ return value
+
+
+def present(path):return Path(path).exists() or Path(path).is_symlink()
+
+
+def component(path):
+ path=Path(path)
+ if not present(path):return None
+ if path.is_symlink():return digest({'kind':'link','target':os.readlink(path)})
+ if path.is_file():return digest({'kind':'file','sha256':FS['sha'](path),'size':path.stat().st_size})
+ require(path.is_dir(),'Özel dosya geri yüklenmez.')
+ return digest({'kind':'dir','entries':inventory(path)})
+
+
+class Engine:
+ def __init__(self,top,boot,efi,backend=None):
+  self.backend=backend or FS['LinuxBackend']()
+  # The guard runs before any directory creation, command or filesystem mutation.
+  self.backend.guard()
+  self.top=Path(top);self.boot=Path(boot);self.efi=Path(efi)
+  self.layout=self.backend.layout(self.top,self.boot,self.efi)
+  self.store=self.top/'.vabu-recovery';self.root=self.top/'root'
+
+ @contextlib.contextmanager
+ def locked(self,write=False,create=False):
+  require(self.backend.layout(self.top,self.boot,self.efi,write=write)==self.layout,'Hedef dosya sistemi veya şifreleme başlığı değişti.')
+  directory(self.store,private=True,create=create)
+  path=self.store/'.lock'
+  flags=(os.O_RDWR if write else os.O_RDONLY)|os.O_NOFOLLOW|os.O_NONBLOCK|(os.O_CREAT if create else 0)
+  fd=os.open(path,flags,0o600)
+  try:
+   info=os.fstat(fd);require(stat.S_ISREG(info.st_mode) and info.st_uid==os.getuid() and not info.st_mode & 0o077,'Kurtarma kilidi güvenilir değil.')
+   fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+   yield
+  finally:os.close(fd)
+
+ def space(self,paths,bytes_needed):
+  for path,amount in zip(paths,bytes_needed):
+   require(shutil.disk_usage(path).free>=amount+128*1024**2,'Güvenli hazırlama için yeterli boş alan yok.')
+
+ def checkpoint_path(self,value):
+  value=identifier(value);path=self.store/'checkpoints'/value
+  directory(path,private=True)
+  return path
+
+ def verify(self,value):
+  path=self.checkpoint_path(value);manifest=read_json(path/'manifest.json')
+  require(isinstance(manifest,dict) and manifest.get('format')==1 and manifest.get('id')==value,'Kurtarma kaydı geçersiz.')
+  seal=manifest.get('seal');require(seal==digest({k:v for k,v in manifest.items() if k!='seal'}),'Kurtarma kaydı bütünlüğü uyuşmuyor.')
+  require(manifest.get('layout')==self.layout,'Kurtarma noktası bu dosya sistemlerine ait değil.')
+  root_info=self.backend.subvolume(path/'root')
+  require(self.backend.readonly(path/'root') and root_info['uuid']==manifest.get('rootUUID') and root_info.get('generation')==manifest.get('rootGeneration'),'Kök görüntüsü değişmiş veya salt okunur değil.')
+  require(inventory(path/'boot')==manifest.get('boot') and inventory(path/'efi/EFI/fedora')==manifest.get('efi'),'Önyükleme yedeği bütünlüğü uyuşmuyor.')
+  installation=self.backend.validate_installation(path/'root',path/'boot',path/'efi',self.layout)
+  require(installation==manifest.get('installation'),'Kök, çekirdek ve EFI kaydı uyuşmuyor.')
+  return path,manifest
+
+ def create(self,label):
+  require(isinstance(label,str) and len(label)<=80 and all(ord(c)>=32 for c in label),'Etiket kısa ve tek satır olmalı.')
+  with self.locked(write=True,create=True):
+   checkpoints=self.store/'checkpoints';directory(checkpoints,private=True,create=True)
+   require(len(list(checkpoints.iterdir()))<6,'Altı kurtarma noktası sınırı doldu; otomatik silme yapılmaz.')
+   self.backend.validate_installation(self.root,self.boot,self.efi,self.layout)
+   old_boot=inventory(self.boot,EXCLUDED);old_efi=inventory(self.efi/'EFI/fedora')
+   boot_bytes=sum(v.get('size',0) for v in old_boot.values());efi_bytes=sum(v.get('size',0) for v in old_efi.values())
+   self.space([self.top],[boot_bytes+efi_bytes+1024**3])
+   value=uuid.uuid4().hex;path=checkpoints/value;directory(path,private=True,create=True)
+   write_json(path/'capture.json',{'state':'capturing','id':value})
+   copy_tree(self.boot,path/'boot',EXCLUDED)
+   directory(path/'efi',private=True,create=True);directory(path/'efi/EFI',private=True,create=True)
+   copy_tree(self.efi/'EFI/fedora',path/'efi/EFI/fedora')
+   self.backend.snapshot(self.root,path/'root',True)
+   require(inventory(self.boot,EXCLUDED)==old_boot and inventory(self.efi/'EFI/fedora')==old_efi,'Yakalama sırasında önyükleme dosyaları değişti; nokta tamamlanmadı.')
+   installation=self.backend.validate_installation(path/'root',path/'boot',path/'efi',self.layout)
+   require(self.backend.readonly(path/'root'),'Kök görüntüsü salt okunur olmadı.')
+   manifest={'format':1,'id':value,'createdAt':int(time.time()),'label':label,'layout':self.layout,'rootUUID':self.backend.subvolume(path/'root')['uuid'],'rootGeneration':self.backend.subvolume(path/'root')['generation'],
+             'installation':installation,'boot':old_boot,'efi':old_efi,'coverage':'root+boot+EFI/fedora; excludes home, var/log, other EFI vendors and firmware variables'}
+   manifest['seal']=digest(manifest);write_json(path/'manifest.json',manifest)
+   self.backend.sync(self.top)
+   return {'id':value,'label':label,'coverage':manifest['coverage']}
+
+ def listing(self):
+  if not self.store.exists():return {'checkpoints':[],'operations':[]}
+  with self.locked():
+   rows=[];operations=[]
+   for path in sorted((self.store/'checkpoints').glob('*')):
+    if not TOKEN.fullmatch(path.name):continue
+    try:
+     _,manifest=self.verify(path.name)
+     rows.append({'id':path.name,'label':manifest['label'],'createdAt':manifest['createdAt'],'state':'verified'})
+    except (OSError,ValueError):rows.append({'id':path.name,'state':'incomplete-or-invalid'})
+   for path in sorted((self.store/'operations').glob('*')):
+    if not TOKEN.fullmatch(path.name):continue
+    record=read_json(path/'journal.json');operations.append({'id':path.name,'state':record.get('state')})
+   return {'checkpoints':rows,'operations':operations}
+
+ def _plan(self,value):
+  path,manifest=self.verify(value)
+  current=self.backend.subvolume(self.root)
+  boot=inventory(self.boot,EXCLUDED);efi=inventory(self.efi/'EFI/fedora')
+  data={'checkpoint':value,'checkpointSeal':manifest['seal'],'layout':self.layout,'currentRoot':current,'currentBoot':digest(boot),'currentEFI':digest(efi)}
+  return {'confirmation':digest(data),'checkpoint':value,'targetFilesystems':self.layout,'previousRoot':current['uuid'],
+          'coverage':manifest['coverage'],'requiresLiveEnvironment':True,'automaticReboot':False,'powerLoss':'Resume or undo from the live environment before booting the installed system.'}
+
+ def plan(self,value):
+  with self.locked():return self._plan(value)
+
+ def operation(self,value):
+  value=identifier(value);path=self.store/'operations'/value;directory(path,private=True)
+  data=read_json(path/'journal.json')
+  require(isinstance(data,dict) and data.get('id')==value and data.get('format')==1 and data.get('layout')==self.layout,'İşlem kaydı hedeflerle uyuşmuyor.')
+  identifier(data.get('checkpoint'))
+  require(data.get('state') in ('preparing','prepared','applying','complete','undoing','undone'),'İşlem durumu geçersiz.')
+  return path,data
+
+ def stages(self,value,create=False):
+  result={}
+  for name,mount in (('boot',self.boot),('efi',self.efi)):
+   base=mount/'.vabu-recovery'
+   directory(base,create=create)
+   operation=base/identifier(value);directory(operation,create=create)
+   for part in ('new','old'):directory(operation/part,create=create)
+   result[name]=operation
+  return result
+
+ def apply(self,value,confirmation,acknowledged):
+  require(acknowledged,'VM doğrulaması bekleyen motor için açık deneysel kullanım onayı gerekli.')
+  with self.locked(write=True):
+   plan=self._plan(value);require(confirmation==plan['confirmation'],'Hedef veya yedek değişti; planı yeniden incele.')
+   operations=self.store/'operations';directory(operations,private=True,create=True)
+   require(len(list(operations.iterdir()))<6,'İşlem saklama sınırı doldu; önce kayıtları incele.')
+   for old in operations.iterdir():
+    if TOKEN.fullmatch(old.name):require(read_json(old/'journal.json').get('state') in ('complete','undone'),'Önce yarım kalan işlemi devam ettir veya geri al.')
+   token=uuid.uuid4().hex;path=operations/token;directory(path,private=True,create=True)
+   journal={'format':1,'id':token,'checkpoint':value,'layout':self.layout,'state':'preparing','oldRoot':plan['previousRoot']}
+   write_json(path/'journal.json',journal);self.backend.sync(self.top)
+   return self._resume(token)
+
+ def _prepare(self,path,journal,checkpoint):
+  token=journal['id'];candidate=path/'candidate'
+  stages=self.stages(token,True)
+  require(self.backend.subvolume(self.root)['uuid']==journal['oldRoot'],'Kurulu kök işlem hazırlanırken değişti.')
+  if not candidate.exists():self.backend.snapshot(checkpoint/'root',candidate,False)
+  probe=path/'exchange-probe'
+  if not probe.exists():self.backend.snapshot(checkpoint/'root',probe,False)
+  parent=self.backend.subvolume(checkpoint/'root')['uuid']
+  require(self.backend.subvolume(candidate)['parent']==parent and self.backend.subvolume(probe)['parent']==parent,'Hazırlanan kökün kaynağı uyuşmuyor.')
+  # Probe actual Btrfs subvolume exchange, not just ordinary directory rename.
+  self.backend.exchange(candidate,probe);self.backend.exchange(candidate,probe)
+  self.backend.prepare_root(candidate)
+  boot_bytes=sum(v.get('size',0) for v in inventory(checkpoint/'boot').values());efi_bytes=sum(v.get('size',0) for v in inventory(checkpoint/'efi/EFI/fedora').values())
+  self.space([self.top,self.boot,self.efi],[1024**3,boot_bytes,efi_bytes])
+  steps=[]
+  scopes=(('boot',checkpoint/'boot',self.boot,EXCLUDED),('efi',checkpoint/'efi/EFI',self.efi/'EFI',set()))
+  for scope,source,live,excluded in scopes:
+   desired={p.name for p in source.iterdir()}
+   existing={p.name for p in live.iterdir()} if live.exists() else set()
+   if scope=='efi':existing={'fedora'} if (live/'fedora').exists() else set();desired={'fedora'}
+   names=sorted((desired|existing)-set(excluded))
+   for name in names:
+    require(name not in ('.','..') and '/' not in name,'Geçersiz önyükleme adı.')
+    stage=stages[scope]/'new'/name;original=live/name
+    if name in desired:
+     if present(stage) and component(stage)!=component(source/name):
+      # Only this operation's unfinished NEW copy is discarded; never installed files or undo copies.
+      if stage.is_dir() and not stage.is_symlink():shutil.rmtree(stage)
+      else:stage.unlink()
+     if not present(stage):
+      item=source/name
+      if item.is_symlink():os.symlink(os.readlink(item),stage)
+      elif item.is_dir():copy_tree(item,stage)
+      else:shutil.copy2(item,stage,follow_symlinks=False)
+    steps.append({'scope':scope,'name':name,'old':component(original),'new':component(stage)})
+   self.backend.sync(stages[scope])
+  journal.update({'state':'prepared','newRoot':self.backend.subvolume(candidate)['uuid'],'steps':steps})
+  write_json(path/'journal.json',journal);self.backend.sync(self.top)
+
+ def check_step(self,step):
+  require(isinstance(step,dict) and step.get('scope') in ('boot','efi') and isinstance(step.get('name'),str) and step['name'] not in ('','.','..') and '/' not in step['name'],'İşlem adımı geçersiz.')
+  require(not (step['scope']=='boot' and step['name'] in EXCLUDED) and (step['scope']!='efi' or step['name']=='fedora'),'Korunan önyükleme alanına dokunulmaz.')
+  require(step.get('old') is not None or step.get('new') is not None,'Boş işlem adımı geçersiz.')
+  for key in ('old','new'):require(step.get(key) is None or isinstance(step[key],str) and re.fullmatch(r'[a-f0-9]{64}',step[key]),'İşlem özeti geçersiz.')
+
+ def check_state(self,step,stages):
+  self.check_step(step);scope=step['scope'];name=step['name']
+  live=(self.boot if scope=='boot' else self.efi/'EFI')/name
+  actual=(component(live),component(stages[scope]/'new'/name),component(stages[scope]/'old'/name))
+  valid=((step['old'],step['new'],None),(None,step['new'],step['old']),(step['new'],None,step['old']))
+  require(actual in valid,'Önyükleme, hazırlama veya geri dönüş dosyaları değişmiş; işlem durduruldu.')
+
+ def move_step(self,step,stages,undo=False):
+  self.check_step(step);scope=step['scope'];name=step['name']
+  live=(self.boot if scope=='boot' else self.efi/'EFI')/name
+  new=stages[scope]/'new'/name;old=stages[scope]/'old'/name
+  directory(live.parent,create=scope=='efi')
+  if not undo:
+   if step['old'] is not None and not present(old):
+    require(component(live)==step['old'] and component(new)==step['new'],'Önyükleme dosyası beklenen durumda değil.')
+    os.rename(live,old);self.backend.sync(old.parent);self.backend.sync(live.parent)
+   if step['old'] is not None:require(component(old)==step['old'],'Geri dönüş kopyası değişmiş.')
+   if present(new):
+    require(component(new)==step['new'] and not present(live),'Yeni dosya veya hedef beklenmedik durumda.')
+    os.rename(new,live);self.backend.sync(live.parent);self.backend.sync(new.parent)
+   require(component(live)==step['new'],'Önyükleme adımı doğrulanamadı.')
+  else:
+   # A never-started step already has OLD live and NEW staged.
+   if not present(old) and component(live)==step['old'] and component(new)==step['new']:return
+   if present(live):
+    require(component(live)==step['new'] and not present(new),'Geri alma hedefi beklenen durumda değil.')
+    os.rename(live,new);self.backend.sync(new.parent);self.backend.sync(live.parent)
+   if present(old):
+    require(component(old)==step['old'] and not present(live),'Önceki dosya veya hedef değişmiş.')
+    os.rename(old,live);self.backend.sync(live.parent);self.backend.sync(old.parent)
+   require(component(live)==step['old'] and component(new)==step['new'],'Önyükleme geri dönüşü doğrulanamadı.')
+
+ def root_step(self,path,journal,undo=False):
+  current=self.backend.subvolume(self.root)['uuid'];candidate=self.backend.subvolume(path/'candidate')['uuid']
+  before=journal['newRoot'] if undo else journal['oldRoot'];after=journal['oldRoot'] if undo else journal['newRoot']
+  if current==before:
+   require(candidate==after,'Değiştirilecek kök kimliği uyuşmuyor.')
+   self.backend.exchange(self.root,path/'candidate');self.backend.sync(self.top)
+  else:require(current==after and candidate==before,'Kökler beklenen durumda değil; işlem durduruldu.')
+
+ def _resume(self,value):
+  path,journal=self.operation(value)
+  require(journal['state']!='undone','Geri alınan işlem yeniden uygulanmaz; yeni plan oluştur.')
+  if journal['state']=='undoing':return self._undo(path,journal,self.stages(value))
+  checkpoint,_=self.verify(journal['checkpoint'])
+  if journal['state']=='preparing':self._prepare(path,journal,checkpoint)
+  stages=self.stages(value)
+  require({self.backend.subvolume(self.root)['uuid'],self.backend.subvolume(path/'candidate')['uuid']}=={journal['oldRoot'],journal['newRoot']} and journal['oldRoot']!=journal['newRoot'],'İşlem kökleri değişmiş; önyükleme dosyalarına dokunulmadı.')
+  require(isinstance(journal.get('steps'),list),'İşlem adımları okunamadı.')
+  for step in journal['steps']:self.check_state(step,stages)
+  if journal['state']=='complete':
+   require(self.backend.subvolume(self.root)['uuid']==journal['newRoot'],'Tamamlanmış işlemin kökü değişmiş.')
+   for step in journal['steps']:self.check_step(step);require(component((self.boot if step['scope']=='boot' else self.efi/'EFI')/step['name'])==step['new'],'Tamamlanmış işlemin dosyaları değişmiş.')
+   return {'id':value,'state':'complete','rebooted':False}
+  require(self.backend.layout(self.top,self.boot,self.efi,write=True)==self.layout,'Hazırlama sırasında hedef veya şifreleme başlığı değişti.')
+  journal['state']='applying';write_json(path/'journal.json',journal)
+  for step in journal['steps']:self.move_step(step,stages)
+  self.root_step(path,journal)
+  journal['state']='complete';write_json(path/'journal.json',journal);self.backend.sync(self.top)
+  return {'id':value,'state':'complete','rebooted':False}
+
+ def resume(self,value,confirmation,acknowledged):
+  require(acknowledged and confirmation==identifier(value),'İşlem kimliğini ve deneysel kullanım onayını açıkça doğrula.')
+  with self.locked(write=True):return self._resume(value)
+
+ def _undo(self,path,journal,stages):
+  if 'newRoot' in journal:
+   require({self.backend.subvolume(self.root)['uuid'],self.backend.subvolume(path/'candidate')['uuid']}=={journal['oldRoot'],journal['newRoot']} and journal['oldRoot']!=journal['newRoot'],'Geri dönüş kökleri değişmiş.')
+  else:require(self.backend.subvolume(self.root)['uuid']==journal['oldRoot'],'Önceki kök değişmiş.')
+  require(isinstance(journal.get('steps',[]),list),'Geri dönüş adımları okunamadı.')
+  for step in journal.get('steps',[]):self.check_state(step,stages)
+  for step in reversed(journal.get('steps',[])):self.move_step(step,stages,True)
+  if 'newRoot' in journal:self.root_step(path,journal,True)
+  else:require(self.backend.subvolume(self.root)['uuid']==journal['oldRoot'],'Önceki kök değişmiş.')
+  journal['state']='undone';write_json(path/'journal.json',journal);self.backend.sync(self.top)
+  return {'id':journal['id'],'state':'undone','rebooted':False}
+
+ def undo(self,value,confirmation,acknowledged):
+  require(acknowledged and confirmation==identifier(value),'İşlem kimliğini ve deneysel kullanım onayını açıkça doğrula.')
+  with self.locked(write=True):
+   path,journal=self.operation(value)
+   if journal['state']=='undone':return {'id':value,'state':'undone','rebooted':False}
+   stages=self.stages(value,create=journal['state']=='preparing')
+   journal['state']='undoing';write_json(path/'journal.json',journal)
+   return self._undo(path,journal,stages)
+
+
+def main():
+ parser=argparse.ArgumentParser(description='Vabu: canlı ISO üzerinde açık hedefli, deneysel tam sistem geri alma. /home ve /var/log korunur.')
+ parser.add_argument('action',choices=('create','list','plan','apply','resume','undo'))
+ parser.add_argument('identifier',nargs='?')
+ parser.add_argument('--top',required=True);parser.add_argument('--boot',required=True);parser.add_argument('--efi',required=True)
+ parser.add_argument('--label',default='Manual checkpoint');parser.add_argument('--confirm');parser.add_argument('--ack-unverified',action='store_true')
+ args=parser.parse_args();engine=Engine(args.top,args.boot,args.efi)
+ if args.action=='create':result=engine.create(args.label)
+ elif args.action=='list':result=engine.listing()
+ elif args.action=='plan':result=engine.plan(identifier(args.identifier))
+ elif args.action=='apply':result=engine.apply(identifier(args.identifier),args.confirm,args.ack_unverified)
+ elif args.action=='resume':result=engine.resume(identifier(args.identifier),args.confirm,args.ack_unverified)
+ else:result=engine.undo(identifier(args.identifier),args.confirm,args.ack_unverified)
+ print(json.dumps(result,ensure_ascii=False))
+
+
+if __name__=='__main__':
+ try:main()
+ except (OSError,ValueError,KeyError,TypeError,RecursionError,subprocess.SubprocessError) as error:
+  print('Kurtarma durduruldu: '+str(error)+' Yarım kalan işlem varsa canlı ortamdan list/resume/undo kullan; kurulu sistemi başlatma.',file=sys.stderr)
+  sys.exit(1)

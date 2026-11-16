@@ -64,7 +64,7 @@ cmd_snapshots() {
 }
 
 cmd_rollback() {
-    die "Otomatik tam sistem geri alma henüz desteklenmiyor. Kök anlık görüntüsü ayrı /boot bölümünü kapsamaz; çalışan sistem üzerinde geri yükleme durduruldu. Anlık görüntüleri 'vabu snapshots' ile listeleyebilirsin."
+    die "Çalışan sistemde geri alma yapılmaz. Tam noktalar için canlı ISO üzerinde 'vabu recovery --help' kullan. Snapper numarası ayrı /boot ve EFI yedeği olmadan tam sistem kurtarma noktası değildir."
 }
 
 cmd_reset() {
@@ -103,7 +103,8 @@ ${C_SKY}vabu${C_OFF} - Vabu sistem aracı
   vabu info                  Sürüm, çekirdek, kabuk, paket sayısı
   vabu update                dnf + Flatpak güncellemesi
   vabu snapshots             Kök dosya görüntülerini listele
-  vabu rollback <numara>     Tam sistem geri alma şu anda devre dışı
+  vabu rollback <numara>     Çalışan sistemde reddedilir; canlı ortam motorunu kullan
+  vabu recovery [...]        Deneysel canlı ortam motoru: create/list/plan/apply/resume/undo
   vabu drivers [...]         Ekran kartı ve codec sürücüleri (vabu-drivers)
   vabu reset niri            niri ayarlarını varsayılana döndür
   vabu doctor                Sistem sağlık kontrolü
@@ -124,6 +125,7 @@ case "${1:-help}" in
     drivers)    shift; exec vabu-drivers "$@" ;;
     reset)      shift; cmd_reset "${1:-}" ;;
     doctor)     cmd_doctor ;;
+    recovery) shift; exec /usr/libexec/vabu/recovery "$@" ;;
     recovery-check) exec /usr/libexec/vabu/system-check recovery ;;
     --version)  echo "vabu $(vabu_version)" ;;
     help|-h|--help) usage ;;
