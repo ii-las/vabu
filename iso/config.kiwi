@@ -84,6 +84,11 @@
     <package name="generic-logos"/>
     <package name="glibc-langpack-tr"/>
     <package name="glibc-langpack-en"/>
+    <!-- Kurulum aracı (install-system): bölümleme, dosya sistemleri, kopyalama -->
+    <package name="util-linux"/>
+    <package name="dosfstools"/>
+    <package name="e2fsprogs"/>
+    <package name="rsync"/>
 
     <!-- Depolar: kurulan sistemde de açık kalır -->
     <package name="rpmfusion-free-release"/>
