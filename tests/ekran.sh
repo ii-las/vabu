@@ -61,7 +61,22 @@ export SWAYSOCK; SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -name 'sway-ipc
 shot() { sleep "${2:-1.3}"; timeout 20 grim "$OUT/$1.png" 2>>"$OUT/grim.log" || { echo "::error::görüntü alınamadı: $1"; touch "$OUT/test-failed"; }; }
 call() { timeout 10 qs -p "$SHELL_DIR" ipc call "$@" >/dev/null 2>&1 || { echo "::error::ipc başarısız: $*"; touch "$OUT/test-failed"; }; }
 # Açılan yüzey klavye odağını alsın diye yazmadan önce kısa bir bekleme
-yaz()  { sleep 0.6; command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null; sleep 0.4; }
+yaz() {
+    sleep 0.6
+    command -v wtype >/dev/null && timeout 5 wtype "$@" 2>/dev/null || { echo "::error::klavye girdisi gönderilemedi"; echo "keyboard injection failed" >>"$OUT/test-failed"; }
+    sleep 0.4
+}
+assert_open() {
+    local target="$1" expected="$2" actual="" attempt
+    for attempt in $(seq 30); do
+        actual="$(timeout 10 qs -p "$SHELL_DIR" ipc call "$target" isOpen 2>/dev/null)"
+        [[ "$actual" == "$expected" ]] && return 0
+        sleep 0.1
+    done
+    printf '::error::%s open state: expected=%s actual=%q\n' "$target" "$expected" "$actual"
+    printf '%s open state: expected=%s actual=%q\n' "$target" "$expected" "$actual" >>"$OUT/test-failed"
+    return 1
+}
 
 # Önce bütün dosyaları derle: yükleme hatalarının hepsi tek seferde görünsün
 KOPYA="$HOME/kabuk"
@@ -99,13 +114,15 @@ call welcome open;               shot 01b-hosgeldin
 call welcome next;               shot 01c-rehber
 call welcome close
 call clipboard toggle;           shot 01d-pano-kapali
-[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call clipboard isOpen)" == true ]] || touch "$OUT/test-failed"
+assert_open clipboard true
 yaz -k Escape
-[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call clipboard isOpen)" == false ]] || touch "$OUT/test-failed"
+assert_open clipboard false
+shot 01d2-pano-escape 0
 call appmenu open foot;          shot 01e-uygulama-menusu
-[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call appmenu isOpen)" == true ]] || touch "$OUT/test-failed"
+assert_open appmenu true
 yaz -k Escape
-[[ "$(timeout 10 qs -p "$SHELL_DIR" ipc call appmenu isOpen)" == false ]] || touch "$OUT/test-failed"
+assert_open appmenu false
+shot 01e2-menu-escape 0
 
 call panel toggle control;       shot 02-kontrol
 call panel toggle wifi;          shot 03-wifi

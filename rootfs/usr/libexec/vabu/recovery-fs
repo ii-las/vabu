@@ -231,8 +231,10 @@ class LinuxBackend:
   self.command(['btrfs','subvolume','create',snap]);self._relabel(path)
 
  def _relabel(self,path):
-  fd=os.open(Path(path)/'.autorelabel',os.O_WRONLY|os.O_CREAT|os.O_NOFOLLOW,0o600)
-  try:os.fsync(fd)
+  fd=os.open(Path(path)/'.autorelabel',os.O_WRONLY|os.O_CREAT|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
+  try:
+   require(stat.S_ISREG(os.fstat(fd).st_mode),'SELinux işareti normal dosya olmalı.')
+   os.fsync(fd)
   finally:os.close(fd)
 
  def validate_installation(self,root,boot,efi,layout):

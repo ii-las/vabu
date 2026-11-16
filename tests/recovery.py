@@ -353,6 +353,16 @@ class Recovery(unittest.TestCase):
    with self.assertRaises(ValueError):self.engine.apply(point,'a'*64,True)
   self.assertFalse((self.engine.store/'operations').exists())
 
+ def test_relabel_marker_refuses_special_files_and_links(self):
+  backend=FS['LinuxBackend']();marker=self.root/'.autorelabel'
+  backend._relabel(self.root);self.assertTrue(marker.is_file())
+  marker.unlink();os.mkfifo(marker)
+  with self.assertRaises((OSError,ValueError)):backend._relabel(self.root)
+  marker.unlink();outside=self.base/'untouched';outside.write_text('keep')
+  marker.symlink_to(outside)
+  with self.assertRaises((OSError,ValueError)):backend._relabel(self.root)
+  self.assertEqual(outside.read_text(),'keep')
+
  def test_lock_fifo_is_rejected_without_blocking(self):
   self.point();lock=self.top/'.vabu-recovery/.lock'
   lock.unlink();os.mkfifo(lock,0o600)

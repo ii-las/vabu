@@ -38,6 +38,20 @@ PanelWindow {
         onPressed: root.dismissed()
     }
     onOpenChanged: if (open) Qt.callLater(() => { if (root.open && !holder.activeFocus) holder.forceActiveFocus(Qt.PopupFocusReason) })
+    // Window shortcuts also handle Escape when an editor consumes key events.
+    Shortcut {
+        sequence: "Esc"
+        context: Qt.WindowShortcut
+        enabled: root.open
+        onActivated: root.dismissed()
+    }
+    // Layer surfaces can acquire keyboard focus after the first queued callback.
+    Timer {
+        interval: 40
+        repeat: true
+        running: root.open && !holder.activeFocus
+        onTriggered: holder.forceActiveFocus(Qt.PopupFocusReason)
+    }
     FocusScope {
         id: holder
         anchors.fill: parent
