@@ -23,7 +23,7 @@ Singleton {
     readonly property string icon: kind === "ethernet" ? "lan"
         : kind === "wifi" ? signalIcon(strength)
         : wifiOn ? "wifi_find" : "wifi_off"
-    readonly property string label: kind === "none" ? (wifiOn ? "Bağlı değil" : "Kapalı") : name
+    readonly property string label: kind === "none" ? (wifiOn ? Lang.t("Bağlı değil") : Lang.t("Kapalı")) : name
 
     function signalIcon(s) {
         return s >= 75 ? "signal_wifi_4_bar" : s >= 50 ? "network_wifi_3_bar" : s >= 25 ? "network_wifi_2_bar" : "network_wifi_1_bar"

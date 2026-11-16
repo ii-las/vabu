@@ -23,13 +23,13 @@ Rectangle {
         color: Theme.alpha(Theme.paper, 0.18)
     }
 
-    Text {
+    Text { textFormat: Text.PlainText;
         id: cap
         anchors.centerIn: parent
         text: root.label
         color: root.superKey ? Theme.accentInk : Theme.paper
         font.family: Theme.sans
         font.weight: root.superKey ? Font.DemiBold : Font.Medium
-        font.pixelSize: 12
+        font.pixelSize: Math.round((12) * Config.textScale)
     }
 }

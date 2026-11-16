@@ -38,7 +38,7 @@ Singleton {
     readonly property string sidebarSide: values.sidebarSide ?? "left"
     readonly property bool showSeconds: values.showSeconds ?? false
     readonly property bool showMedia: values.showMedia ?? true
-    readonly property bool sidebarCompact: values.sidebarCompact ?? false
+    readonly property bool sidebarCompact: focusMode ? (values.focusCompact ?? true) : (values.sidebarCompact ?? false)
     readonly property bool nightLight: values.nightLight ?? false
     readonly property var pinned: values.pinned ?? [
         "org.mozilla.firefox", "foot", "org.gnome.Nautilus",
@@ -47,7 +47,17 @@ Singleton {
     // Gün yayı için konum; boşsa saat diliminden bulunur (bkz. Sun.qml).
     readonly property var location: values.location ?? null
 
+    readonly property bool focusMode: values.focusMode === true
+    readonly property bool clipboardEnabled: values.clipboardEnabled === true
+    readonly property bool reducedMotion: values.reducedMotion ?? false
+    readonly property bool highContrast: values.highContrast ?? false
+    readonly property bool effects: values.effects ?? true
+    readonly property real textScale: [1, 1.15, 1.3, 1.5].includes(values.textScale) ? values.textScale : 1
+    readonly property int sidebarWidth: Math.max(240, Math.min(360, Number(values.sidebarWidth) || 280))
+    readonly property string language: values.language === "en" ? "en" : "tr"
+
     function set(key, value) {
+        if (key === "sidebarCompact" && focusMode) key = "focusCompact"
         const v = Object.assign({}, values)
         if (value === null || value === undefined) delete v[key]
         else v[key] = value

@@ -12,16 +12,21 @@ ShellRoot {
     id: root
 
     readonly property var pages: [
-        { key: "look",     icon: "palette",           title: "Görünüm",                    file: "SettingsLook.qml" },
-        { key: "display",  icon: "desktop_windows",   title: "Ekranlar",                   file: "SettingsDisplays.qml" },
-        { key: "network",  icon: "wifi",              title: "Ağ ve Bluetooth",            file: "SettingsNetwork.qml" },
-        { key: "sound",    icon: "volume_up",         title: "Ses",                        file: "SettingsSound.qml" },
-        { key: "keyboard", icon: "keyboard",          title: "Klavye ve dokunmatik yüzey", file: "SettingsKeyboard.qml" },
+        { key: "look",     icon: "palette",           title: Lang.t("Görünüm"),                    file: "SettingsLook.qml" },
+        { key: "display",  icon: "desktop_windows",   title: Lang.t("Ekranlar"),                   file: "SettingsDisplays.qml" },
+        { key: "network",  icon: "wifi",              title: Lang.t("Ağ ve Bluetooth"),            file: "SettingsNetwork.qml" },
+        { key: "power", icon: "battery_charging_full", title: Lang.t("Güç ve uyku"), file: "SettingsPower.qml" },
+        { key: "health", icon: "health_and_safety", title: Lang.t("Tanılama ve kurtarma"), file: "SettingsHealth.qml" },
+        { key: "desktop", icon: "desktop_windows", title: Lang.t("Masaüstü"), file: "SettingsDesktop.qml" },
+        { key: "accessibility", icon: "accessibility_new", title: Lang.t("Erişilebilirlik ve dil"), file: "SettingsAccessibility.qml" },
+        { key: "devices", icon: "devices", title: Lang.t("Cihazlar ve paylaşım"), file: "SettingsDevices.qml" },
+        { key: "sound",    icon: "volume_up",         title: Lang.t("Ses"),                        file: "SettingsSound.qml" },
+        { key: "keyboard", icon: "keyboard",          title: Lang.t("Klavye ve dokunmatik yüzey"), file: "SettingsKeyboard.qml" },
         { key: "apps",     icon: "apps",              title: "Uygulamalar ve kaynaklar",   file: "SettingsApps.qml" },
-        { key: "updates",  icon: "system_update_alt", title: "Güncellemeler",              file: "SettingsUpdates.qml" },
-        { key: "drivers",  icon: "memory",            title: "Sürücüler",                  file: "SettingsDrivers.qml" },
-        { key: "users",    icon: "group",             title: "Kullanıcılar",               file: "SettingsUsers.qml" },
-        { key: "about",    icon: "info",              title: "Hakkında",                   file: "SettingsAbout.qml" }
+        { key: "updates",  icon: "system_update_alt", title: Lang.t("Güncellemeler"),              file: "SettingsUpdates.qml" },
+        { key: "drivers",  icon: "memory",            title: Lang.t("Sürücüler"),                  file: "SettingsDrivers.qml" },
+        { key: "users",    icon: "group",             title: Lang.t("Kullanıcılar"),               file: "SettingsUsers.qml" },
+        { key: "about",    icon: "info",              title: Lang.t("Hakkında"),                   file: "SettingsAbout.qml" }
     ]
     property string page: {
         const p = Quickshell.env("VABU_SETTINGS_PAGE") || "look"
@@ -60,7 +65,7 @@ ShellRoot {
             // Gezinme
             Rectangle {
                 Layout.fillHeight: true
-                Layout.preferredWidth: 264
+                Layout.preferredWidth: win.width < 820 ? 180 : 264
                 color: Theme.nav
 
                 Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: Theme.line }
@@ -71,12 +76,12 @@ ShellRoot {
                     anchors.topMargin: 20
                     spacing: 12
 
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         Layout.leftMargin: 10
-                        text: "Ayarlar"
+                        text: Lang.t("Ayarlar")
                         color: Theme.paper
                         font.family: Theme.sans
-                        font.pixelSize: 20
+                        font.pixelSize: Math.round((20) * Config.textScale)
                         font.weight: Font.DemiBold
                         font.letterSpacing: -0.2
                     }
@@ -96,24 +101,26 @@ ShellRoot {
                             verticalAlignment: TextInput.AlignVCenter
                             color: Theme.paper
                             font.family: Theme.sans
-                            font.pixelSize: 14
+                            font.pixelSize: Math.round((14) * Config.textScale)
                             selectionColor: Theme.accent
                             selectedTextColor: Theme.accentInk
                             clip: true
                             onTextChanged: root.search = text.toLowerCase()
-                            Text {
+                            Text { textFormat: Text.PlainText;
                                 visible: !searchInput.text
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: "Ara"
+                                text: Lang.t("Ara")
                                 color: Theme.faint
                                 font: searchInput.font
                             }
                         }
                     }
 
-                    Item {
+                    Flickable {
                         Layout.fillWidth: true
-                        implicitHeight: nav.implicitHeight
+                        Layout.fillHeight: true
+                        contentHeight: nav.implicitHeight
+                        clip: true
 
                         // Seçili sayfanın zemini: sayfadan sayfaya kayar
                         Rectangle {
@@ -123,7 +130,7 @@ ShellRoot {
                             height: 40
                             radius: Theme.radiusRow
                             color: Theme.well
-                            Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+                            Behavior on y { NumberAnimation { duration: Config.reducedMotion ? 0 : 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                         }
 
                         Column {
@@ -142,6 +149,9 @@ ShellRoot {
                                     width: nav.width
                                     height: 40
                                     visible: match
+                                    activeFocusOnTab: true
+                                    Keys.onReturnPressed: root.page = modelData.key
+                                    Keys.onSpacePressed: root.page = modelData.key
                                     Accessible.role: Accessible.PageTab
                                     Accessible.name: modelData.title
 
@@ -150,7 +160,7 @@ ShellRoot {
                                         radius: Theme.radiusRow
                                         // arama sırasında kayan zemin gizlidir; seçili satır kendi zeminini çizer
                                         color: navItem.isOn ? (root.search ? Theme.well : "transparent")
-                                            : mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : "transparent"
+                                            : mouse.pressed ? Theme.pressed : mouse.containsMouse || navItem.activeFocus ? Theme.hover : "transparent"
                                         Behavior on color { ColorAnimation { duration: Theme.fast } }
                                     }
                                     RowLayout {
@@ -159,12 +169,12 @@ ShellRoot {
                                         anchors.rightMargin: 10
                                         spacing: 12
                                         Icon { name: navItem.modelData.icon; size: 19; color: navItem.isOn ? Theme.accent : Theme.soft; filled: navItem.isOn }
-                                        Text {
+                                        Text { textFormat: Text.PlainText;
                                             Layout.fillWidth: true
                                             text: navItem.modelData.title
                                             color: navItem.fg
                                             font.family: Theme.sans
-                                            font.pixelSize: 14
+                                            font.pixelSize: Math.round((14) * Config.textScale)
                                             font.weight: navItem.isOn ? Font.DemiBold : Font.Medium
                                             elide: Text.ElideRight
                                         }
@@ -172,13 +182,13 @@ ShellRoot {
                                             visible: navItem.modelData.key === "updates" && root.updateCount > 0
                                             implicitWidth: Math.max(20, badge.implicitWidth + 12); implicitHeight: 20; radius: 10
                                             color: Theme.accent
-                                            Text {
+                                            Text { textFormat: Text.PlainText;
                                                 id: badge
                                                 anchors.centerIn: parent
                                                 text: root.updateCount
                                                 color: Theme.accentInk
                                                 font.family: Theme.sans
-                                                font.pixelSize: 11
+                                                font.pixelSize: Math.round((11) * Config.textScale)
                                                 font.weight: Font.DemiBold
                                             }
                                         }
@@ -194,7 +204,6 @@ ShellRoot {
                             }
                         }
                     }
-                    Item { Layout.fillHeight: true }
                 }
             }
 
@@ -214,11 +223,11 @@ ShellRoot {
                     width: Math.min(720, flick.width - 72)
                     spacing: 18
 
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         text: root.pages[root.pageIndex].title
                         color: Theme.paper
                         font.family: Theme.sans
-                        font.pixelSize: 26
+                        font.pixelSize: Math.round((26) * Config.textScale)
                         font.weight: Font.DemiBold
                         font.letterSpacing: -0.4
                     }
@@ -231,8 +240,8 @@ ShellRoot {
                         transform: Translate { id: pageShift; y: 0 }
                         ParallelAnimation {
                             id: pageIn
-                            NumberAnimation { target: loader; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: pageShift; property: "y"; from: 12; to: 0; duration: 380; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+                            NumberAnimation { target: loader; property: "opacity"; from: 0; to: 1; duration: Config.reducedMotion ? 0 : 220; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: pageShift; property: "y"; from: 12; to: 0; duration: Config.reducedMotion ? 0 : 380; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
                         }
                     }
                 }

@@ -1,0 +1,73 @@
+#!/usr/bin/python3 -I
+"""User-session idle supervision, independent of the graphical shell."""
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import time
+
+
+def battery():
+    for path in Path('/sys/class/power_supply').glob('*'):
+        try:
+            if (path / 'type').read_text().strip() == 'Battery' and (path / 'status').read_text().strip() == 'Discharging':
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def arguments(values, on_battery):
+    prefix = 'battery' if on_battery else 'ac'
+    def duration(key, default):
+        value = values.get(prefix + key, default)
+        if isinstance(value, bool) or not isinstance(value, (int,float)) or not 0 <= value <= 120:
+            value = default
+        return round(value) * 60
+    lock = duration('Lock', 5)
+    screen = duration('Screen', 10)
+    suspend = duration('Suspend', 0)
+    cmd = ['swayidle', '-w', 'before-sleep', '/usr/libexec/vabu/lock']
+    if lock: cmd += ['timeout', str(lock), '/usr/libexec/vabu/lock']
+    if screen: cmd += ['timeout', str(max(screen,lock)), 'niri msg action power-off-monitors', 'resume', 'niri msg action power-on-monitors']
+    if suspend: cmd += ['timeout', str(max(suspend,lock)), '/usr/libexec/vabu/lock && systemctl suspend']
+    return cmd
+
+
+def main():
+    child = None
+    def stop(*_): raise SystemExit(0)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    try:
+        current = None
+        path = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'vabu/shell.json'
+        while True:
+            display = os.environ.get('WAYLAND_DISPLAY', '')
+            if display:
+                socket = Path(display) if display.startswith('/') else Path(os.environ.get('XDG_RUNTIME_DIR', '/run/user/' + str(os.getuid()))) / display
+                if not socket.exists(): return
+            try:
+                values = json.loads(path.read_text()) if path.is_file() else {}
+                if not isinstance(values, dict): values = {}
+            except (OSError, ValueError):
+                # A broken file must not disable locking.
+                values = {}
+            desired = arguments(values, battery())
+            if current != desired or child is None or child.poll() is not None:
+                if child is not None and child.poll() is None:
+                    child.terminate()
+                    try: child.wait(timeout=2)
+                    except subprocess.TimeoutExpired: child.kill(); child.wait()
+                child = subprocess.Popen(desired)
+                current = desired
+            time.sleep(5)
+    finally:
+        if child is not None and child.poll() is None:
+            child.terminate()
+            try: child.wait(timeout=2)
+            except subprocess.TimeoutExpired: child.kill(); child.wait()
+
+
+if __name__ == '__main__': main()

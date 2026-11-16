@@ -67,6 +67,9 @@ ShellRoot {
     }
 
     // Tek örnekler (odaktaki ekranda açılır)
+    Welcome { id: welcome }
+    AppMenu {}
+    ClipboardPanel {}
     Launcher {}
     NotificationPopups {}
     Osd { id: osd }
@@ -89,6 +92,18 @@ ShellRoot {
         }
     }
 
+    Timer {
+        interval: 1500
+        running: !Config.values.onboardingDone && Quickshell.env("USER") !== "liveuser"
+        onTriggered: Ui.welcomeOpen = true
+    }
+    IpcHandler {
+        target: "welcome"
+        function open(): void { Ui.closeAll(); Ui.welcomeOpen = true }
+        function close(): void { Ui.welcomeOpen = false }
+        function next(): void { welcome.step = Math.min(welcome.steps.length - 1, welcome.step + 1) }
+    }
+    IpcHandler { target: "clipboard"; function toggle(): void { const next = !Ui.clipboardOpen; Ui.closeAll(); Ui.clipboardOpen = next } }
     // IPC
     IpcHandler {
         target: "launcher"

@@ -9,6 +9,8 @@ Singleton {
     property string query: ""
     property var results: []            // [{key, name, summary, icon, sources:[{kind, ref}], installed}]
     property bool busy: (indexer.running && catalog.length === 0) || dnfSearch.running
+    property bool installing: false
+    property var messages: ({})
     property var states: ({})           // key -> "installing" | "done" | "error"
 
     // AppStream kataloglarından çıkarılan yerel dizin (bkz. /usr/libexec/vabu/app-index)
@@ -104,12 +106,33 @@ Singleton {
         if (query.length >= 2) merge()
     }
 
+    function note(key, text) {
+        const m = Object.assign({}, messages)
+        const percent = text.match(/(\d{1,3})%/)
+        m[key] = percent ? "İlerleme: %" + Math.min(100, Number(percent[1])) : text.trim().slice(0, 160)
+        messages = m
+    }
+    function failure(text) {
+        const t = text.toLowerCase()
+        if (/space|disk full/.test(t)) return "Disk alanı yetersiz. Alan açıp yeniden dene."
+        if (/not authorized|authentication|cancelled|dismissed/.test(t)) return "Yetkilendirme tamamlanmadı. Yeniden deneyebilirsin."
+        if (/resolve|network|timeout|connection|download/.test(t)) return "Bağlantı veya depo hatası. Ağı denetleyip yeniden dene."
+        return "Kurulum tamamlanamadı. Kaynağı ve güncellemeleri denetleyip yeniden dene."
+    }
     function install(item, source) {
+        if (installing || !item || !item.sources?.length) return
         const src = source ?? item.sources[0]
+        if (!sourceInfo[src.kind] || !/^[A-Za-z0-9][A-Za-z0-9+_.-]*$/.test(src.ref)) {
+            note(item.key, "Geçersiz uygulama kaynağı.")
+            const invalid = Object.assign({}, states); invalid[item.key] = "error"; states = invalid
+            return
+        }
+        installing = true
+        note(item.key, "Kurulum hazırlanıyor…")
         const s = Object.assign({}, states); s[item.key] = "installing"; states = s
         const cmd = src.kind === "flathub"
-            ? ["flatpak", "install", "-y", "--noninteractive", "flathub", src.ref]
-            : ["pkexec", "dnf", "install", "-y", src.ref]
+            ? ["flatpak", "install", "-y", "--noninteractive", "--", "flathub", src.ref]
+            : ["pkexec", "dnf", "install", "-y", "--", src.ref]
         const proc = installer.createObject(root, { command: cmd, itemKey: item.key, itemName: item.name })
         proc.running = true
     }
@@ -118,14 +141,19 @@ Singleton {
         id: installer
         Process {
             property string itemKey
+            environment: ({ "LC_ALL": "C" })
             property string itemName
+            stdout: SplitParser { onRead: line => root.note(itemKey, line) }
+            stderr: StdioCollector { id: installErr }
             onExited: (code) => {
+                root.installing = false
+                root.note(itemKey, code === 0 ? Lang.t("Kuruldu") : root.failure(installErr.text))
                 const s = Object.assign({}, root.states)
                 s[itemKey] = code === 0 ? "done" : "error"
                 root.states = s
                 Quickshell.execDetached(["notify-send", "-a", "Vabu", "-i", "vabu-logo",
                     code === 0 ? itemName + " kuruldu" : itemName + " kurulamadı",
-                    code === 0 ? "Başlatıcıdan açabilirsin." : "Ayrıntı için terminalde tekrar dene."])
+                    code === 0 ? "Başlatıcıdan açabilirsin." : root.messages[itemKey]])
                 root.refreshInstalled()
                 destroy()
             }

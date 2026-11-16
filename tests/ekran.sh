@@ -71,7 +71,7 @@ echo "=== derleme"
 sed 's/\x1b\[[0-9;]*m//g' "$OUT/derle.log" | grep -A12 "DERLEME-" || cat "$OUT/derle.log"
 
 # Görünüm: önce açık, sonra koyu. Kabuk ayar dosyasını izler, değişince yeniden boyanır.
-gorunum() { mkdir -p "$HOME/.config/vabu"; printf '{"theme":"%s"}\n' "$1" > "$HOME/.config/vabu/shell.json"; sleep 1.5; }
+gorunum() { mkdir -p "$HOME/.config/vabu"; printf '{"theme":"%s","onboardingDone":true}\n' "$1" > "$HOME/.config/vabu/shell.json"; sleep 1.5; }
 gorunum acik
 
 # Başlatıcının "Kur" kipi için uygulama dizini (AppStream kataloglarından)
@@ -84,6 +84,11 @@ fi
 qs -p "$SHELL_DIR" >"$OUT/shell.log" 2>&1 &
 sleep 10
 shot 01-masaustu 0
+call welcome open;               shot 01b-hosgeldin
+call welcome next;               shot 01c-rehber
+call welcome close
+call clipboard toggle;           shot 01d-pano-kapali
+call clipboard toggle
 
 call panel toggle control;       shot 02-kontrol
 call panel toggle wifi;          shot 03-wifi
@@ -138,7 +143,7 @@ gorunum acik
 (vabu-settings look >"$OUT/settings.log" 2>&1 &)
 shot 20-ayarlar-gorunum 5
 n=21
-for page in display network sound drivers apps updates keyboard users about; do
+for page in display network sound power health desktop accessibility devices drivers apps updates keyboard users about; do
     vabu-settings "$page" >/dev/null 2>&1
     shot "$n-ayarlar-$page" 1.5
     n=$((n + 1))

@@ -10,6 +10,7 @@ import Quickshell.Services.UPower
 ColumnLayout {
     id: root
     property real originX: 0
+    property var hostWindow
     property string screenName: ""
     spacing: 8
 
@@ -49,14 +50,14 @@ ColumnLayout {
             spacing: -4
             Repeater {
                 model: ["HH", "mm"]
-                delegate: Text {
+                delegate: Text { textFormat: Text.PlainText;
                     required property string modelData
                     required property int index
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatTime(clock.date, modelData)
                     color: index === 0 ? Theme.paper : Theme.soft
                     font.family: Theme.sans
-                    font.pixelSize: 21
+                    font.pixelSize: Math.round((21) * Config.textScale)
                     font.weight: index === 0 ? Font.DemiBold : Font.Medium
                     font.features: ({ "tnum": 1, "lnum": 1 })
                 }
@@ -89,7 +90,7 @@ ColumnLayout {
             height: 40
             radius: Theme.radiusRow
             color: Theme.accent
-            Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+            Behavior on y { NumberAnimation { duration: Config.reducedMotion ? 0 : 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         }
 
         Column {
@@ -108,7 +109,7 @@ ColumnLayout {
                     width: spacesCol.width
                     height: 40
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Alan " + (r.ws.idx ?? "")
+                    Accessible.name: r.ws.name || ("Alan " + (r.ws.idx ?? ""))
 
                     Rectangle {
                         anchors.fill: parent
@@ -124,14 +125,14 @@ ColumnLayout {
                         size: 17
                         color: Theme.faint
                     }
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         visible: !cell.r.spare || cell.isOn
                         anchors.centerIn: parent
                         anchors.verticalCenterOffset: cell.r.count > 0 ? -4 : 0
                         text: cell.r.ws.idx ?? ""
                         color: cell.isOn ? Theme.accentInk : Theme.paper
                         font.family: Theme.sans
-                        font.pixelSize: 14
+                        font.pixelSize: Math.round((14) * Config.textScale)
                         font.weight: Font.DemiBold
                         font.features: ({ "tnum": 1 })
                         Behavior on color { ColorAnimation { duration: Theme.state } }
@@ -191,11 +192,11 @@ ColumnLayout {
                 icon: "search"
                 iconColor: Theme.soft
                 idle: Theme.well
-                tooltip: "Ara"
+                tooltip: Lang.t("Ara")
                 onClicked: Ui.openLauncher("search")
             }
             Repeater {
-                model: Apps.pinnedEntries.slice(0, 6)
+                model: Apps.pinnedEntries.slice(0, 12)
                 delegate: Item {
                     id: app
                     required property var modelData
@@ -236,14 +237,15 @@ ColumnLayout {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-                        onClicked: e => e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : Apps.open(app.modelData)
+                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+                        onClicked: e => e.button === Qt.RightButton ? Ui.appMenu(app.modelData) : e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : Apps.open(app.modelData)
                     }
                 }
             }
         }
     }
 
+    Tray { Layout.fillWidth: true; originX: root.originX; hostWindow: root.hostWindow }
     Item { Layout.fillHeight: true }
 
     // Çalan parça: oynat / duraklat
@@ -278,7 +280,7 @@ ColumnLayout {
                 width: parent.width
                 icon: Net.icon
                 iconColor: Net.kind === "none" ? Theme.muted : Theme.paper
-                tooltip: "Ağ: " + Net.label
+                tooltip: Lang.t("Ağ: ") + Net.label
                 active: root.isOpen("wifi")
                 onClicked: root.toggle("wifi")
             }
@@ -309,8 +311,8 @@ ColumnLayout {
             IconButton {
                 id: bell
                 width: parent.width
-                icon: Notifs.dnd ? "notifications_off" : "notifications"
-                iconColor: Notifs.dnd ? Theme.muted : Theme.paper
+                icon: Notifs.effectiveDnd ? "notifications_off" : "notifications"
+                iconColor: Notifs.effectiveDnd ? Theme.muted : Theme.paper
                 tooltip: "Bildirimler: " + Notifs.count
                 active: root.isOpen("notifications")
                 onClicked: root.toggle("notifications")
@@ -327,7 +329,7 @@ ColumnLayout {
                 icon: root.hasBattery ? (root.charging ? "bolt" : root.batteryPct >= 95 ? "battery_full"
                     : "battery_" + Math.max(0, Math.min(6, Math.round(root.batteryPct / 100 * 6))) + "_bar") : "tune"
                 iconColor: root.hasBattery && !root.charging && root.batteryPct <= 15 ? Theme.danger : Theme.paper
-                tooltip: root.hasBattery ? "Kontrol merkezi · pil %" + root.batteryPct : "Kontrol merkezi"
+                tooltip: root.hasBattery ? "Kontrol merkezi · pil %" + root.batteryPct : Lang.t("Kontrol merkezi")
                 active: root.isOpen("control")
                 onClicked: root.toggle("control")
             }
@@ -341,7 +343,7 @@ ColumnLayout {
                 width: parent.width
                 icon: Config.sidebarSide === "right" ? "right_panel_open" : "left_panel_open"
                 iconColor: Theme.soft
-                tooltip: "Yan paneli genişlet"
+                tooltip: Lang.t("Yan paneli genişlet")
                 onClicked: { Ui.closePopover(); Config.set("sidebarCompact", false) }
             }
         }

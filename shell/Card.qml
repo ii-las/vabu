@@ -10,7 +10,7 @@ Item {
     property real radius: Theme.radiusCard
     property color tint: Theme.panel
     property color edgeColor: Theme.edge
-    property bool frosted: true
+    property bool frosted: Config.effects && !Config.highContrast
     property bool shadow: false
     // Pencerenin ekrandaki sol üst köşesi. Tam ekran ve kenara yaslı pencereler 0 bırakır.
     property real originX: 0

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Recovery uses packaged fallback tools, independent of Vabu Shell and user niri config.
+start() { "$@" >/dev/null 2>&1 & }
+start lxqt-policykit-agent
+start nm-applet
+start mako --config /usr/share/vabu/mako/config
+start waybar -c /usr/share/vabu/waybar/config.jsonc -s /usr/share/vabu/waybar/style.css
+start swaybg -c '#15181E'
+start swayidle -w timeout 300 '/usr/libexec/vabu/lock' before-sleep '/usr/libexec/vabu/lock'
+exec foot --title 'Vabu Kurtarma' bash -c 'printf "Vabu Kurtarma\n\nvabu doctor     Sistem denetimi\nvabu reset niri Ayarları yedekleyip sıfırla\n\n"; exec bash'

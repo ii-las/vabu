@@ -19,6 +19,7 @@ shell:
 iso:
     rm -rf out && mkdir -p out/desc && cp -a iso/. out/desc/
     sed -i "s/@FEDORA@/{{fedora}}/g; s/@ARCH@/{{arch}}/g; s#/vabu-os/#/{{owner}}/#g" out/desc/config.kiwi
+    sudo --preserve-env=COPR_KEY_SHA256 python3 tools/prepare-iso-keys.py out/desc {{fedora}}
     sudo kiwi-ng system build --description out/desc --target-dir out
 
 # Üretilen ISO'yu sanal makinede dene

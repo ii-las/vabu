@@ -1,0 +1,131 @@
+#!/usr/bin/python3 -I
+"""Bounded, allowlisted desktop probes. No remote requests or raw-log collection."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import time
+
+
+def run(args, timeout=5):
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=timeout,
+                           env={**os.environ, 'LC_ALL': 'C'})
+        return p.returncode, p.stdout.strip()[:32768]
+    except (OSError, subprocess.SubprocessError):
+        return 127, ''
+
+
+def diagnostics():
+    checks = []
+    for key, label, command in (
+        ('network', 'Ağ', ['nmcli', '-t', '-f', 'STATE', 'general']),
+        ('portal', 'Ekran paylaşımı', ['systemctl', '--user', 'is-active', 'xdg-desktop-portal.service']),
+        ('locking', 'Boşta kilitleme', ['systemctl', '--user', 'is-active', 'vabu-idle.service']),
+        ('audio', 'Ses', ['systemctl', '--user', 'is-active', 'pipewire.service']),
+        ('bluetooth', 'Bluetooth', ['systemctl', 'is-active', 'bluetooth.service']),
+        ('printing', 'Yazdırma', ['systemctl', 'is-active', 'cups.socket']),
+        ('updates', 'Güncellemeler', ['systemctl', 'is-enabled', 'vabu-update.timer']),
+        ('drivers', 'Ekran kartı sürücüsü', ['vabu-drivers', 'status', '--quiet']),
+    ):
+        code, output = run(command)
+        good = code == 0 and (key != 'network' or output == 'connected')
+        checks.append({'id': key, 'label': label, 'state': 'ok' if good else 'attention',
+                       'detail': 'Hazır' if good else 'Denetim veya yapılandırma gerekiyor'})
+    code, fs = run(['findmnt', '-no', 'FSTYPE', '/'])
+    checks.append({'id': 'snapshots', 'label': 'Anlık görüntüler',
+                   'state': 'ok' if fs == 'btrfs' and Path('/etc/snapper/configs/root').exists() else 'attention',
+                   'detail': 'Tam sistem geri alma ayrıca doğrulanmalıdır; /boot kapsam dışındadır.'})
+    return {'checks': checks}
+
+
+def report():
+    # Only package/kernel versions and fixed status labels; no usernames, SSIDs, IPs,
+    # hostnames, environment dumps, hardware serials or arbitrary journal output.
+    versions = {}
+    for package in ('vabu-release', 'vabu-desktop', 'vabu-shell', 'quickshell', 'niri', 'kernel-core'):
+        code, text = run(['rpm', '-q', '--qf', '%{VERSION}-%{RELEASE}\n', package])
+        versions[package] = text if code == 0 else 'unavailable'
+    return {'format': 1, 'versions': versions, 'diagnostics': diagnostics()}
+
+
+def performance():
+    _, text = run(['ps', '-u', str(os.getuid()), '-o', 'comm=,pcpu=,rss='])
+    processes = []
+    for line in text.splitlines():
+        parts = line.rsplit(None, 2)
+        if len(parts) != 3 or Path(parts[0]).name not in ('qs', 'quickshell', 'niri', 'Xwayland', 'xwayland-satellite'):
+            continue
+        try:
+            processes.append({'name': Path(parts[0]).name, 'cpu': float(parts[1]), 'memoryMiB': round(int(parts[2]) / 1024, 1)})
+        except ValueError:
+            pass
+    battery = []
+    for path in sorted(Path('/sys/class/power_supply').glob('BAT*')):
+        try:
+            # Watt and percentage only, no serial/model data.
+            power = int((path / 'power_now').read_text()) / 1_000_000 if (path / 'power_now').exists() else None
+            battery.append({'percent': int((path / 'capacity').read_text()), 'watts': power})
+        except (OSError, ValueError):
+            pass
+    return {'processes': processes, 'battery': battery, 'sampledAt': int(time.time())}
+
+
+def keymap():
+    result = {}
+    for key, prop in (('layout','X11Layout'),('variant','X11Variant'),('options','X11Options')):
+        code, text = run(['busctl', '--system', '--json=short', 'get-property', 'org.freedesktop.locale1', '/org/freedesktop/locale1', 'org.freedesktop.locale1', prop])
+        try: result[key] = json.loads(text)['data'][0] if code == 0 else ''
+        except (ValueError,KeyError,IndexError): result[key] = ''
+    return result
+
+
+def lid_status():
+    values = {'battery': 'suspend', 'ac': 'suspend'}
+    path = Path('/etc/systemd/logind.conf.d/50-vabu-lid.conf')
+    try:
+        for line in path.read_text().splitlines():
+            key, _, value = line.partition('=')
+            if value not in ('suspend','ignore'): continue
+            if key == 'HandleLidSwitch': values['battery'] = value
+            elif key == 'HandleLidSwitchExternalPower': values['ac'] = value
+    except OSError:
+        pass
+    return values
+
+
+def lid(on_battery, on_ac):
+    if os.geteuid() != 0 or any(value not in ('suspend', 'ignore') for value in (on_battery, on_ac)):
+        raise ValueError('Yetkili, geçerli kapak ayarı gerekli.')
+    folder = Path('/etc/systemd/logind.conf.d')
+    folder.mkdir(mode=0o755, parents=True, exist_ok=True)
+    fd, name = tempfile.mkstemp(prefix='.vabu-lid-', dir=folder)
+    try:
+        with os.fdopen(fd, 'w') as f:
+            f.write('[Login]\nHandleLidSwitch=' + on_battery + '\nHandleLidSwitchExternalPower=' + on_ac + '\n')
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(name, 0o644)
+        os.replace(name, folder / '50-vabu-lid.conf')
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+
+
+def main():
+    if len(sys.argv) == 2 and sys.argv[1] in ('diagnostics', 'report', 'performance', 'keymap', 'lid_status'):
+        print(json.dumps(globals()[sys.argv[1]](), ensure_ascii=False))
+    elif len(sys.argv) == 4 and sys.argv[1] == 'lid':
+        lid(sys.argv[2], sys.argv[3])
+    else:
+        raise ValueError('Bilinmeyen işlem.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (ValueError, OSError) as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)

@@ -11,8 +11,8 @@ Singleton {
     function pick(light, darkValue) { return root.dark ? darkValue : light }
 
     // Cam yüzeyler: arkadaki duvar kağıdı bulanık görünür, üstüne bu ton gelir
-    readonly property color panel: pick(Qt.rgba(248 / 255, 249 / 255, 252 / 255, 0.5), Qt.rgba(26 / 255, 25 / 255, 31 / 255, 0.42))
-    readonly property color panelDeep: pick(Qt.rgba(248 / 255, 249 / 255, 252 / 255, 0.66), Qt.rgba(22 / 255, 21 / 255, 27 / 255, 0.6))
+    readonly property color panel: Config.highContrast ? panelSolid : pick(Qt.rgba(248 / 255, 249 / 255, 252 / 255, 0.5), Qt.rgba(26 / 255, 25 / 255, 31 / 255, 0.42))
+    readonly property color panelDeep: Config.highContrast ? panelSolid : pick(Qt.rgba(248 / 255, 249 / 255, 252 / 255, 0.66), Qt.rgba(22 / 255, 21 / 255, 27 / 255, 0.6))
     readonly property color edge: pick(Qt.rgba(1, 1, 1, 0.72), Qt.rgba(1, 1, 1, 0.1))          // iç kenar ışığı
     readonly property color outline: pick(Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.07), Qt.rgba(0, 0, 0, 0.25))
     readonly property color shadow: pick(Qt.rgba(28 / 255, 38 / 255, 60 / 255, 0.22), Qt.rgba(0, 0, 0, 0.45))
@@ -38,8 +38,8 @@ Singleton {
     // Yazı (eski adlar korunuyor: paper ana yazı rengidir)
     readonly property color paper: pick("#15181E", "#F0EEE9")
     readonly property color soft: pick("#3B4250", "#CFCBC4")
-    readonly property color muted: pick("#566070", "#A9A49D")
-    readonly property color faint: pick("#7A8494", "#7F7A74")
+    readonly property color muted: Config.highContrast ? paper : pick("#566070", "#A9A49D")
+    readonly property color faint: Config.highContrast ? paper : pick("#7A8494", "#7F7A74")
     readonly property color ink: pick("#FFFFFF", "#141316")
 
     // Anlam renkleri
@@ -59,7 +59,7 @@ Singleton {
 
     // Ölçüler
     readonly property int gap: 10
-    readonly property int sidebarWidth: 280
+    readonly property int sidebarWidth: Config.sidebarWidth
     readonly property int sidebarCompactWidth: 72
     readonly property int sidebarNow: Config.sidebarCompact ? sidebarCompactWidth : sidebarWidth
     readonly property int radiusPanel: 22
@@ -73,10 +73,10 @@ Singleton {
     readonly property var emphasized: [0.05, 0.7, 0.1, 1, 1, 1]
     readonly property var accelerate: [0.3, 0, 0.8, 0.15, 1, 1]
     readonly property var standard: [0.2, 0, 0, 1, 1, 1]
-    readonly property int enter: 420
-    readonly property int exit: 180
-    readonly property int state: 220
-    readonly property int fast: 120
+    readonly property int enter: Config.reducedMotion ? 0 : 420
+    readonly property int exit: Config.reducedMotion ? 0 : 180
+    readonly property int state: Config.reducedMotion ? 0 : 220
+    readonly property int fast: Config.reducedMotion ? 0 : 120
 
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 

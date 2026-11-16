@@ -7,8 +7,8 @@ ColumnLayout {
     id: root
     spacing: 6
 
-    readonly property var months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
-    readonly property var weekdays: ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+    readonly property var months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", Lang.t("Aralık")]
+    readonly property var weekdays: Config.language === "en" ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] : ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
     readonly property date today: clock.date
@@ -45,22 +45,22 @@ ColumnLayout {
         Layout.leftMargin: 8
         Layout.bottomMargin: 6
         spacing: 2
-        Text {
-            text: root.months[root.month]
+        Text { textFormat: Text.PlainText;
+            text: Lang.date(new Date(root.year, root.month, 1), "MMMM")
             color: Theme.paper
             font.family: Theme.sans
-            font.pixelSize: 20
+            font.pixelSize: Math.round((20) * Config.textScale)
             font.weight: Font.DemiBold
             font.letterSpacing: -0.3
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.fillWidth: true
             Layout.leftMargin: 6
             Layout.alignment: Qt.AlignBaseline
             text: root.year
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 20
+            font.pixelSize: Math.round((20) * Config.textScale)
             font.weight: Font.Normal
             font.features: ({ "lnum": 1 })
         }
@@ -68,19 +68,19 @@ ColumnLayout {
             visible: !root.thisMonth
             implicitWidth: 34; implicitHeight: 34
             icon: "today"; iconSize: 19; iconColor: Theme.soft
-            tooltip: "Bugüne dön"
+            tooltip: Lang.t("Bugüne dön")
             onClicked: { root.year = root.today.getFullYear(); root.month = root.today.getMonth() }
         }
         IconButton {
             implicitWidth: 34; implicitHeight: 34
             icon: "chevron_left"; iconSize: 22
-            tooltip: "Önceki ay"
+            tooltip: Lang.t("Önceki ay")
             onClicked: root.shift(-1)
         }
         IconButton {
             implicitWidth: 34; implicitHeight: 34
             icon: "chevron_right"; iconSize: 22
-            tooltip: "Sonraki ay"
+            tooltip: Lang.t("Sonraki ay")
             onClicked: root.shift(1)
         }
     }
@@ -93,7 +93,7 @@ ColumnLayout {
 
         Repeater {
             model: root.weekdays
-            delegate: Text {
+            delegate: Text { textFormat: Text.PlainText;
                 required property string modelData
                 required property int index
                 width: grid.cell
@@ -103,7 +103,7 @@ ColumnLayout {
                 text: modelData
                 color: index >= 5 ? Theme.faint : Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 font.weight: Font.Medium
             }
         }
@@ -118,14 +118,14 @@ ColumnLayout {
                     width: 36; height: 36; radius: 18
                     color: modelData.today ? Theme.accent : "transparent"
                 }
-                Text {
+                Text { textFormat: Text.PlainText;
                     anchors.centerIn: parent
                     text: modelData.day
                     color: modelData.today ? Theme.accentInk
                         : !modelData.inMonth ? Theme.alpha(Theme.paper, 0.22)
                         : modelData.weekend ? Theme.muted : Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round((14) * Config.textScale)
                     font.weight: modelData.today ? Font.DemiBold : Font.Normal
                     font.features: ({ "tnum": 1 })
                 }
@@ -149,8 +149,8 @@ ColumnLayout {
 
             Column {
                 spacing: 1
-                Text { text: "Gün doğumu"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12 }
-                Text { text: Sun.sunriseText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
+                Text { textFormat: Text.PlainText; text: Lang.t("Gün doğumu"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                Text { textFormat: Text.PlainText; text: Sun.sunriseText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
             // gündüzün neresindeyiz
             Item {
@@ -173,8 +173,8 @@ ColumnLayout {
             }
             Column {
                 spacing: 1
-                Text { anchors.right: parent.right; text: "Gün batımı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12 }
-                Text { anchors.right: parent.right; text: Sun.sunsetText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
+                Text { textFormat: Text.PlainText; anchors.right: parent.right; text: Lang.t("Gün batımı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                Text { textFormat: Text.PlainText; anchors.right: parent.right; text: Sun.sunsetText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
         }
     }

@@ -17,11 +17,11 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 7
         Rectangle { width: 6; height: 6; radius: 3; color: root.tone; anchors.verticalCenter: parent.verticalCenter }
-        Text {
+        Text { textFormat: Text.PlainText;
             text: root.text
             color: root.kind === "off" ? Theme.muted : Theme.soft
             font.family: Theme.sans
-            font.pixelSize: 12
+            font.pixelSize: Math.round((12) * Config.textScale)
             font.weight: Font.Medium
         }
     }

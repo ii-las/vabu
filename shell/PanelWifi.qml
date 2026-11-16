@@ -13,18 +13,18 @@ ColumnLayout {
     PanelHeader {
         title: "Wi‑Fi"
         sub: !Net.wifiAvailable ? "Bu bilgisayarda Wi‑Fi yok"
-            : !Net.wifiOn ? "Kapalı"
-            : Net.kind === "wifi" ? Net.name + " ağına bağlı" : "Bağlı değil"
+            : !Net.wifiOn ? Lang.t("Kapalı")
+            : Net.kind === "wifi" ? Net.name + " ağına bağlı" : Lang.t("Bağlı değil")
         IconButton {
             visible: Net.wifiOn
             implicitWidth: 34; implicitHeight: 34
             icon: "refresh"
             iconSize: 19
             iconColor: Theme.soft
-            tooltip: "Yeniden tara"
+            tooltip: Lang.t("Yeniden tara")
             onClicked: Net.scan()
             rotation: Net.scanning ? 360 : 0
-            Behavior on rotation { enabled: Net.scanning; NumberAnimation { duration: 900; easing.type: Easing.InOutCubic } }
+            Behavior on rotation { enabled: Net.scanning; NumberAnimation { duration: Config.reducedMotion ? 0 : 900; easing.type: Easing.InOutCubic } }
         }
         Toggle {
             visible: Net.wifiAvailable
@@ -39,7 +39,7 @@ ColumnLayout {
         visible: Net.wired !== ""
         icon: "lan"
         label: Net.wired
-        sub: "Kablolu bağlantı"
+        sub: Lang.t("Kablolu bağlantı")
         selected: true
     }
 
@@ -70,8 +70,8 @@ ColumnLayout {
                         icon: Net.signalIcon(net.modelData.signal)
                         label: net.modelData.ssid
                         sub: net.modelData.active ? "Bağlı"
-                            : Net.connecting === net.modelData.ssid ? "Bağlanıyor"
-                            : Net.known[net.modelData.ssid] ? "Kayıtlı" : ""
+                            : Net.connecting === net.modelData.ssid ? Lang.t("Bağlanıyor")
+                            : Net.known[net.modelData.ssid] ? Lang.t("Kayıtlı") : ""
                         selected: net.modelData.active
                         busy: Net.connecting === net.modelData.ssid
                         trailing: net.modelData.secure && !Net.known[net.modelData.ssid] ? "lock" : ""
@@ -83,7 +83,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         implicitHeight: net.asking ? form.implicitHeight + 10 : 0
                         clip: true
-                        Behavior on implicitHeight { NumberAnimation { duration: 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+                        Behavior on implicitHeight { NumberAnimation { duration: Config.reducedMotion ? 0 : 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 
                         ColumnLayout {
                             id: form
@@ -98,23 +98,23 @@ ColumnLayout {
                                     Layout.fillWidth: true
                                     implicitHeight: 40
                                     echoMode: TextInput.Password
-                                    placeholder: "Şifre"
+                                    placeholder: Lang.t("Şifre")
                                     onAccepted: if (text.length >= 8) Net.connect(net.modelData, text)
                                 }
                                 IconButton {
                                     implicitWidth: 40; implicitHeight: 40
                                     icon: "arrow_forward"
                                     active: pw.text.length >= 8
-                                    tooltip: "Bağlan"
+                                    tooltip: Lang.t("Bağlan")
                                     onClicked: if (pw.text.length >= 8) Net.connect(net.modelData, pw.text)
                                 }
                             }
-                            Text {
+                            Text { textFormat: Text.PlainText;
                                 visible: Net.error !== ""
                                 text: Net.error
                                 color: Theme.danger
                                 font.family: Theme.sans
-                                font.pixelSize: 12
+                                font.pixelSize: Math.round((12) * Config.textScale)
                             }
                         }
                     }
@@ -124,7 +124,7 @@ ColumnLayout {
         }
     }
 
-    Text {
+    Text { textFormat: Text.PlainText;
         visible: Net.wifiOn && Net.networks.length === 0
         Layout.fillWidth: true
         Layout.topMargin: 18
@@ -133,13 +133,13 @@ ColumnLayout {
         text: Net.scanning ? "Ağlar aranıyor…" : "Yakında ağ bulunamadı"
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 13
+        font.pixelSize: Math.round((13) * Config.textScale)
     }
 
     DashLine { Layout.fillWidth: true; Layout.topMargin: 4; Layout.bottomMargin: 4 }
     ListRow {
         icon: "settings"
-        label: "Ağ ayarları"
+        label: Lang.t("Ağ ayarları")
         iconColor: Theme.soft
         trailing: "chevron_right"
         onClicked: Ui.settings("network")

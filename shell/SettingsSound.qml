@@ -44,13 +44,13 @@ ColumnLayout {
             value: level.muted ? 0 : (level.node?.audio?.volume ?? 0)
             onMoved: v => { if (level.node?.audio) { level.node.audio.muted = false; level.node.audio.volume = v } }
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.preferredWidth: 30
             horizontalAlignment: Text.AlignRight
             text: level.muted ? "0" : Math.round((level.node?.audio?.volume ?? 0) * 100)
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 12
+            font.pixelSize: Math.round((12) * Config.textScale)
             font.features: ({ "tnum": 1 })
         }
     }
@@ -89,11 +89,11 @@ ColumnLayout {
         Item { visible: list.devices.length > 1; implicitHeight: 4 }
     }
 
-    DeviceGroup { title: "Çıkış"; devices: page.sinks; current: page.defSink; kind: "sink"; empty: "Hoparlör ya da kulaklık bulunamadı" }
-    DeviceGroup { title: "Giriş"; devices: page.sources; current: page.defSource; kind: "source"; empty: "Mikrofon bulunamadı" }
+    DeviceGroup { title: Lang.t("Çıkış"); devices: page.sinks; current: page.defSink; kind: "sink"; empty: "Hoparlör ya da kulaklık bulunamadı" }
+    DeviceGroup { title: Lang.t("Giriş"); devices: page.sources; current: page.defSource; kind: "source"; empty: "Mikrofon bulunamadı" }
 
     Group {
-        title: "Uygulamalar"
+        title: Lang.t("Uygulamalar")
         Repeater {
             model: page.streams
             delegate: SettingRow {
@@ -104,12 +104,12 @@ ColumnLayout {
         }
         SettingRow {
             visible: page.streams.length === 0
-            label: "Şu an ses çalan bir uygulama yok"
+            label: Lang.t("Şu an ses çalan bir uygulama yok")
         }
     }
 
     PillButton {
-        label: "Gelişmiş ses ayarları"
+        label: Lang.t("Gelişmiş ses ayarları")
         icon: "tune"
         onClicked: Quickshell.execDetached(["pavucontrol"])
     }

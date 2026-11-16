@@ -44,8 +44,8 @@ ColumnLayout {
                     icon: Net.signalIcon(net.modelData.signal)
                     label: net.modelData.ssid
                     sub: net.modelData.active ? "Bağlı"
-                        : Net.connecting === net.modelData.ssid ? "Bağlanıyor"
-                        : (Net.known[net.modelData.ssid] ? "Kayıtlı · " : "") + (net.modelData.secure ? "Şifreli" : "Açık ağ")
+                        : Net.connecting === net.modelData.ssid ? Lang.t("Bağlanıyor")
+                        : (Net.known[net.modelData.ssid] ? "Kayıtlı · " : "") + (net.modelData.secure ? Lang.t("Şifreli") : Lang.t("Açık ağ"))
                     selected: net.modelData.active
                     busy: Net.connecting === net.modelData.ssid
                     trailing: net.modelData.secure && !Net.known[net.modelData.ssid] ? "lock" : ""
@@ -55,7 +55,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     implicitHeight: net.asking ? form.implicitHeight + 12 : 0
                     clip: true
-                    Behavior on implicitHeight { NumberAnimation { duration: 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+                    Behavior on implicitHeight { NumberAnimation { duration: Config.reducedMotion ? 0 : 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                     ColumnLayout {
                         id: form
                         x: 44
@@ -72,9 +72,9 @@ ColumnLayout {
                                 placeholder: net.modelData.ssid + " şifresi"
                                 onAccepted: if (text.length >= 8) Net.connect(net.modelData, text)
                             }
-                            PillButton { implicitHeight: 40; primary: true; label: "Bağlan"; enabled: pw.text.length >= 8; onClicked: Net.connect(net.modelData, pw.text) }
+                            PillButton { implicitHeight: 40; primary: true; label: Lang.t("Bağlan"); enabled: pw.text.length >= 8; onClicked: Net.connect(net.modelData, pw.text) }
                         }
-                        Text { visible: Net.error !== ""; text: Net.error; color: Theme.danger; font.family: Theme.sans; font.pixelSize: 12 }
+                        Text { textFormat: Text.PlainText; visible: Net.error !== ""; text: Net.error; color: Theme.danger; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
                     }
                 }
                 onAskingChanged: if (asking) pw.focusField()
@@ -85,10 +85,21 @@ ColumnLayout {
 
     RowLayout {
         spacing: 8
-        PillButton { label: "Yeniden tara"; icon: "refresh"; enabled: Net.wifiOn; onClicked: Net.scan() }
-        PillButton { label: "Gelişmiş ağ ayarları"; icon: "tune"; onClicked: Quickshell.execDetached(["nm-connection-editor"]) }
+        PillButton { label: Lang.t("Yeniden tara"); icon: "refresh"; enabled: Net.wifiOn; onClicked: Net.scan() }
+        PillButton { label: Lang.t("Gelişmiş ağ ayarları"); icon: "tune"; onClicked: Quickshell.execDetached(["nm-connection-editor"]) }
     }
 
+    PillButton { label: Lang.t("Bluetooth eşleştirme ve PIN"); onClicked: Quickshell.execDetached(["blueman-manager"]) }
+    Group {
+        title: Lang.t("Gizli ağ, kurumsal Wi-Fi ve VPN")
+        note: Lang.t("Ağ düzenleyicisinde Wi-Fi güvenlik türünü ve gizli ağ seçeneğini seç. VPN eklerken sağlayıcının verdiği yapılandırmayı kullan.")
+        PillButton { label: Lang.t("Wi-Fi bağlantısı ekle"); onClicked: Ui.run(["nm-connection-editor","--create","--type","wifi"]) }
+        PillButton { label: Lang.t("VPN ekle"); onClicked: Ui.run(["nm-connection-editor","--create","--type","vpn"]) }
+        Repeater {
+            model: Bt.sorted.filter(d => d.paired)
+            delegate: SettingRow { required property var modelData; label: modelData.name; PillButton { label: Lang.t("Eşleşmeyi kaldır"); onClicked: modelData.forget() } }
+        }
+    }
     Group {
         title: "Bluetooth"
         SettingRow {
@@ -115,9 +126,9 @@ ColumnLayout {
                 Layout.rightMargin: 4
                 icon: Bt.deviceIcon(modelData)
                 label: modelData.name || modelData.address
-                sub: working ? (modelData.pairing ? "Eşleştiriliyor" : "Bağlanıyor")
+                sub: working ? (modelData.pairing ? Lang.t("Eşleştiriliyor") : Lang.t("Bağlanıyor"))
                     : modelData.connected ? (modelData.batteryAvailable ? "Bağlı · pil %" + Math.round(modelData.battery * 100) : "Bağlı")
-                    : modelData.paired ? "Eşleşmiş" : "Eşleştirmek için tıkla"
+                    : modelData.paired ? Lang.t("Eşleşmiş") : "Eşleştirmek için tıkla"
                 selected: modelData.connected
                 busy: working
                 onClicked: Bt.activate(modelData)

@@ -29,7 +29,7 @@ Item {
     property bool wanted: false                 // tıklamayla form istendi
     readonly property bool engaged: primary && (pinned || password.length > 0 || error || busy || wanted)
     property real t: engaged ? 1 : 0
-    Behavior on t { NumberAnimation { duration: 520; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+    Behavior on t { NumberAnimation { duration: Config.reducedMotion ? 0 : 520; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 
     function fail() {
         password = ""
@@ -45,7 +45,7 @@ Item {
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
     readonly property var days: ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"]
-    readonly property var months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    readonly property var months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", Lang.t("Aralık")]
 
     readonly property var battery: UPower.displayDevice
     readonly property bool hasBattery: battery?.isLaptopBattery ?? false
@@ -80,7 +80,7 @@ Item {
         anchors.fill: parent
         opacity: 0
         Component.onCompleted: opacity = 1
-        Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: Config.reducedMotion ? 0 : 500; easing.type: Easing.OutCubic } }
 
         // Saat
         Column {
@@ -89,23 +89,23 @@ Item {
             y: root.mix(root.height * 0.27, root.height * 0.12)
             spacing: root.mix(6, 2)
             readonly property real big: Math.round(Math.min(190, root.height * 0.19))
-            Text {
+            Text { textFormat: Text.PlainText;
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatTime(clock.date, "HH:mm")
                 color: Theme.paper
                 font.family: Theme.serif
                 font.weight: Font.Normal
-                font.pixelSize: Math.round(root.mix(clockBox.big, clockBox.big * 0.58))
+                font.pixelSize: Math.round((Math.round(root.mix(clockBox.big, clockBox.big * 0.58))) * Config.textScale)
                 font.letterSpacing: root.mix(-5, -3)
                 font.features: ({ "tnum": 1, "lnum": 1 })
                 lineHeight: 0.9
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.days[clock.date.getDay()] + ", " + clock.date.getDate() + " " + root.months[clock.date.getMonth()]
+                text: Lang.date(clock.date, "dddd, d MMMM")
                 color: Theme.alpha(Theme.paper, 0.86)
                 font.family: Theme.sans
-                font.pixelSize: Math.round(root.mix(21, 17))
+                font.pixelSize: Math.round((Math.round(root.mix(21, 17))) * Config.textScale)
                 font.weight: Font.Medium
             }
         }
@@ -128,13 +128,13 @@ Item {
                 border.width: 1
                 border.color: Theme.edge
                 readonly property string initial: (root.user.full || root.user.name || "").charAt(0).toLocaleUpperCase()
-                Text {
+                Text { textFormat: Text.PlainText;
                     visible: parent.initial !== ""
                     anchors.centerIn: parent
                     text: parent.initial
                     color: Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 30
+                    font.pixelSize: Math.round((30) * Config.textScale)
                     font.weight: Font.Medium
                 }
                 Icon {
@@ -154,23 +154,23 @@ Item {
                     visible: root.users.length > 1
                     implicitWidth: 30; implicitHeight: 30
                     icon: "chevron_left"; iconSize: 20; iconColor: Theme.soft
-                    tooltip: "Önceki kullanıcı"
+                    tooltip: Lang.t("Önceki kullanıcı")
                     onClicked: root.userPicked((root.userIndex - 1 + root.users.length) % root.users.length)
                 }
-                Text {
+                Text { textFormat: Text.PlainText;
                     height: 30
                     verticalAlignment: Text.AlignVCenter
                     text: root.user.full || root.user.name
                     color: Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 17
+                    font.pixelSize: Math.round((17) * Config.textScale)
                     font.weight: Font.DemiBold
                 }
                 IconButton {
                     visible: root.users.length > 1
                     implicitWidth: 30; implicitHeight: 30
                     icon: "chevron_right"; iconSize: 20; iconColor: Theme.soft
-                    tooltip: "Sonraki kullanıcı"
+                    tooltip: Lang.t("Sonraki kullanıcı")
                     onClicked: root.userPicked((root.userIndex + 1) % root.users.length)
                 }
             }
@@ -188,14 +188,14 @@ Item {
                 Behavior on border.color { ColorAnimation { duration: Theme.state } }
                 transform: Translate { id: nudge }
 
-                Text {
+                Text { textFormat: Text.PlainText;
                     visible: root.password.length === 0
                     x: 20
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.busy ? "Doğrulanıyor" : "Şifre"
+                    text: root.busy ? Lang.t("Doğrulanıyor") : Lang.t("Şifre")
                     color: Theme.alpha(Theme.paper, 0.5)
                     font.family: Theme.sans
-                    font.pixelSize: 16
+                    font.pixelSize: Math.round((16) * Config.textScale)
                 }
                 Row {
                     x: 20
@@ -208,7 +208,7 @@ Item {
                             color: Theme.paper
                             scale: 0
                             Component.onCompleted: scale = 1
-                            Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
+                            Behavior on scale { NumberAnimation { duration: Config.reducedMotion ? 0 : 180; easing.type: Easing.OutBack } }
                         }
                     }
                 }
@@ -233,13 +233,13 @@ Item {
                 }
             }
 
-            Text {
+            Text { textFormat: Text.PlainText;
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 18
-                text: root.error ? "Şifre hatalı" : ""
+                text: root.error ? Lang.t("Şifre hatalı") : ""
                 color: Theme.danger
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 font.weight: Font.Medium
             }
 
@@ -264,15 +264,15 @@ Item {
                 visible: root.hasBattery
                 spacing: 5
                 Icon { anchors.verticalCenter: parent.verticalCenter; name: "battery_" + Math.max(0, Math.min(6, Math.round(root.batteryPct / 100 * 6))) + "_bar"; size: 19 }
-                Text { anchors.verticalCenter: parent.verticalCenter; text: "%" + root.batteryPct; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 13; font.features: ({ "tnum": 1 }) }
+                Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "%" + root.batteryPct; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.features: ({ "tnum": 1 }) }
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 visible: Niri.kbShort !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 text: Niri.kbShort
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.4
             }
@@ -284,9 +284,9 @@ Item {
             anchors.rightMargin: 30
             anchors.bottomMargin: 26
             spacing: 8
-            Round { icon: "bedtime"; tooltip: "Uyku"; onClicked: Quickshell.execDetached(["systemctl", "suspend"]) }
-            Round { visible: root.restartButton; icon: "restart_alt"; tooltip: "Yeniden başlat"; onClicked: Quickshell.execDetached(["systemctl", "reboot"]) }
-            Round { icon: "power_settings_new"; iconColor: Theme.danger; tooltip: "Kapat"; onClicked: Quickshell.execDetached(["systemctl", "poweroff"]) }
+            Round { icon: "bedtime"; tooltip: Lang.t("Uyku"); onClicked: Quickshell.execDetached(["systemctl", "suspend"]) }
+            Round { visible: root.restartButton; icon: "restart_alt"; tooltip: Lang.t("Yeniden başlat"); onClicked: Quickshell.execDetached(["systemctl", "reboot"]) }
+            Round { icon: "power_settings_new"; iconColor: Theme.danger; tooltip: Lang.t("Kapat"); onClicked: Quickshell.execDetached(["systemctl", "poweroff"]) }
         }
     }
 
@@ -322,15 +322,15 @@ Item {
 
     SequentialAnimation {
         id: shake
-        NumberAnimation { target: nudge; property: "x"; to: -12; duration: 55 }
-        NumberAnimation { target: nudge; property: "x"; to: 11; duration: 70 }
-        NumberAnimation { target: nudge; property: "x"; to: -7; duration: 65 }
-        NumberAnimation { target: nudge; property: "x"; to: 4; duration: 60 }
-        NumberAnimation { target: nudge; property: "x"; to: 0; duration: 55 }
+        NumberAnimation { target: nudge; property: "x"; to: -12; duration: Config.reducedMotion ? 0 : 55 }
+        NumberAnimation { target: nudge; property: "x"; to: 11; duration: Config.reducedMotion ? 0 : 70 }
+        NumberAnimation { target: nudge; property: "x"; to: -7; duration: Config.reducedMotion ? 0 : 65 }
+        NumberAnimation { target: nudge; property: "x"; to: 4; duration: Config.reducedMotion ? 0 : 60 }
+        NumberAnimation { target: nudge; property: "x"; to: 0; duration: Config.reducedMotion ? 0 : 55 }
     }
     SequentialAnimation {
         id: leaving
-        NumberAnimation { target: content; property: "opacity"; to: 0; duration: 200; easing.type: Easing.InCubic }
+        NumberAnimation { target: content; property: "opacity"; to: 0; duration: Config.reducedMotion ? 0 : 200; easing.type: Easing.InCubic }
         ScriptAction { script: { root.password = ""; root.finished() } }
     }
 }

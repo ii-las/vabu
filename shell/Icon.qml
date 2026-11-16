@@ -1,7 +1,7 @@
 import QtQuick
 
 // Material Symbols Rounded. Dolgu (filled) ve kalınlık değişken eksenlerle animasyonlu değişir.
-Text {
+Text { textFormat: Text.PlainText;
     id: root
     property string name: ""
     property real size: 20

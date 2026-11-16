@@ -10,6 +10,9 @@ Singleton {
     property string launcherMode: "search"     // search | install | command | calc
     property bool sessionMenuOpen: false
     property bool shortcutsOpen: false
+    property bool welcomeOpen: false
+    property var appMenuEntry: null
+    property bool clipboardOpen: false
     property bool locked: false
 
     // Yan panelden açılan paneller: wifi | bluetooth | sound | calendar | control | notifications
@@ -36,6 +39,9 @@ Singleton {
         else openLauncher(mode)
     }
     function closeAll() {
+        welcomeOpen = false
+        appMenuEntry = null
+        clipboardOpen = false
         launcherOpen = false
         popover = ""
         sessionMenuOpen = false
@@ -50,6 +56,7 @@ Singleton {
     function screenshot() { closeAll(); shot.start() }
     Timer { id: shot; interval: 320; onTriggered: Quickshell.execDetached(["niri", "msg", "action", "screenshot"]) }
 
+    function appMenu(entry) { closeAll(); appMenuEntry = entry }
     function run(cmd) { Quickshell.execDetached(cmd) }
     function terminal(cmd) { Quickshell.execDetached(["foot", "--app-id", "vabu-term"].concat(cmd)) }
     function settings(page) { closeAll(); Quickshell.execDetached(page ? ["vabu-settings", page] : ["vabu-settings"]) }

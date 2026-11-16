@@ -37,6 +37,8 @@ Requires:       xdg-desktop-portal-gtk
 Requires:       gnome-keyring
 Requires:       lxqt-policykit
 Requires:       network-manager-applet
+Requires:       nm-connection-editor
+Requires:       pavucontrol
 Requires:       pipewire
 Requires:       wireplumber
 Requires:       brightnessctl
@@ -68,8 +70,18 @@ Requires:       perl-interpreter
 Requires:       fuzzel
 Requires:       waybar
 Requires:       mako
+Requires:       blueman
+Requires:       cups
+Requires:       system-config-printer
+Requires:       simple-scan
+Requires:       gnome-disk-utility
+Requires:       gvfs-mtp
+Requires:       gvfs-smb
+Requires:       NetworkManager-openvpn-gnome
+Requires:       NetworkManager-openconnect-gnome
 Requires:       swaybg
 # Başlatıcıda uygulama kurma: AppStream kataloglarından yerel dizin
+Requires:       gtk3
 Requires:       python3
 Requires:       appstream-data
 Recommends:     rpmfusion-free-appstream-data
@@ -166,7 +178,7 @@ install -Dm0644 niri-default.kdl %{buildroot}%{_datadir}/vabu/niri/config.kdl
 
 %post
 %systemd_post vabu-update.timer vabu-snapper-setup.service vabu-flatpak-setup.service
-%systemd_user_post vabu-user-update.timer
+%systemd_user_post vabu-user-update.timer vabu-idle.service
 if [ $1 -eq 1 ]; then
     systemctl enable greetd.service >/dev/null 2>&1 || :
     systemctl set-default graphical.target >/dev/null 2>&1 || :
@@ -181,7 +193,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 
 %preun
 %systemd_preun vabu-update.timer vabu-snapper-setup.service vabu-flatpak-setup.service
-%systemd_user_preun vabu-user-update.timer
+%systemd_user_preun vabu-user-update.timer vabu-idle.service
 
 %postun
 glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
@@ -202,6 +214,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %{_unitdir}/vabu-snapper-setup.service
 %{_unitdir}/vabu-flatpak-setup.service
 %{_unitdir}/greetd.service.d/vabu.conf
+%{_userunitdir}/vabu-idle.service
 %{_userunitdir}/vabu-user-update.service
 %{_userunitdir}/vabu-user-update.timer
 %{_datadir}/vabu/
@@ -212,6 +225,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas >/dev/null 2>&1 || :
 %{_datadir}/pixmaps/vabu-logo.png
 %{_datadir}/icons/hicolor/scalable/apps/vabu-logo.svg
 %{_datadir}/wayland-sessions/vabu-gaming.desktop
+%{_datadir}/wayland-sessions/vabu-recovery.desktop
 
 %changelog
 * Sun Nov 15 2026 ii-las <ii-las@users.noreply.github.com> - 0.1.0-1

@@ -24,6 +24,8 @@ if name == 'niri':
     if args == ['msg', '-j', 'outputs']:
         print(json.dumps({'DP-1': {'logical': {'scale': 1, 'x': 0, 'y': 0}, 'current_mode': 0,
               'modes': [{'width': 1920, 'height': 1080, 'refresh_rate': 60000}], 'vrr_enabled': False}}))
+    elif args[:1] == ['-c'] and os.environ.get('GREETER_LAUNCHED'):
+        pathlib.Path(os.environ['VABU_GREETER_STATUS']).write_text('launched\n')
     elif args[:1] == ['validate']:
         sys.exit(1 if os.environ.get('INVALID_CONFIG') else 0)
     elif '1280x720@60.000' in args and os.environ.get('FAIL_MODE'):
@@ -31,12 +33,16 @@ if name == 'niri':
 elif name == 'jq':
     try: data = json.loads(pathlib.Path(args[-1]).read_text())
     except (ValueError, OSError): sys.exit(1)
-    if args[0] == '-e': sys.exit(0 if isinstance(data, dict) else 1)
+    if args[0] == '-e':
+        if args[1].startswith('has('): sys.exit(0 if 'xkbLayout' in data else 1)
+        sys.exit(0 if isinstance(data, dict) else 1)
     if '.outputs' in args[1]: sys.exit(0)
     key = re.search(r'\.([a-zA-Z]+)', args[1]).group(1)
     value = data.get(key)
     if value is not None: print(json.dumps(value) if isinstance(value, (bool,int,float)) else value)
 elif name == 'mktemp':
+    if args == ['-d']:
+        print(tempfile.mkdtemp(dir=os.environ['HOME'])); sys.exit(0)
     if args[0].startswith('--suffix='):
         fd, path = tempfile.mkstemp(suffix=args[0].split('=',1)[1], dir=os.environ['HOME'])
     else:
@@ -56,7 +62,7 @@ elif name == 'rpm': sys.exit(1)
 elif name == 'lspci':
     if os.environ.get('NVIDIA'): print('01:00.0 VGA compatible controller [0300]: NVIDIA [10de:1234]')
 elif name == 'foot': pass
-elif name in ('sudo', 'pkexec', 'snapper', 'systemctl', 'swaylock', 'fuzzel', 'sleep', 'vabu-drivers', 'lsmod', 'mokutil'): pass
+elif name in ('sudo', 'pkexec', 'snapper', 'systemctl', 'swaylock', 'fuzzel', 'sleep', 'vabu-drivers', 'lsmod', 'mokutil', 'tuigreet'): pass
 else: sys.exit('Unexpected mock command: ' + name)
 '''
 
@@ -72,7 +78,7 @@ class Reliability(unittest.TestCase):
         self.log = self.base / 'commands'
         for name in ('niri', 'qs', 'timeout', 'dnf', 'flatpak', 'curl', 'rpm', 'lspci',
                      'jq', 'mktemp', 'foot', 'sudo', 'pkexec', 'snapper', 'systemctl', 'swaylock', 'fuzzel',
-                     'sleep', 'vabu-drivers', 'lsmod', 'mokutil'):
+                     'sleep', 'vabu-drivers', 'lsmod', 'mokutil', 'tuigreet'):
             f = self.bin / name
             f.write_text(MOCK)
             f.chmod(0o755)
@@ -242,6 +248,31 @@ class Reliability(unittest.TestCase):
         self.assertIn('animations {\n    off', out.read_text())
         self.assertNotIn('natural-scroll', out.read_text())
         self.assertEqual(list(out.parent.glob('.vabu-config.*')), [])
+
+    def greeter_script(self):
+        target = self.base / 'greeter.qml'; target.touch()
+        source = (ROOT / 'rootfs/usr/libexec/vabu/greeter').read_text().replace('/usr/share/vabu/shell/greeter.qml', str(target))
+        script = self.base / 'greeter'; script.write_text(source)
+        return script
+
+    def test_graphical_greeter_failure_falls_back_to_text(self):
+        result = self.run_script(self.greeter_script())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.calls()[-1][0], 'tuigreet')
+
+    def test_authenticated_greeter_exits_without_second_login(self):
+        self.env['GREETER_LAUNCHED'] = '1'
+        result = self.run_script(self.greeter_script())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(any(c[0] == 'tuigreet' for c in self.calls()))
+
+    def test_default_keymap_is_inherited_from_system(self):
+        config = self.config_setup()
+        result = self.run_script('rootfs/usr/libexec/vabu/niri-config')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        text = (config / 'niri/config.kdl').read_text()
+        self.assertNotIn('layout "us,tr"', text)
+        self.assertNotIn('@@', text)
 
     def test_sources_parse_without_executing_installers(self):
         for folder in ('rootfs', 'shell-system', 'iso', 'tests', 'tools'):

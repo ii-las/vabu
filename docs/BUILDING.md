@@ -16,8 +16,8 @@ just rpm
 Root yetkisi ve `kiwi-cli` gerekir:
 
 ```bash
-sudo dnf install kiwi-cli kiwi-systemdeps-iso-media kiwi-systemdeps-bootloaders
-just iso
+sudo dnf install distribution-gpg-keys kiwi-cli kiwi-systemdeps-iso-media kiwi-systemdeps-bootloaders
+COPR_KEY_SHA256=<doğrulanmış-açık-anahtar-dosyası-özeti> just iso
 ```
 
 ISO `out/` dizinine yazılır. Paketler COPR'dan alındığı için önce COPR derlemelerinin bitmiş olması gerekir.

@@ -14,7 +14,7 @@ ColumnLayout {
     PanelHeader {
         title: "Bluetooth"
         sub: !Bt.available ? "Bu bilgisayarda Bluetooth yok"
-            : !Bt.isOn ? "Kapalı"
+            : !Bt.isOn ? Lang.t("Kapalı")
             : Bt.connected.length ? Bt.label + " bağlı" : "Yakındaki cihazlar aranıyor"
         Spinner {
             visible: Bt.isOn && Bt.discovering
@@ -51,9 +51,9 @@ ColumnLayout {
                     readonly property bool working: modelData.pairing || modelData.state === BluetoothDeviceState.Connecting || modelData.state === BluetoothDeviceState.Disconnecting
                     icon: Bt.deviceIcon(modelData)
                     label: modelData.name || modelData.address
-                    sub: working ? (modelData.pairing ? "Eşleştiriliyor" : "Bağlanıyor")
+                    sub: working ? (modelData.pairing ? Lang.t("Eşleştiriliyor") : Lang.t("Bağlanıyor"))
                         : modelData.connected ? (modelData.batteryAvailable ? "Bağlı · pil %" + Math.round(modelData.battery * 100) : "Bağlı")
-                        : modelData.paired ? "Eşleşmiş" : "Eşleştirmek için tıkla"
+                        : modelData.paired ? Lang.t("Eşleşmiş") : "Eşleştirmek için tıkla"
                     selected: modelData.connected
                     busy: working
                     onClicked: Bt.activate(modelData)
@@ -62,24 +62,25 @@ ColumnLayout {
         }
     }
 
-    Text {
+    Text { textFormat: Text.PlainText;
         visible: Bt.available && Bt.isOn && Bt.sorted.length === 0
         Layout.fillWidth: true
         Layout.topMargin: 18
         Layout.bottomMargin: 18
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.Wrap
-        text: "Yakında cihaz yok"
+        text: Lang.t("Yakında cihaz yok")
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 13
+        font.pixelSize: Math.round((13) * Config.textScale)
         lineHeight: 1.2
     }
 
+    PillButton { label: Lang.t("Bluetooth eşleştirme ve PIN"); onClicked: Quickshell.execDetached(["blueman-manager"]) }
     DashLine { Layout.fillWidth: true; Layout.topMargin: 4; Layout.bottomMargin: 4 }
     ListRow {
         icon: "settings"
-        label: "Bluetooth ayarları"
+        label: Lang.t("Bluetooth ayarları")
         iconColor: Theme.soft
         trailing: "chevron_right"
         onClicked: Ui.settings("network")

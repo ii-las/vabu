@@ -4,6 +4,9 @@ import QtQuick.Layouts
 // Listelerde tıklanabilir satır: solda simge, ortada ad ve açıklama, sağda durum.
 Item {
     id: root
+    activeFocusOnTab: true
+    Keys.onReturnPressed: if (enabled) root.clicked()
+    Keys.onSpacePressed: if (enabled) root.clicked()
     property string icon: ""
     property string label: ""
     property string sub: ""
@@ -21,7 +24,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusRow
-        color: mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : "transparent"
+        color: mouse.pressed ? Theme.pressed : mouse.containsMouse || root.activeFocus ? Theme.hover : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
 
@@ -35,22 +38,22 @@ Item {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 0
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: root.label
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 14
+                font.pixelSize: Math.round((14) * Config.textScale)
                 font.weight: root.selected ? Font.DemiBold : Font.Medium
                 elide: Text.ElideRight
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 visible: root.sub !== ""
                 text: root.sub
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 elide: Text.ElideRight
             }
         }

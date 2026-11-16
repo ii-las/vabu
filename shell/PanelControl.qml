@@ -76,22 +76,22 @@ ColumnLayout {
             anchors.rightMargin: 10
             anchors.bottomMargin: 12
             spacing: 1
-            Text {
+            Text { textFormat: Text.PlainText;
                 width: parent.width
                 text: tile.name
                 color: tile.fg
                 font.family: Theme.sans
-                font.pixelSize: 14
+                font.pixelSize: Math.round((14) * Config.textScale)
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 width: parent.width
                 text: tile.detail
                 color: tile.fg
                 opacity: 0.66
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 elide: Text.ElideRight
             }
         }
@@ -140,13 +140,13 @@ ColumnLayout {
                 value: level.value
                 onMoved: v => level.moved(v)
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.preferredWidth: 28
                 horizontalAlignment: Text.AlignRight
                 text: Math.round(level.value * 100)
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 font.features: ({ "tnum": 1 })
             }
         }
@@ -184,16 +184,16 @@ ColumnLayout {
             }
             Tile {
                 icon: "dark_mode"
-                name: "Koyu görünüm"
-                detail: Config.theme === "otomatik" ? "Otomatik" : Theme.dark ? "Açık" : "Kapalı"
+                name: Lang.t("Koyu görünüm")
+                detail: Config.theme === "otomatik" ? Lang.t("Otomatik") : Theme.dark ? Lang.t("Açık") : Lang.t("Kapalı")
                 isOn: Theme.dark
                 onToggled: Config.set("theme", Theme.dark ? "acik" : "koyu")
             }
             Tile {
                 icon: "do_not_disturb_on"
-                name: "Rahatsız etme"
-                detail: Notifs.dnd ? "Açık" : "Kapalı"
-                isOn: Notifs.dnd
+                name: Lang.t("Rahatsız etme")
+                detail: Notifs.effectiveDnd ? Lang.t("Açık") : Lang.t("Kapalı")
+                isOn: Notifs.effectiveDnd
                 onToggled: Notifs.dnd = !Notifs.dnd
             }
         }
@@ -205,8 +205,8 @@ ColumnLayout {
             Layout.maximumWidth: 52
             Layout.fillHeight: true
             spacing: 10
-            SessionButton { icon: "lock"; tip: "Kilitle"; onClicked: Ui.lock() }
-            SessionButton { icon: "bedtime"; tip: "Uyku"; onClicked: { Ui.closeAll(); Ui.run(["systemctl", "suspend"]) } }
+            SessionButton { icon: "lock"; tip: Lang.t("Kilitle"); onClicked: Ui.lock() }
+            SessionButton { icon: "bedtime"; tip: Lang.t("Uyku"); onClicked: { Ui.closeAll(); Ui.run(["systemctl", "suspend"]) } }
             SessionButton { icon: "power_settings_new"; tip: "Oturum menüsü"; tone: Theme.danger; onClicked: { Ui.closeAll(); Ui.sessionMenuOpen = true } }
         }
     }
@@ -232,19 +232,20 @@ ColumnLayout {
         readonly property var order: PowerProfiles.hasPerformanceProfile
             ? [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
             : [PowerProfile.PowerSaver, PowerProfile.Balanced]
-        options: PowerProfiles.hasPerformanceProfile ? ["Tasarruf", "Dengeli", "Performans"] : ["Tasarruf", "Dengeli"]
+        options: PowerProfiles.hasPerformanceProfile ? [Lang.t("Tasarruf"), Lang.t("Dengeli"), Lang.t("Performans")] : [Lang.t("Tasarruf"), Lang.t("Dengeli")]
         currentIndex: Math.max(0, order.indexOf(PowerProfiles.profile))
         stretch: true
         onPicked: i => PowerProfiles.profile = order[i]
     }
 
+    SettingRow { label: Lang.t("Odak modu"); Toggle { checked: Config.focusMode; onToggled: Config.set("focusMode", !checked) } }
     RowLayout {
         Layout.fillWidth: true
         spacing: 10
         PillButton {
             Layout.fillWidth: true
             icon: "settings"
-            label: "Ayarlar"
+            label: Lang.t("Ayarlar")
             onClicked: Ui.settings()
         }
         Rectangle {
@@ -255,12 +256,12 @@ ColumnLayout {
             color: kbMouse.pressed ? Theme.pressed : kbMouse.containsMouse ? Theme.hover : Theme.well
             Accessible.role: Accessible.Button
             Accessible.name: "Klavye düzeni: " + Niri.kbShort
-            Text {
+            Text { textFormat: Text.PlainText;
                 anchors.centerIn: parent
                 text: Niri.kbShort
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.4
             }
@@ -271,7 +272,7 @@ ColumnLayout {
             radius: Theme.radiusRow + 2
             idle: Theme.well
             icon: "screenshot_region"
-            tooltip: "Ekran görüntüsü"
+            tooltip: Lang.t("Ekran görüntüsü")
             onClicked: Ui.screenshot()
         }
     }

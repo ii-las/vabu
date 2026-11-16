@@ -94,16 +94,16 @@ PanelWindow {
                     height: parent.height
                     radius: 2
                     color: Theme.paper
-                    Behavior on width { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                    Behavior on width { NumberAnimation { duration: Config.reducedMotion ? 0 : 140; easing.type: Easing.OutCubic } }
                 }
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.preferredWidth: 26
                 horizontalAlignment: Text.AlignRight
                 text: root.muted ? "0" : Math.round(root.value * 100)
                 color: Theme.soft
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 font.weight: Font.Medium
                 font.features: ({ "tnum": 1 })
             }

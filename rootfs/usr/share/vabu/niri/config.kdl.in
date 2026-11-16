@@ -6,9 +6,7 @@
 input {
     keyboard {
         xkb {
-            layout "@@XKB_LAYOUT@@"
-            variant "@@XKB_VARIANT@@"
-            options "@@XKB_OPTIONS@@"
+            @@XKB_CONFIG@@
         }
     }
     touchpad {
@@ -59,6 +57,9 @@ prefer-no-csd
 
 // Ekranlar (Vabu Ayarlar > Ekranlar)
 @@OUTPUTS@@
+
+// Adlandırılmış alanlar ve uygulama atamaları
+@@WORKSPACES@@
 
 screenshot-path "~/Pictures/Screenshots/%Y-%m-%d %H-%M-%S.png"
 
@@ -124,6 +125,8 @@ binds {
     Mod+Ctrl+Slash { show-hotkey-overlay; }
 
     // Uygulamalar
+    Mod+Tab { spawn "qs" "-p" "/usr/share/vabu/shell" "ipc" "call" "launcher" "open" "windows"; }
+    Mod+P { spawn "qs" "-p" "/usr/share/vabu/shell" "ipc" "call" "clipboard" "toggle"; }
     Mod+Return hotkey-overlay-title="Terminal" { spawn "foot"; }
     Mod+Space hotkey-overlay-title="Ara ve başlat" { spawn "vabu-launcher"; }
     Mod+I hotkey-overlay-title="Uygulama kur" { spawn "vabu-launcher" "--install"; }

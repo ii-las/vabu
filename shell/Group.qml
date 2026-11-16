@@ -11,13 +11,13 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: 8
 
-    Text {
+    Text { textFormat: Text.PlainText;
         visible: root.title !== ""
         Layout.leftMargin: 4
         text: root.title
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 13
+        font.pixelSize: Math.round((13) * Config.textScale)
         font.weight: Font.Medium
     }
     Rectangle {
@@ -34,7 +34,7 @@ ColumnLayout {
             spacing: 0
         }
     }
-    Text {
+    Text { textFormat: Text.PlainText;
         visible: root.note !== ""
         Layout.fillWidth: true
         Layout.leftMargin: 4
@@ -42,7 +42,7 @@ ColumnLayout {
         text: root.note
         color: Theme.faint
         font.family: Theme.sans
-        font.pixelSize: 12
+        font.pixelSize: Math.round((12) * Config.textScale)
         lineHeight: 1.2
         wrapMode: Text.Wrap
     }

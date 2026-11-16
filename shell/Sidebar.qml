@@ -28,9 +28,9 @@ PanelWindow {
     }
     SequentialAnimation {
         id: switcher
-        NumberAnimation { target: root; property: "fade"; to: 0; duration: 110; easing.type: Easing.InCubic }
+        NumberAnimation { target: root; property: "fade"; to: 0; duration: Config.reducedMotion ? 0 : 110; easing.type: Easing.InCubic }
         ScriptAction { script: root.compact = Config.sidebarCompact }
-        NumberAnimation { target: root; property: "fade"; to: 1; duration: 280; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+        NumberAnimation { target: root; property: "fade"; to: 1; duration: Config.reducedMotion ? 0 : 280; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
     }
 
     implicitWidth: compact ? Theme.sidebarCompactWidth : Theme.sidebarWidth
@@ -47,14 +47,19 @@ PanelWindow {
         onPressed: Ui.closePopover()
     }
 
-    Item {
+    Flickable {
+        id: scroller
         anchors.fill: parent
         anchors.margins: Theme.gap
+        clip: true
+        contentHeight: root.compact ? compactView.implicitHeight : fullView.implicitHeight
         opacity: root.fade
         transform: Translate { x: (1 - root.fade) * (root.onRight ? 12 : -12) }
 
         ColumnLayout {
-            anchors.fill: parent
+            id: fullView
+            width: parent.width
+            height: Math.max(scroller.height, implicitHeight)
             visible: !root.compact
             spacing: 8
 
@@ -73,6 +78,7 @@ PanelWindow {
                 originX: root.originX
             }
 
+            Tray { Layout.fillWidth: true; originX: root.originX; hostWindow: root }
             Item { Layout.fillHeight: true }
 
             SidebarMedia {
@@ -87,10 +93,13 @@ PanelWindow {
         }
 
         SidebarCompact {
-            anchors.fill: parent
+            id: compactView
+            width: parent.width
+            height: Math.max(scroller.height, implicitHeight)
             visible: root.compact
             originX: root.originX
             screenName: root.screenName
+            hostWindow: root
         }
     }
 }

@@ -39,7 +39,7 @@ Card {
             implicitWidth: root.button
             icon: Config.sidebarSide === "right" ? "right_panel_close" : "left_panel_close"
             iconColor: Theme.soft
-            tooltip: "Yan paneli daralt"
+            tooltip: Lang.t("Yan paneli daralt")
             onClicked: { Ui.closePopover(); Config.set("sidebarCompact", true) }
         }
         Item { Layout.fillWidth: true }
@@ -47,7 +47,7 @@ Card {
             implicitWidth: root.button
             icon: Net.icon
             iconColor: Net.kind === "none" ? Theme.muted : Theme.paper
-            tooltip: "Ağ: " + Net.label
+            tooltip: Lang.t("Ağ: ") + Net.label
             active: root.isOpen("wifi")
             onClicked: root.toggle("wifi")
         }
@@ -81,8 +81,8 @@ Card {
         IconButton {
             id: bell
             implicitWidth: root.button
-            icon: Notifs.dnd ? "notifications_off" : "notifications"
-            iconColor: Notifs.dnd ? Theme.muted : Theme.paper
+            icon: Notifs.effectiveDnd ? "notifications_off" : "notifications"
+            iconColor: Notifs.effectiveDnd ? Theme.muted : Theme.paper
             tooltip: "Bildirimler: " + Notifs.count
             active: root.isOpen("notifications")
             onClicked: root.toggle("notifications")
@@ -102,7 +102,7 @@ Card {
             id: control
             implicitWidth: root.hasBattery ? batt.implicitWidth + 16 : root.button
             icon: root.hasBattery ? "" : "tune"
-            tooltip: root.hasBattery ? "Kontrol merkezi · pil %" + root.batteryPct : "Kontrol merkezi"
+            tooltip: root.hasBattery ? "Kontrol merkezi · pil %" + root.batteryPct : Lang.t("Kontrol merkezi")
             active: root.isOpen("control")
             onClicked: root.toggle("control")
             Row {
@@ -119,12 +119,12 @@ Card {
                     filled: root.charging
                     color: batt.tone
                 }
-                Text {
+                Text { textFormat: Text.PlainText;
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.batteryPct
                     color: batt.tone
                     font.family: Theme.sans
-                    font.pixelSize: 13
+                    font.pixelSize: Math.round((13) * Config.textScale)
                     font.weight: Font.Medium
                     font.features: ({ "tnum": 1 })
                 }

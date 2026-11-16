@@ -10,7 +10,7 @@ Item {
     default property alias control: slot.data
 
     Layout.fillWidth: true
-    implicitHeight: Math.max(58, texts.implicitHeight + 26)
+    implicitHeight: Math.max(58, rowLayout.implicitHeight + 26)
 
     Rectangle {
         visible: root.y > 1
@@ -20,31 +20,34 @@ Item {
         color: Theme.line
     }
 
-    RowLayout {
+    GridLayout {
+        id: rowLayout
+        columns: root.width < 540 ? 1 : 2
         anchors.fill: parent
         anchors.leftMargin: 16
         anchors.rightMargin: 16
-        spacing: 16
+        rowSpacing: 10
+        columnSpacing: 16
         ColumnLayout {
             id: texts
             Layout.fillWidth: true
             spacing: 3
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: root.label
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 14
+                font.pixelSize: Math.round((14) * Config.textScale)
                 font.weight: Font.Medium
                 wrapMode: Text.Wrap
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 visible: root.sub !== ""
                 text: root.sub
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 lineHeight: 1.15
                 wrapMode: Text.Wrap
             }

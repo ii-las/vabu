@@ -7,17 +7,17 @@ ColumnLayout {
     spacing: 24
 
     readonly property var catalog: [
-        { layout: "tr", variant: "", name: "Türkçe Q" },
-        { layout: "tr", variant: "f", name: "Türkçe F" },
-        { layout: "us", variant: "", name: "İngilizce (ABD)" },
-        { layout: "gb", variant: "", name: "İngilizce (BK)" },
-        { layout: "de", variant: "", name: "Almanca" },
-        { layout: "fr", variant: "", name: "Fransızca" },
-        { layout: "es", variant: "", name: "İspanyolca" },
-        { layout: "it", variant: "", name: "İtalyanca" },
-        { layout: "ru", variant: "", name: "Rusça" },
-        { layout: "ara", variant: "", name: "Arapça" },
-        { layout: "az", variant: "", name: "Azerice" }
+        { layout: "tr", variant: "", name: Lang.t("Türkçe Q") },
+        { layout: "tr", variant: "f", name: Lang.t("Türkçe F") },
+        { layout: "us", variant: "", name: Lang.t("İngilizce (ABD)") },
+        { layout: "gb", variant: "", name: Lang.t("İngilizce (BK)") },
+        { layout: "de", variant: "", name: Lang.t("Almanca") },
+        { layout: "fr", variant: "", name: Lang.t("Fransızca") },
+        { layout: "es", variant: "", name: Lang.t("İspanyolca") },
+        { layout: "it", variant: "", name: Lang.t("İtalyanca") },
+        { layout: "ru", variant: "", name: Lang.t("Rusça") },
+        { layout: "ara", variant: "", name: Lang.t("Arapça") },
+        { layout: "az", variant: "", name: Lang.t("Azerice") }
     ]
 
     // niri.json'daki "us,tr" + ",f" → [{layout, variant}]
@@ -40,7 +40,7 @@ ColumnLayout {
     ]
 
     Group {
-        title: "Klavye düzenleri"
+        title: Lang.t("Klavye düzenleri")
         Repeater {
             model: page.current
             delegate: SettingRow {
@@ -51,13 +51,13 @@ ColumnLayout {
                 IconButton {
                     visible: index > 0
                     implicitWidth: 36; implicitHeight: 36
-                    icon: "arrow_upward"; iconColor: Theme.soft; tooltip: "Yukarı taşı"
+                    icon: "arrow_upward"; iconColor: Theme.soft; tooltip: Lang.t("Yukarı taşı")
                     onClicked: { const l = page.current.slice(); [l[index - 1], l[index]] = [l[index], l[index - 1]]; page.save(l) }
                 }
                 IconButton {
                     visible: page.current.length > 1
                     implicitWidth: 36; implicitHeight: 36
-                    icon: "close"; iconColor: Theme.soft; tooltip: "Kaldır"
+                    icon: "close"; iconColor: Theme.soft; tooltip: Lang.t("Kaldır")
                     onClicked: page.save(page.current.filter((_, i) => i !== index))
                 }
             }
@@ -82,7 +82,7 @@ ColumnLayout {
     Group {
         SettingRow {
             visible: page.current.length > 1
-            label: "Düzenler arasında geçiş"
+            label: Lang.t("Düzenler arasında geçiş")
             Segmented {
                 options: page.switches.map(s => s.name)
                 currentIndex: page.switches.findIndex(s => NiriConf.xkbOptions.includes(s.opt))
@@ -90,7 +90,7 @@ ColumnLayout {
             }
         }
         SettingRow {
-            label: "Doğal kaydırma"
+            label: Lang.t("Doğal kaydırma")
             Toggle { checked: NiriConf.naturalScroll; onToggled: NiriConf.set("naturalScroll", !NiriConf.naturalScroll) }
         }
     }
@@ -98,16 +98,16 @@ ColumnLayout {
     NiriStatus { Layout.fillWidth: true }
 
     Group {
-        title: "Kısayollar"
+        title: Lang.t("Kısayollar")
         SettingRow {
-            label: "Kısayol tablosu"
+            label: Lang.t("Kısayol tablosu")
             sub: "Super + Shift + /"
-            PillButton { implicitHeight: 38; label: "Göster"; icon: "keyboard"; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }
+            PillButton { implicitHeight: 38; label: Lang.t("Göster"); icon: "keyboard"; onClicked: Ui.run(["qs", "-p", "/usr/share/vabu/shell", "ipc", "call", "shortcuts", "toggle"]) }
         }
         SettingRow {
-            label: "niri ayar dosyası"
+            label: Lang.t("niri ayar dosyası")
             sub: "~/.config/niri/config.kdl"
-            PillButton { implicitHeight: 38; label: "Aç"; icon: "edit"; onClicked: Ui.run(["xdg-open", (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/niri/config.kdl"]) }
+            PillButton { implicitHeight: 38; label: Lang.t("Aç"); icon: "edit"; onClicked: Ui.run(["xdg-open", (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/niri/config.kdl"]) }
         }
     }
 }

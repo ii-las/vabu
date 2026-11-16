@@ -19,8 +19,9 @@ else
     command -v mako >/dev/null && start mako --config "$VABU_SHARE/mako/config"
 fi
 
-# Boşta: 5 dk kilit, 10 dk ekranı kapat; uykudan önce kilit
-start swayidle -w \
-    timeout 300 '/usr/libexec/vabu/lock' \
-    timeout 600 'niri msg action power-off-monitors' \
-    before-sleep '/usr/libexec/vabu/lock'
+# Kilitleme kabuk çökse de devam etsin; oturum hedefiyle birlikte kapanır.
+if ! systemctl --user start vabu-idle.service >/dev/null 2>&1; then
+    start /usr/libexec/vabu/idle
+fi
+start blueman-applet
+start /usr/libexec/vabu/workspaces launch

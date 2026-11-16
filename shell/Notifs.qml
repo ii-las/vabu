@@ -6,6 +6,7 @@ import Quickshell.Services.Notifications
 Singleton {
     id: root
 
+    readonly property bool effectiveDnd: dnd || Config.focusMode
     property bool dnd: false                      // rahatsız etme
     property var popups: []                       // ekranda gösterilenler
     readonly property var visiblePopups: popups.filter(p => p)   // kapatılıp silinmişleri atla
@@ -31,11 +32,12 @@ Singleton {
         persistenceSupported: true
 
         onNotification: n => {
+            for (const old of root.all.slice(0, Math.max(0, root.all.length - 99))) old.dismiss()
             n.tracked = true
             // Uygulama kapatınca ya da merkezden silinince nesne yok edilir; listeden de çıkar
             n.closed.connect(() => root.dismissPopup(n))
             const critical = n.urgency === NotificationUrgency.Critical
-            if (root.dnd && !critical) return
+            if (root.effectiveDnd && !critical) return
             root.popups = [n].concat(root.popups).slice(0, 4)
         }
     }

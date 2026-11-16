@@ -77,7 +77,7 @@ PanelWindow {
         y: root.top ? Theme.gap : root.height - Theme.gap - height
         Behavior on height {
             enabled: root.shown > 0.9
-            NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+            NumberAnimation { duration: Config.reducedMotion ? 0 : 300; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
         }
 
         opacity: Math.min(1, root.shown * 1.4)
@@ -113,9 +113,9 @@ PanelWindow {
         // Panelden panele geçiş: içerik kısa bir solmayla değişir
         SequentialAnimation {
             id: swap
-            NumberAnimation { target: body; property: "opacity"; to: 0; duration: 90 }
+            NumberAnimation { target: body; property: "opacity"; to: 0; duration: Config.reducedMotion ? 0 : 90 }
             ScriptAction { script: root.current = Ui.popover }
-            NumberAnimation { target: body; property: "opacity"; to: 1; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation { target: body; property: "opacity"; to: 1; duration: Config.reducedMotion ? 0 : 200; easing.type: Easing.OutCubic }
         }
     }
 

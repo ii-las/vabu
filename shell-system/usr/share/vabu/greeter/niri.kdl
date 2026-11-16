@@ -2,8 +2,7 @@
 input {
     keyboard {
         xkb {
-            layout "us,tr"
-            options "grp:alt_shift_toggle"
+            // Kurulumun localectl ile seçtiği sistem klavyesini kullan.
         }
     }
     touchpad {
@@ -19,7 +18,7 @@ cursor {
     xcursor-theme "Adwaita"
 }
 
-spawn-at-startup "qs" "-p" "/usr/share/vabu/shell/greeter.qml"
+spawn-at-startup "/usr/libexec/vabu/greeter-shell"
 
 binds {
 }

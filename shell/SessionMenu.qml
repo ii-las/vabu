@@ -15,11 +15,11 @@ OverlayWindow {
     onOpenChanged: if (open) { selected = 0; keys.forceActiveFocus() }
 
     readonly property var actions: [
-        { icon: "lock",               label: "Kilitle",        run: () => Ui.lock() },
-        { icon: "bedtime",            label: "Uyku",           run: () => { Ui.lock(); Ui.run(["systemctl", "suspend"]) } },
-        { icon: "logout",             label: "Oturumu kapat",  run: () => Niri.quit() },
-        { icon: "restart_alt",        label: "Yeniden başlat", run: () => Ui.run(["systemctl", "reboot"]) },
-        { icon: "power_settings_new", label: "Kapat",          run: () => Ui.run(["systemctl", "poweroff"]), danger: true }
+        { icon: "lock",               label: Lang.t("Kilitle"),        run: () => Ui.lock() },
+        { icon: "bedtime",            label: Lang.t("Uyku"),           run: () => { Ui.lock(); Ui.run(["systemctl", "suspend"]) } },
+        { icon: "logout",             label: Lang.t("Oturumu kapat"),  run: () => Niri.quit() },
+        { icon: "restart_alt",        label: Lang.t("Yeniden başlat"), run: () => Ui.run(["systemctl", "reboot"]) },
+        { icon: "power_settings_new", label: Lang.t("Kapat"),          run: () => Ui.run(["systemctl", "poweroff"]), danger: true }
     ]
 
     function activate(i) {
@@ -95,14 +95,14 @@ OverlayWindow {
                         filled: btn.isOn
                         color: btn.fg
                     }
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: parent.bottom
                         anchors.bottomMargin: 20
                         text: btn.modelData.label
                         color: btn.fg
                         font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.pixelSize: Math.round((13) * Config.textScale)
                         font.weight: Font.DemiBold
                     }
                     MouseArea {

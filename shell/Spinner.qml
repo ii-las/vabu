@@ -16,9 +16,9 @@ Item {
         weight: 400
         color: root.color
         RotationAnimator on rotation {
-            running: root.running && root.visible
+            running: root.running && root.visible && !Config.reducedMotion
             from: 0; to: 360
-            duration: 900
+            duration: Config.reducedMotion ? 0 : 900
             loops: Animation.Infinite
         }
     }

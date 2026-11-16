@@ -1,0 +1,12 @@
+[Unit]
+Description=Vabu idle locking and power policy
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/vabu/idle
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

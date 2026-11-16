@@ -15,7 +15,7 @@ rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/vabu/
 
 # Masaüstü ve giriş ekranı
 systemctl set-default graphical.target
-systemctl enable greetd.service NetworkManager.service
+systemctl enable greetd.service NetworkManager.service bluetooth.service cups.socket
 
 # Canlı kullanıcı: şifresiz, sudo yetkili. Kurulumda Calamares 'removeuser' ile silinir.
 useradd -m -G wheel -c "Vabu Canlı" liveuser

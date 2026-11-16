@@ -19,6 +19,7 @@ ShellRoot {
     property int sessionIndex: 0
     readonly property var sessions: [
         { name: "Vabu", sub: "niri masaüstü", cmd: ["niri-session"] },
+        { name: Lang.t("Vabu Kurtarma"), sub: "temel panel ve terminal", cmd: ["niri", "-c", "/usr/share/vabu/recovery/niri.kdl"] },
         { name: "Vabu Oyun", sub: "Steam, tam ekran", cmd: ["/usr/libexec/vabu/gaming-session"] }
     ]
     readonly property var user: users[userIndex] ?? { name: "", full: "" }
@@ -45,10 +46,8 @@ ShellRoot {
             lastUser.setText(root.user.name)
             Greetd.launch(root.sessions[root.sessionIndex].cmd)
         }
-        function onLaunched() {
-            // Greeter'ın niri'si kapanınca greetd seçilen oturumu başlatır
-            Quickshell.execDetached(["niri", "msg", "action", "quit", "--skip-confirmation"])
-        }
+        // greeter-shell önce başarılı çıkışı kaydeder, sonra greeter compositor'ını kapatır.
+        // Burada erken quit göndermek, başarı işareti yazılmadan ebeveyni kapatabilir.
         function onError(error) {
             root.busy = false
             root.password = ""

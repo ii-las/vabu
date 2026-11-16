@@ -61,7 +61,7 @@ PanelWindow {
 
         add: Transition {
             ParallelAnimation {
-                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 240 }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Config.reducedMotion ? 0 : 240 }
                 NumberAnimation { property: "x"; from: root.onRight ? -36 : 36; to: 0; duration: Theme.enter; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
             }
         }
@@ -72,8 +72,8 @@ PanelWindow {
             }
         }
         displaced: Transition {
-            NumberAnimation { properties: "x,y"; duration: 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
-            NumberAnimation { property: "opacity"; to: 1; duration: 200 }
+            NumberAnimation { properties: "x,y"; duration: Config.reducedMotion ? 0 : 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+            NumberAnimation { property: "opacity"; to: 1; duration: Config.reducedMotion ? 0 : 200 }
         }
     }
 }

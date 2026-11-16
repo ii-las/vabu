@@ -39,7 +39,7 @@ ColumnLayout {
     }
 
     Group {
-        title: "Bu bilgisayarın kullanıcıları"
+        title: Lang.t("Bu bilgisayarın kullanıcıları")
         Repeater {
             model: page.users
             delegate: SettingRow {
@@ -49,7 +49,7 @@ ColumnLayout {
                 PillButton {
                     visible: modelData.me
                     implicitHeight: 36
-                    label: "Şifremi değiştir"
+                    label: Lang.t("Şifremi değiştir")
                     icon: "key"
                     onClicked: Ui.terminal(["sh", "-c", "passwd; echo; read -p 'Kapatmak için Enter…' _"])
                 }
@@ -58,7 +58,7 @@ ColumnLayout {
     }
 
     Group {
-        title: "Yeni kullanıcı"
+        title: Lang.t("Yeni kullanıcı")
         GridLayout {
             Layout.fillWidth: true
             Layout.margins: 14
@@ -66,19 +66,19 @@ ColumnLayout {
             columnSpacing: 10
             rowSpacing: 10
             uniformCellWidths: true
-            Field { id: newName; Layout.fillWidth: true; placeholder: "Ad Soyad" }
+            Field { id: newName; Layout.fillWidth: true; placeholder: Lang.t("Ad Soyad") }
             Field {
                 id: newUser
                 Layout.fillWidth: true
-                placeholder: "Kullanıcı adı"
+                placeholder: Lang.t("Kullanıcı adı")
                 onTextChanged: { const t = text.toLowerCase().replace(/[^a-z0-9_-]/g, ""); if (t !== text) text = t }
             }
-            Field { id: newPass; Layout.fillWidth: true; echoMode: TextInput.Password; placeholder: "Şifre (en az 6 karakter)" }
+            Field { id: newPass; Layout.fillWidth: true; echoMode: TextInput.Password; placeholder: Lang.t("Şifre (en az 6 karakter)") }
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
                 Toggle { id: adminToggle; onToggled: checked = !checked }
-                Text { Layout.fillWidth: true; text: "Yönetici olsun"; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14 }
+                Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: Lang.t("Yönetici olsun"); color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale)}
             }
         }
         RowLayout {
@@ -89,7 +89,7 @@ ColumnLayout {
             spacing: 12
             PillButton {
                 primary: true
-                label: "Kullanıcı ekle"
+                label: Lang.t("Kullanıcı ekle")
                 icon: "person_add"
                 enabled: newUser.text.length > 1 && newPass.text.length >= 6
                 onClicked: {
@@ -103,7 +103,7 @@ ColumnLayout {
                     adder.write(newPass.text + "\n")
                 }
             }
-            Text { Layout.fillWidth: true; text: page.message; color: Theme.soft; font.family: Theme.sans; font.pixelSize: 12; wrapMode: Text.Wrap }
+            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: page.message; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale); wrapMode: Text.Wrap }
         }
     }
 }

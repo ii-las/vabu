@@ -21,18 +21,19 @@ Rectangle {
 
     TextInput {
         id: input
+        Accessible.name: root.placeholder
         anchors.fill: parent
         anchors.leftMargin: 14
         anchors.rightMargin: 14
         verticalAlignment: TextInput.AlignVCenter
         color: Theme.paper
         font.family: root.mono ? Theme.mono : Theme.sans
-        font.pixelSize: 14
+        font.pixelSize: Math.round((14) * Config.textScale)
         selectionColor: Theme.accent
         selectedTextColor: Theme.accentInk
         clip: true
         onAccepted: root.accepted()
-        Text {
+        Text { textFormat: Text.PlainText;
             visible: !input.text
             anchors.verticalCenter: parent.verticalCenter
             text: root.placeholder

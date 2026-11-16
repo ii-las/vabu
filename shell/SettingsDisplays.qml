@@ -108,7 +108,7 @@ ColumnLayout {
         wrapMode: Text.Wrap
         color: Theme.danger
         font.family: Theme.sans
-        font.pixelSize: 13
+        font.pixelSize: Math.round((13) * Config.textScale)
     }
 
     // Yerleşim
@@ -157,8 +157,8 @@ ColumnLayout {
                 Column {
                     anchors.centerIn: parent
                     spacing: 2
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.sans; font.weight: Font.DemiBold; font.pixelSize: 26 }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.soft; font.family: Theme.sans; font.pixelSize: 12 }
+                    Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.sans; font.weight: Font.DemiBold; font.pixelSize: Math.round((26) * Config.textScale)}
+                    Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
                 }
                 MouseArea {
                     anchors.fill: parent
@@ -186,12 +186,12 @@ ColumnLayout {
                 }
             }
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             anchors { right: parent.right; bottom: parent.bottom; margins: 12 }
             text: page.outputs.length > 1 ? "Ekranları sürükleyerek diz" : ""
             color: Theme.faint
             font.family: Theme.sans
-            font.pixelSize: 12
+            font.pixelSize: Math.round((12) * Config.textScale)
         }
     }
 
@@ -203,7 +203,7 @@ ColumnLayout {
 
         SettingRow {
             id: resRow
-            label: "Çözünürlük"
+            label: Lang.t("Çözünürlük")
             readonly property var sizes: page.sel ? [...new Set(page.sel.modes.map(m => m.width + "×" + m.height))] : []
             Segmented {
                 visible: resRow.sizes.length <= 4
@@ -227,14 +227,14 @@ ColumnLayout {
                     const best = page.sel.modes.filter(m => m.width === w && m.height === h).sort((a, b) => b.refresh_rate - a.refresh_rate)[0]
                     page.setDraft("mode", page.modeString(best))
                 }
-                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_left"; tooltip: "Daha büyük"; onClicked: parent.pick(Math.max(0, parent.idx - 1)) }
-                Text { anchors.verticalCenter: parent.verticalCenter; text: parent.sizes[parent.idx] ?? ""; color: Theme.paper; font.family: Theme.sans; font.weight: Font.Medium; font.pixelSize: 14; font.features: ({ "tnum": 1 }) }
-                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_right"; tooltip: "Daha küçük"; onClicked: parent.pick(Math.min(parent.sizes.length - 1, parent.idx + 1)) }
+                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_left"; tooltip: Lang.t("Daha büyük"); onClicked: parent.pick(Math.max(0, parent.idx - 1)) }
+                Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: parent.sizes[parent.idx] ?? ""; color: Theme.paper; font.family: Theme.sans; font.weight: Font.Medium; font.pixelSize: Math.round((14) * Config.textScale); font.features: ({ "tnum": 1 }) }
+                IconButton { implicitWidth: 34; implicitHeight: 34; icon: "chevron_right"; tooltip: Lang.t("Daha küçük"); onClicked: parent.pick(Math.min(parent.sizes.length - 1, parent.idx + 1)) }
             }
         }
         SettingRow {
             id: rateRow
-            label: "Yenileme hızı"
+            label: Lang.t("Yenileme hızı")
             readonly property var rates: {
                 if (!page.sel || !page.cur) return []
                 const [w, h] = page.cur.mode.split("@")[0].split("x").map(Number)
@@ -249,7 +249,7 @@ ColumnLayout {
         }
         SettingRow {
             id: scaleRow
-            label: "Ölçek"
+            label: Lang.t("Ölçek")
             readonly property var scales: [1, 1.25, 1.5, 1.75, 2]
             Segmented {
                 mono: true
@@ -260,22 +260,54 @@ ColumnLayout {
         }
         SettingRow {
             visible: page.sel?.vrr_supported ?? false
-            label: "Değişken yenileme hızı (VRR)"
+            label: Lang.t("Değişken yenileme hızı (VRR)")
             Toggle { checked: page.cur?.vrr ?? false; onToggled: page.setDraft("vrr", !page.cur.vrr) }
         }
         SettingRow {
             visible: page.outputs.length > 1
-            label: "Bu ekranı kullan"
+            label: Lang.t("Bu ekranı kullan")
             Toggle { checked: !(page.cur?.off ?? false); onToggled: page.setDraft("off", !page.cur.off) }
         }
     }
 
     Group {
-        title: "Gece ışığı"
+        title: Lang.t("Gece ışığı")
         SettingRow {
-            label: "Gece ışığı"
-            sub: Config.nightLight ? "Gün batımından gün doğumuna" : ""
+            label: Lang.t("Gece ışığı")
+            sub: Config.nightLight ? Lang.t("Gün batımından gün doğumuna") : ""
             Toggle { checked: Config.nightLight; onToggled: Config.set("nightLight", !Config.nightLight) }
+        }
+    }
+
+    Group {
+        title: Lang.t("Ekran düzeni profilleri")
+        note: Lang.t("Profili yükledikten sonra Uygula düğmesiyle dene. Onaylanmayan değişiklikler otomatik geri alınır. Bağlı ekran adları uyuşmalıdır.")
+        Field { id: profileName; Layout.fillWidth: true; placeholder: Lang.t("Profil adı (ör. Masa, Sunum)") }
+        PillButton {
+            label: Lang.t("Bu düzeni profil olarak sakla")
+            enabled: !page.previewBusy && page.previewToken === "" && profileName.text.trim().length > 0 && profileName.text.trim().length <= 40 && page.outputs.length > 0
+            onClicked: {
+                const profile = {name:profileName.text.trim(), outputs:JSON.parse(JSON.stringify(page.draft))}
+                Config.set("displayProfiles", (Config.values.displayProfiles ?? []).filter(p => p.name !== profile.name).concat([profile]).slice(-12))
+                profileName.text = ""
+            }
+        }
+        Repeater {
+            model: Config.values.displayProfiles ?? []
+            delegate: SettingRow {
+                required property var modelData
+                label: modelData.name
+                PillButton {
+                    label: Lang.t("Yükle"); enabled: !page.previewBusy && page.previewToken === ""
+                    onClicked: {
+                        const expected = Object.keys(modelData.outputs).sort().join("\n")
+                        const actual = page.outputs.map(o => o.name).sort().join("\n")
+                        if (expected !== actual) { page.previewError = "Bu profilin ekranları bağlı ekranlarla uyuşmuyor."; return }
+                        page.draft = JSON.parse(JSON.stringify(modelData.outputs))
+                    }
+                }
+                IconButton { icon: "delete"; tooltip: Lang.t("Profili sil"); onClicked: Config.set("displayProfiles", (Config.values.displayProfiles ?? []).filter(p => p.name !== modelData.name)) }
+            }
         }
     }
 
@@ -284,14 +316,14 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: 14
         visible: page.previewToken === ""
-        PillButton { primary: true; label: "Uygula"; enabled: !page.previewBusy; onClicked: page.apply() }
-        PillButton { label: "Yenile"; icon: "refresh"; enabled: !page.previewBusy; onClicked: page.load() }
-        Text {
+        PillButton { primary: true; label: Lang.t("Uygula"); enabled: !page.previewBusy; onClicked: page.apply() }
+        PillButton { label: Lang.t("Yenile"); icon: "refresh"; enabled: !page.previewBusy; onClicked: page.load() }
+        Text { textFormat: Text.PlainText;
             Layout.fillWidth: true
-            text: "Onaylamazsan 15 saniye içinde eski ayara döner."
+            text: Lang.t("Onaylamazsan 15 saniye içinde eski ayara döner.")
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 12
+            font.pixelSize: Math.round((12) * Config.textScale)
             wrapMode: Text.Wrap
         }
     }
@@ -307,16 +339,16 @@ ColumnLayout {
             anchors.fill: parent
             anchors.margins: 14
             spacing: 12
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
-                text: "Böyle kalsın mı? " + page.countdown + " sn sonra eski hâline döner."
+                text: Lang.t("Böyle kalsın mı? ") + page.countdown + Lang.t(" sn sonra eski hâline döner.")
                 color: Theme.paper
                 font.family: Theme.sans
                 font.weight: Font.DemiBold
-                font.pixelSize: 15
+                font.pixelSize: Math.round((15) * Config.textScale)
             }
-            PillButton { label: "Geri al"; enabled: !page.previewBusy; onClicked: page.revert() }
-            PillButton { primary: true; label: "Böyle kalsın"; enabled: !page.previewBusy; onClicked: page.keep() }
+            PillButton { label: Lang.t("Geri al"); enabled: !page.previewBusy; onClicked: page.revert() }
+            PillButton { primary: true; label: Lang.t("Böyle kalsın"); enabled: !page.previewBusy; onClicked: page.keep() }
         }
     }
 

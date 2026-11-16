@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
 
@@ -34,12 +36,15 @@ jobs:
           grep -n "@" iso/config.kiwi | grep -v "xml\|@FEDORA\|@ARCH" || true
 
       - name: Kiwi ile ISO üret
+        env:
+          COPR_KEY_SHA256: ${{ vars.COPR_KEY_SHA256 }}
         run: |
           sudo podman run --rm --privileged \
-            -v "$PWD":/work:Z -v /dev:/dev \
+            -v "$PWD":/work:Z -v /dev:/dev -w /work -e COPR_KEY_SHA256 -e FEDORA \
             registry.fedoraproject.org/fedora:${FEDORA} \
             bash -euxc '
-              dnf -y install kiwi-cli kiwi-systemdeps-iso-media kiwi-systemdeps-bootloaders
+              dnf -y install python3 distribution-gpg-keys kiwi-cli kiwi-systemdeps-iso-media kiwi-systemdeps-bootloaders
+              python3 tools/prepare-iso-keys.py /work/iso "$FEDORA"
               kiwi-ng system build --description /work/iso --target-dir /work/out
             '
           name="vabu-$(cat VERSION)-fedora${FEDORA}-${{ inputs.arch }}-$(date -u +%Y%m%d-%H%M).iso"
@@ -52,12 +57,32 @@ jobs:
         if: failure()
         run: sudo find out -name '*.log' -exec tail -n 200 {} \; || true
 
+      - name: İmzalı kaynak doğrulaması
+        id: provenance
+        if: ${{ !github.event.repository.private || vars.PRIVATE_ATTESTATIONS_ENABLED == 'true' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: vabu-*.iso
+
+      - name: Doğrulama belgesini sakla
+        if: steps.provenance.outcome == 'success'
+        env:
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: cp -- "$BUNDLE" "vabu-${{ inputs.arch }}.sigstore.json"
+
+      - name: İmzasız sürüm yayınını durdur
+        if: startsWith(github.ref, 'refs/tags/v') && steps.provenance.outcome != 'success'
+        run: |
+          echo "::error::Sürüm yayını için imzalı kaynak doğrulaması gerekli. Özel depoda desteklenen GitHub planını doğrula."
+          exit 1
+
       - uses: actions/upload-artifact@v4
         with:
           name: vabu-iso-${{ inputs.arch }}
           path: |
             vabu-*.iso
             vabu-*.sha256
+            vabu-*.sigstore.json
           retention-days: 7
           compression-level: 0
 
@@ -65,4 +90,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" vabu-*.iso vabu-*.sha256 --clobber || gh release create "${GITHUB_REF_NAME}" vabu-*.iso vabu-*.sha256 --title "Vabu ${GITHUB_REF_NAME}" --generate-notes
+        run: gh release upload "${GITHUB_REF_NAME}" vabu-*.iso vabu-*.sha256 vabu-*.sigstore.json --clobber || gh release create "${GITHUB_REF_NAME}" vabu-*.iso vabu-*.sha256 vabu-*.sigstore.json --title "Vabu ${GITHUB_REF_NAME}" --generate-notes

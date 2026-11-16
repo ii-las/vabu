@@ -51,10 +51,14 @@ j() {  # j <dosya> <jq ifadesi> <varsayılan>
     [[ -n "$v" ]] && printf '%s' "$v" || printf '%s' "$3"
 }
 
-export XKB_LAYOUT XKB_VARIANT XKB_OPTIONS NATURAL_SCROLL GAPS RADIUS FOCUS_COLOR ANIMATIONS OUTPUTS USER_BLOCK
+export XKB_LAYOUT XKB_VARIANT XKB_OPTIONS NATURAL_SCROLL GAPS RADIUS FOCUS_COLOR ANIMATIONS OUTPUTS USER_BLOCK WORKSPACES XKB_CONFIG
 XKB_LAYOUT="$(j "$SETTINGS" .xkbLayout "us,tr")"
 XKB_VARIANT="$(j "$SETTINGS" .xkbVariant "")"
 XKB_OPTIONS="$(j "$SETTINGS" .xkbOptions "grp:alt_shift_toggle")"
+XKB_CONFIG=""
+if [[ -f "$SETTINGS" ]] && jq -e 'has("xkbLayout")' "$SETTINGS" >/dev/null 2>&1; then
+    XKB_CONFIG="$(jq -r '"layout \(.xkbLayout | @json)\nvariant \((.xkbVariant // "") | @json)\noptions \((.xkbOptions // "grp:alt_shift_toggle") | @json)"' "$SETTINGS")"
+fi
 [[ "$(j "$SETTINGS" .naturalScroll true)" == "true" ]] && NATURAL_SCROLL="natural-scroll" || NATURAL_SCROLL=""
 GAPS="$(j "$SETTINGS" .gaps 12)"
 RADIUS="$(j "$SETTINGS" .radius 14)"
@@ -83,6 +87,8 @@ OUTPUTS="$(jq -r '
     (if .vrr then "    variable-refresh-rate\n" else "" end) +
     "}"' "$SETTINGS" 2>/dev/null || true)"
 
+WORKSPACES="$(python3 "$(dirname "$0")/workspaces" render "$SETTINGS")" || { echo "Çalışma alanları geçersiz; ayar uygulanmadı." >&2; exit 2; }
+
 # Mevcut dosyadaki kullanıcı bölümünü koru
 USER_BLOCK=""
 if [[ -e "$OUT" ]]; then
@@ -101,6 +107,7 @@ fi
 tmp="$(mktemp --suffix=.kdl)"
 trap 'rm -f "$tmp"' EXIT
 perl -pe '
+    s/\@\@XKB_CONFIG\@\@/$ENV{XKB_CONFIG}/g;
     s/\@\@XKB_LAYOUT\@\@/$ENV{XKB_LAYOUT}/g;
     s/\@\@XKB_VARIANT\@\@/$ENV{XKB_VARIANT}/g;
     s/\@\@XKB_OPTIONS\@\@/$ENV{XKB_OPTIONS}/g;
@@ -111,6 +118,7 @@ perl -pe '
     s/\@\@ANIMATIONS\@\@/$ENV{ANIMATIONS}/g;
     s/\@\@OUTPUTS\@\@/$ENV{OUTPUTS}/g;
     s/\@\@USER\@\@/$ENV{USER_BLOCK}/g;
+    s/\@\@WORKSPACES\@\@/$ENV{WORKSPACES}/g;
 ' "$TEMPLATE" > "$tmp"
 
 # Doğrula: hatalı bir ayar oturumu bozmasın

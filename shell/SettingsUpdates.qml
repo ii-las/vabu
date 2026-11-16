@@ -117,31 +117,31 @@ ColumnLayout {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 3
-                Text {
+                Text { textFormat: Text.PlainText;
                     Layout.fillWidth: true
-                    text: page.checking ? "Denetleniyor" : page.checkFailed ? "Denetim tamamlanamadı" : page.total > 0 ? page.total + " güncelleme hazır" : "Her şey güncel"
+                    text: page.checking ? Lang.t("Denetleniyor") : page.checkFailed ? Lang.t("Denetim tamamlanamadı") : page.total > 0 ? page.total + " güncelleme hazır" : Lang.t("Her şey güncel")
                     color: Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 18
+                    font.pixelSize: Math.round((18) * Config.textScale)
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.2
                     elide: Text.ElideRight
                 }
-                Text {
+                Text { textFormat: Text.PlainText;
                     Layout.fillWidth: true
                     visible: false
                     text: ""
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: 13
+                    font.pixelSize: Math.round((13) * Config.textScale)
                     elide: Text.ElideRight
                 }
             }
-            PillButton { label: "Denetle"; icon: "refresh"; enabled: !page.checking; onClicked: page.check(true) }
+            PillButton { label: Lang.t("Denetle"); icon: "refresh"; enabled: !page.checking; onClicked: page.check(true) }
             PillButton {
                 visible: page.total > 0
                 primary: true
-                label: "Şimdi güncelle"
+                label: Lang.t("Şimdi güncelle")
                 onClicked: Ui.terminal(["sh", "-c", "vabu update; echo; read -p 'Kapatmak için Enter…' _"])
             }
         }
@@ -155,7 +155,7 @@ ColumnLayout {
         wrapMode: Text.Wrap
         color: Theme.danger
         font.family: Theme.sans
-        font.pixelSize: 13
+        font.pixelSize: Math.round((13) * Config.textScale)
     }
 
     // Paket satırı: ad solda, sürüm sağda
@@ -172,8 +172,8 @@ ColumnLayout {
             anchors.leftMargin: 16
             anchors.rightMargin: 16
             spacing: 12
-            Text { Layout.fillWidth: true; text: pr.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 14; font.weight: pr.ours ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
-            Text { Layout.maximumWidth: pr.width * 0.5; text: pr.version; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 12; font.features: ({ "tnum": 1 }); elide: Text.ElideMiddle }
+            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: pr.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: pr.ours ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
+            Text { textFormat: Text.PlainText; Layout.maximumWidth: pr.width * 0.5; text: pr.version; color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale); font.features: ({ "tnum": 1 }); elide: Text.ElideMiddle }
         }
     }
 
@@ -205,8 +205,8 @@ ColumnLayout {
     }
 
     Group {
-        title: "Anlık görüntüler"
-        note: "Anlık görüntüler ayrı /boot bölümünü kapsamaz. Otomatik tam sistem geri alma henüz desteklenmiyor."
+        title: Lang.t("Anlık görüntüler")
+        note: Lang.t("Anlık görüntüler ayrı /boot bölümünü kapsamaz. Otomatik tam sistem geri alma henüz desteklenmiyor.")
         Repeater {
             model: page.snapshots
             delegate: SettingRow {
@@ -218,13 +218,13 @@ ColumnLayout {
         }
         SettingRow {
             visible: page.snapshots.length === 0
-            label: "Henüz geri alma noktası yok"
+            label: Lang.t("Henüz geri alma noktası yok")
         }
     }
 
     Group {
         SettingRow {
-            label: "Sistem paketlerini arka planda indir"
+            label: Lang.t("Sistem paketlerini arka planda indir")
             sub: "RPM paketlerini indirir. Kullanıcı Flatpak güncellemelerinin ayrı zamanlayıcısı vardır."
             Toggle {
                 enabled: !timerChange.running

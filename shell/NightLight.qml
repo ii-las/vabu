@@ -9,7 +9,7 @@ Singleton {
 
     readonly property bool isOn: Config.nightLight
     property bool failed: false
-    readonly property string label: !isOn ? "Kapalı" : failed ? "Bu ekranda yok" : Sun.night ? "Açık" : "Gün batımında"
+    readonly property string label: !isOn ? Lang.t("Kapalı") : failed ? "Bu ekranda yok" : Sun.night ? Lang.t("Açık") : "Gün batımında"
 
     function toggle() {
         failed = false

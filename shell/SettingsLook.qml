@@ -13,7 +13,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        Text { Layout.leftMargin: 4; text: "Duvar kağıdı"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 13; font.weight: Font.Medium }
+        Text { textFormat: Text.PlainText; Layout.leftMargin: 4; text: Lang.t("Duvar kağıdı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
         GridLayout {
             Layout.fillWidth: true
             columns: 5
@@ -21,7 +21,7 @@ ColumnLayout {
             uniformCellWidths: true
             Repeater {
                 // "auto": görünüme göre gündüz ya da alacakaranlık
-                model: [{ name: "Otomatik", path: "auto" }].concat(Config.wallpapers).concat([{ name: "Kendi resmin", path: "" }])
+                model: [{ name: Lang.t("Otomatik"), path: "auto" }].concat(Config.wallpapers).concat([{ name: Lang.t("Kendi resmin"), path: "" }])
                 delegate: ColumnLayout {
                     id: wp
                     required property var modelData
@@ -83,12 +83,12 @@ ColumnLayout {
                             onClicked: wp.custom ? picker.open() : Config.set("wallpaper", wp.auto ? null : wp.modelData.path)
                         }
                     }
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         Layout.leftMargin: 2
-                        text: wp.modelData.name
+                        text: Lang.t(wp.modelData.name)
                         color: wp.isOn ? Theme.paper : Theme.soft
                         font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.pixelSize: Math.round((13) * Config.textScale)
                         font.weight: wp.isOn ? Font.DemiBold : Font.Normal
                     }
                 }
@@ -98,23 +98,23 @@ ColumnLayout {
 
     FileDialog {
         id: picker
-        title: "Duvar kağıdı seç"
+        title: Lang.t("Duvar kağıdı seç")
         nameFilters: ["Resimler (*.png *.jpg *.jpeg *.webp)"]
         onAccepted: Config.set("wallpaper", String(selectedFile).replace(/^file:\/\//, ""))
     }
 
     Group {
-        title: "Tema"
+        title: Lang.t("Tema")
         SettingRow {
-            label: "Görünüm"
+            label: Lang.t("Görünüm")
             Segmented {
-                options: ["Açık", "Koyu", "Otomatik"]
+                options: [Lang.t("Açık"), "Koyu", Lang.t("Otomatik")]
                 currentIndex: ["acik", "koyu", "otomatik"].indexOf(Config.theme)
                 onPicked: i => Config.set("theme", ["acik", "koyu", "otomatik"][i])
             }
         }
         SettingRow {
-            label: "Vurgu rengi"
+            label: Lang.t("Vurgu rengi")
             Repeater {
                 model: Object.keys(Config.accents)
                 delegate: Item {
@@ -124,7 +124,7 @@ ColumnLayout {
                     readonly property color tone: Theme.dark ? Config.accents[modelData].dark : Config.accents[modelData].light
                     width: 32; height: 32
                     Accessible.role: Accessible.RadioButton
-                    Accessible.name: Config.accents[modelData].name
+                    Accessible.name: Lang.t(Config.accents[modelData].name)
                     Rectangle {
                         anchors.fill: parent
                         radius: 16
@@ -153,43 +153,43 @@ ColumnLayout {
     }
 
     Group {
-        title: "Yan panel"
+        title: Lang.t("Yan panel")
         SettingRow {
-            label: "Konum"
+            label: Lang.t("Konum")
             Segmented {
-                options: ["Sol", "Sağ"]
+                options: [Lang.t("Sol"), Lang.t("Sağ")]
                 currentIndex: Config.sidebarSide === "right" ? 1 : 0
                 onPicked: i => Config.set("sidebarSide", i === 1 ? "right" : "left")
             }
         }
         SettingRow {
-            label: "Dar görünüm"
+            label: Lang.t("Dar görünüm")
             Toggle { checked: Config.sidebarCompact; onToggled: Config.set("sidebarCompact", !Config.sidebarCompact) }
         }
         SettingRow {
-            label: "Saatte saniyeler"
+            label: Lang.t("Saatte saniyeler")
             Toggle { checked: Config.showSeconds; onToggled: Config.set("showSeconds", !Config.showSeconds) }
         }
         SettingRow {
-            label: "Çalan medya"
+            label: Lang.t("Çalan medya")
             Toggle { checked: Config.showMedia; onToggled: Config.set("showMedia", !Config.showMedia) }
         }
     }
 
     Group {
-        title: "Pencereler"
+        title: Lang.t("Pencereler")
         SettingRow {
-            label: "Köşeler"
+            label: Lang.t("Köşeler")
             sub: NiriConf.radius + " px"
             VSlider { implicitWidth: 260; from: 0; to: 24; stepSize: 1; value: NiriConf.radius; onMoved: v => NiriConf.set("radius", v) }
         }
         SettingRow {
-            label: "Aralık"
+            label: Lang.t("Aralık")
             sub: NiriConf.gaps + " px"
             VSlider { implicitWidth: 260; from: 0; to: 32; stepSize: 2; value: NiriConf.gaps; onMoved: v => NiriConf.set("gaps", v) }
         }
         SettingRow {
-            label: "Animasyonlar"
+            label: Lang.t("Animasyonlar")
             Toggle { checked: NiriConf.animations; onToggled: NiriConf.set("animations", !NiriConf.animations) }
         }
     }
@@ -198,7 +198,7 @@ ColumnLayout {
 
     // Sabitlenmiş uygulamalar
     Group {
-        title: "Yan panelde sabitlenenler"
+        title: Lang.t("Yan panelde sabitlenenler")
         Flow {
             Layout.fillWidth: true
             Layout.margins: 12
@@ -217,12 +217,12 @@ ColumnLayout {
                         anchors.centerIn: parent
                         spacing: 8
                         IconImage { anchors.verticalCenter: parent.verticalCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
-                        Text { anchors.verticalCenter: parent.verticalCenter; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: 13; font.weight: Font.Medium }
+                        Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
                         IconButton {
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24; implicitHeight: 24
                             radius: 8
-                            icon: "close"; iconSize: 15; iconColor: Theme.muted; tooltip: "Kaldır"
+                            icon: "close"; iconSize: 15; iconColor: Theme.muted; tooltip: Lang.t("Kaldır")
                             onClicked: Config.set("pinned", Config.pinned.filter(id => Apps.byId(id) !== pin.modelData))
                         }
                     }
@@ -235,7 +235,7 @@ ColumnLayout {
             Layout.rightMargin: 12
             Layout.bottomMargin: 12
             spacing: 8
-            Field { id: pinSearch; Layout.preferredWidth: 260; implicitHeight: 40; placeholder: "Eklemek için uygulama ara" }
+            Field { id: pinSearch; Layout.preferredWidth: 260; implicitHeight: 40; placeholder: Lang.t("Eklemek için uygulama ara") }
             Repeater {
                 model: pinSearch.text.length > 1 ? Apps.search(pinSearch.text).filter(e => !Apps.pinnedEntries.includes(e)).slice(0, 3) : []
                 delegate: PillButton {
@@ -243,7 +243,7 @@ ColumnLayout {
                     implicitHeight: 40
                     icon: "add"
                     label: modelData.name
-                    enabled: Config.pinned.length < 6
+                    enabled: Config.pinned.length < 12
                     onClicked: { Config.set("pinned", Config.pinned.concat([modelData.id.replace(/\.desktop$/, "")])); pinSearch.text = "" }
                 }
             }

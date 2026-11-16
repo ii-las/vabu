@@ -61,6 +61,12 @@ tools/         duvar kağıdı üreticisi
 
 Çevrimdışı regresyon testleri, yapılan güvenilirlik düzeltmeleri ve Fedora üzerinde doğrulanmayı bekleyen alanlar için [docs/RELIABILITY.md](docs/RELIABILITY.md) dosyasına bak. Firefox RPM olarak gelir; diğer varsayılan Flatpak uygulamaları ilk açılışta internet bağlantısıyla kurulur.
 
+## Masaüstü geliştirmeleri
+
+İlk açılış rehberi, sistem tepsisi, pencere araması (`Super+Tab`), uygulama sağ tık menüsü, adlandırılmış çalışma alanları, isteğe bağlı açılış uygulamaları, ekran profilleri, odak modu ve isteğe bağlı pano geçmişi (`Super+P`) eklendi. Ayarlar'a güç, tanılama/kurtarma, cihazlar, erişilebilirlik ve Türkçe/İngilizce arayüz seçenekleri gelir.
+
+Davranışlar ve gerçek Fedora üzerinde doğrulanmayı bekleyen alanlar [docs/DESKTOP_FEATURES.md](docs/DESKTOP_FEATURES.md) içinde açıklanır. Bu kaynak değişiklikleri gerçek ISO/donanım testinin yerine geçmez. Gelecekteki ISO üretimi için güvenilen anahtar özeti ve imzalı yayın kontrolleri [docs/ISO_TRUST.md](docs/ISO_TRUST.md) içinde anlatılır.
+
 ## Lisans
 
 MIT. Ayrıntılar için [LICENSE](LICENSE) dosyasına bak. Yazı tipleri SIL Open Font License ile dağıtılır.

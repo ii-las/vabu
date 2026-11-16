@@ -61,20 +61,20 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 4
-            Text {
+            Text { textFormat: Text.PlainText;
                 text: "Vabu " + (page.info.vabu || "")
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 24
+                font.pixelSize: Math.round((24) * Config.textScale)
                 font.weight: Font.DemiBold
                 font.letterSpacing: -0.3
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: "Fedora " + (page.info.fedora || "") + " tabanlı. Uygulamalar Fedora, RPM Fusion ve Flathub'dan gelir."
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 wrapMode: Text.Wrap
                 lineHeight: 1.2
             }
@@ -82,11 +82,11 @@ ColumnLayout {
     }
 
     Group {
-        title: "Bu bilgisayar"
+        title: Lang.t("Bu bilgisayar")
 
         // Bilgisayar adı (düzenlenebilir)
         SettingRow {
-            label: "Bilgisayar adı"
+            label: Lang.t("Bilgisayar adı")
             sub: page.editingHost ? "" : (page.info.host || "-")
             Field {
                 id: hostField
@@ -100,7 +100,7 @@ ColumnLayout {
                 id: saveHost
                 implicitHeight: 38
                 primary: page.editingHost
-                label: page.editingHost ? "Kaydet" : "Değiştir"
+                label: page.editingHost ? Lang.t("Kaydet") : Lang.t("Değiştir")
                 onClicked: {
                     if (page.editingHost && hostField.text.trim()) {
                         Quickshell.execDetached(["pkexec", "hostnamectl", "set-hostname", hostField.text.trim()])
@@ -120,16 +120,16 @@ ColumnLayout {
                 Layout.fillWidth: true
                 implicitHeight: Math.max(46, value.implicitHeight + 26)
                 Rectangle { x: 16; width: parent.width - 32; height: 1; color: Theme.line }
-                Text {
+                Text { textFormat: Text.PlainText;
                     x: 16
                     y: 14
                     width: 120
                     text: line.modelData[0]
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round((14) * Config.textScale)
                 }
-                Text {
+                Text { textFormat: Text.PlainText;
                     id: value
                     x: 152
                     y: 14
@@ -137,7 +137,7 @@ ColumnLayout {
                     text: line.modelData[1]
                     color: Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round((14) * Config.textScale)
                     lineHeight: 1.25
                     wrapMode: Text.Wrap
                 }
@@ -148,12 +148,12 @@ ColumnLayout {
     RowLayout {
         spacing: 8
         PillButton {
-            label: "Sistem bilgisini kopyala"
+            label: Lang.t("Sistem bilgisini kopyala")
             icon: "content_copy"
             onClicked: { Quickshell.execDetached(["wl-copy", page.asText()]); label = "Kopyalandı" }
         }
         PillButton {
-            label: "Hata bildir"
+            label: Lang.t("Hata bildir")
             icon: "bug_report"
             onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ii-las/vabu/issues"])
         }

@@ -50,6 +50,17 @@ Singleton {
         })
     }
     // Açıksa penceresine git, değilse başlat
+    function togglePin(entry) {
+        if (!entry) return
+        const exists = Config.pinned.some(id => byId(id) === entry)
+        Config.set("pinned", exists ? Config.pinned.filter(id => byId(id) !== entry) : Config.pinned.concat([entry.id.replace(/\.desktop$/, "")]).slice(0, 12))
+    }
+    function searchWindows(query) {
+        const q = query.trim().toLocaleLowerCase()
+        return Niri.windows.filter(w => !q || [w.title, w.app_id, nameFor(w.app_id, w.title)].join(" ").toLocaleLowerCase().includes(q))
+            .slice().sort((a,b) => Number(b.is_focused) - Number(a.is_focused)).slice(0, 8)
+            .map(w => ({ id: w.id, name: w.title || nameFor(w.app_id, w.title), summary: nameFor(w.app_id, w.title), icon: forWindow(w.app_id, w.title)?.icon || "application-x-executable" }))
+    }
     function open(entry) {
         const w = windowsOf(entry)[0]
         if (w) Niri.focusWindow(w.id)

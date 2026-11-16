@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Vabu Kurtarma
+Name[en]=Vabu Recovery
+Comment=Temel panel ve terminal ile kurtarma oturumu
+Exec=niri -c /usr/share/vabu/recovery/niri.kdl
+Type=Application
+DesktopNames=niri

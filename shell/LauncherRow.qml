@@ -11,10 +11,11 @@ Item {
     property bool selected: false
     signal activated()
     signal hovered()
+    signal contextRequested()
 
     readonly property bool isInstall: mode === "install"
     readonly property string state_: isInstall && item.key ? (Packages.states[item.key] ?? (item.installed ? "installed" : "")) : ""
-    readonly property string sub: mode === "search" ? (item.genericName || item.comment || "")
+    readonly property string sub: isInstall && (state_ === "installing" || state_ === "error") ? (Packages.messages[item.key] || "") : mode === "search" ? (item.genericName || item.comment || "")
         : mode === "command" ? (item.sub ?? "") : (item.summary || "")
 
     implicitHeight: 52
@@ -24,7 +25,8 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onPositionChanged: root.hovered()
-        onClicked: root.activated()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: event => event.button === Qt.RightButton && root.mode === "search" ? Ui.appMenu(root.item) : root.activated()
     }
 
     RowLayout {
@@ -40,7 +42,7 @@ Item {
             readonly property string pkgIcon: !root.isInstall || !root.item.icon ? ""
                 : root.item.icon.startsWith("/") ? "file://" + root.item.icon
                 : Quickshell.iconPath(root.item.icon, true)
-            readonly property string source: root.mode === "search" ? Quickshell.iconPath(root.item.icon, "application-x-executable") : pkgIcon
+            readonly property string source: (root.mode === "search" || root.mode === "windows") ? Quickshell.iconPath(root.item.icon, "application-x-executable") : pkgIcon
             IconImage {
                 id: appIcon
                 visible: parent.source !== "" && status !== Image.Error
@@ -62,21 +64,21 @@ Item {
             }
         }
 
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.maximumWidth: root.width * 0.5
             text: root.item.name ?? ""
             color: Theme.paper
             font.family: Theme.sans
-            font.pixelSize: 15
+            font.pixelSize: Math.round((15) * Config.textScale)
             font.weight: Font.Medium
             elide: Text.ElideRight
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.fillWidth: true
             text: root.sub
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 13
+            font.pixelSize: Math.round((13) * Config.textScale)
             elide: Text.ElideRight
         }
 
@@ -96,11 +98,11 @@ Item {
                     anchors.centerIn: parent
                     spacing: 6
                     Rectangle { width: 5; height: 5; radius: 2.5; color: src.info.color; anchors.verticalCenter: parent.verticalCenter }
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         text: src.info.label
                         color: Theme.soft
                         font.family: Theme.sans
-                        font.pixelSize: 12
+                        font.pixelSize: Math.round((12) * Config.textScale)
                         font.weight: Font.Medium
                     }
                 }
@@ -109,19 +111,19 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    enabled: root.state_ === ""
+                    enabled: !Packages.installing && (root.state_ === "" || root.state_ === "error")
                     onClicked: Packages.install(root.item, src.modelData)
                 }
             }
         }
 
         Spinner { visible: root.state_ === "installing"; size: 17 }
-        Text {
+        Text { textFormat: Text.PlainText;
             visible: root.isInstall && root.state_ !== ""
-            text: ({ "installed": "Kurulu", "done": "Kuruldu", "installing": "Kuruluyor", "error": "Kurulamadı" })[root.state_] ?? ""
+            text: ({ "installed": Lang.t("Kurulu"), "done": Lang.t("Kuruldu"), "installing": Lang.t("Kuruluyor"), "error": Lang.t("Kurulamadı") })[root.state_] ?? ""
             color: root.state_ === "error" ? Theme.danger : root.state_ === "done" ? Theme.ok : Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 12
+            font.pixelSize: Math.round((12) * Config.textScale)
             font.weight: Font.Medium
         }
 

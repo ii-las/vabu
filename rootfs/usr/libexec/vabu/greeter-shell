@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+qs -p /usr/share/vabu/shell/greeter.qml
+code=$?
+# greetd.launch exits quickshell successfully; the parent greeter must then exit.
+if [[ -n "${VABU_GREETER_STATUS:-}" && $code -eq 0 ]]; then
+    printf 'launched\n' > "$VABU_GREETER_STATUS"
+fi
+niri msg action quit --skip-confirmation >/dev/null 2>&1 || true
+exit "$code"

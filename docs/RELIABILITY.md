@@ -37,4 +37,4 @@ GitHub ISO işi gerekli kaynak commit'ini imaj tanımına yazar; Kiwi config.sh 
 - Gerçek PAM doğrulaması, kilit çökmesi, uyku/uyanma ve Secure Boot/MOK.
 - Calamares ile şifreli/şifresiz kurulum, ISO çıkarıldıktan sonra açılış; x86_64 ve aarch64.
 
-ISO tanımında RPM imza doğrulaması hâlâ kapalıdır. Güvenilen anahtarların Kiwi aşamasına aktarılması ve imzalı ISO yayın süreci tamamlanmadan bu dal kararlı/güvenlik onaylı sürüm olarak sunulmamalıdır. Quickshell/Qt özel API uyumu, tam sistem kurtarma, grafik greeter çökme kurtarması, kurulum klavyesinin oturuma aktarılması ve daha geniş donanım desteği ayrıca çalışılmalıdır.
+Sonraki masaüstü geliştirmeleriyle ISO tanımında RPM imza doğrulaması açılmıştır. Doğrulanmış COPR anahtar özeti olmadan derleme durur; imzalı kaynak doğrulaması olmadan sürüm yayınlanmaz. Bu akış bu bilgisayarda çalıştırılmamıştır. Ayrıntılar: [ISO_TRUST.md](ISO_TRUST.md). Masaüstü özellikleri ve kalan gerçek sistem testleri: [DESKTOP_FEATURES.md](DESKTOP_FEATURES.md). Otomatik tam sistem geri alma hâlâ devre dışıdır.

@@ -14,10 +14,11 @@ OverlayWindow {
     property string mode: "search"
     readonly property string query: input.text
     readonly property var modes: [
-        { k: "search",  label: "Ara",   hint: "Uygulama ara" },
-        { k: "install", label: "Kur",   hint: "Kurulacak uygulamanın adı" },
-        { k: "command", label: "Komut", hint: "Komut ara" },
-        { k: "calc",    label: "Hesap", hint: "12 × 8" }
+        { k: "search",  label: Lang.t("Ara"),   hint: Lang.t("Uygulama ara") },
+        { k: "windows", label: Lang.t("Pencereler"), hint: Lang.t("Açık pencere ara") },
+        { k: "install", label: Lang.t("Kur"),   hint: Lang.t("Kurulacak uygulamanın adı") },
+        { k: "command", label: Lang.t("Komut"), hint: Lang.t("Komut ara") },
+        { k: "calc",    label: Lang.t("Hesap"), hint: "12 × 8" }
     ]
     readonly property var modeInfo: modes.find(m => m.k === mode) ?? modes[0]
 
@@ -27,18 +28,18 @@ OverlayWindow {
     }
 
     readonly property var commands: [
-        { icon: "system_update_alt",  name: "Sistemi güncelle",    sub: "",                                   run: () => Ui.terminal(["vabu", "update"]) },
-        { icon: "memory",             name: "Sürücüler",           sub: "",                                   run: () => Ui.settings("drivers") },
-        { icon: "history",            name: "Geri alma noktaları", sub: "",                                   run: () => Ui.settings("updates") },
-        { icon: "screenshot_region",  name: "Ekran görüntüsü",     sub: "Print",                              run: () => Ui.screenshot() },
-        { icon: "overview_key",       name: "Genel bakış",         sub: "Super + O",                          run: () => Niri.toggleOverview() },
-        { icon: "keyboard",           name: "Kısayollar",          sub: "Super + Shift + /",                  run: () => { Ui.shortcutsOpen = true } },
-        { icon: "settings",           name: "Ayarlar",             sub: "Super + ,",                          run: () => Ui.settings() },
-        { icon: "lock",               name: "Ekranı kilitle",      sub: "Super + Alt + L",                    run: () => Ui.lock() },
-        { icon: "bedtime",            name: "Uyku",                sub: "",                                   run: () => Ui.run(["systemctl", "suspend"]) },
-        { icon: "logout",             name: "Oturumu kapat",       sub: "",                                   run: () => Niri.quit() },
-        { icon: "restart_alt",        name: "Yeniden başlat",      sub: "",                                   run: () => Ui.run(["systemctl", "reboot"]) },
-        { icon: "power_settings_new", name: "Kapat",               sub: "",                                   run: () => Ui.run(["systemctl", "poweroff"]) }
+        { icon: "system_update_alt",  name: Lang.t("Sistemi güncelle"),    sub: "",                                   run: () => Ui.terminal(["vabu", "update"]) },
+        { icon: "memory",             name: Lang.t("Sürücüler"),           sub: "",                                   run: () => Ui.settings("drivers") },
+        { icon: "history",            name: Lang.t("Geri alma noktaları"), sub: "",                                   run: () => Ui.settings("updates") },
+        { icon: "screenshot_region",  name: Lang.t("Ekran görüntüsü"),     sub: "Print",                              run: () => Ui.screenshot() },
+        { icon: "overview_key",       name: Lang.t("Genel bakış"),         sub: "Super + O",                          run: () => Niri.toggleOverview() },
+        { icon: "keyboard",           name: Lang.t("Kısayollar"),          sub: "Super + Shift + /",                  run: () => { Ui.shortcutsOpen = true } },
+        { icon: "settings",           name: Lang.t("Ayarlar"),             sub: "Super + ,",                          run: () => Ui.settings() },
+        { icon: "lock",               name: Lang.t("Ekranı kilitle"),      sub: "Super + Alt + L",                    run: () => Ui.lock() },
+        { icon: "bedtime",            name: Lang.t("Uyku"),                sub: "",                                   run: () => Ui.run(["systemctl", "suspend"]) },
+        { icon: "logout",             name: Lang.t("Oturumu kapat"),       sub: "",                                   run: () => Niri.quit() },
+        { icon: "restart_alt",        name: Lang.t("Yeniden başlat"),      sub: "",                                   run: () => Ui.run(["systemctl", "reboot"]) },
+        { icon: "power_settings_new", name: Lang.t("Kapat"),               sub: "",                                   run: () => Ui.run(["systemctl", "poweroff"]) }
     ]
 
     readonly property var calcResult: {
@@ -53,6 +54,7 @@ OverlayWindow {
 
     readonly property var items: {
         if (mode === "search") return Apps.search(query)
+        if (mode === "windows") return Apps.searchWindows(query)
         if (mode === "command") {
             const q = query.toLowerCase()
             return commands.filter(c => !q || c.name.toLowerCase().includes(q) || c.sub.toLowerCase().includes(q)).slice(0, 8)
@@ -86,6 +88,8 @@ OverlayWindow {
             return
         } else if (mode === "search") {
             Apps.launch(it)
+        } else if (mode === "windows") {
+            Niri.focusWindow(it.id)
         } else if (mode === "command") {
             Ui.launcherOpen = false
             it.run()
@@ -108,7 +112,7 @@ OverlayWindow {
         height: content.implicitHeight
         Behavior on height {
             enabled: root.shown > 0.9
-            NumberAnimation { duration: 240; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+            NumberAnimation { duration: Config.reducedMotion ? 0 : 240; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
         }
 
         opacity: Math.min(1, root.shown * 1.5)
@@ -144,13 +148,13 @@ OverlayWindow {
                         implicitWidth: modeLabel.implicitWidth + 20
                         radius: 9
                         color: Theme.accent
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             id: modeLabel
                             anchors.centerIn: parent
                             text: root.modeInfo.label
                             color: Theme.accentInk
                             font.family: Theme.sans
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round((13) * Config.textScale)
                             font.weight: Font.DemiBold
                         }
                     }
@@ -160,7 +164,7 @@ OverlayWindow {
                         Layout.fillWidth: true
                         color: Theme.paper
                         font.family: Theme.sans
-                        font.pixelSize: 20
+                        font.pixelSize: Math.round((20) * Config.textScale)
                         selectionColor: Theme.accent
                         selectedTextColor: Theme.accentInk
                         clip: true
@@ -172,7 +176,7 @@ OverlayWindow {
                             root.mode = p === "kur:" ? "install" : p === ">" ? "command" : "calc"
                             text = text.slice(m[0].length)
                         }
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             visible: !input.text
                             text: root.modeInfo.hint
                             color: Theme.faint
@@ -211,11 +215,11 @@ OverlayWindow {
                     Layout.topMargin: 16
                     Layout.bottomMargin: 16
                     spacing: 2
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         text: root.calcResult !== null ? String(root.calcResult).replace(".", ",") : "Bir işlem yaz"
                         color: root.calcResult !== null ? Theme.paper : Theme.faint
                         font.family: Theme.sans
-                        font.pixelSize: root.calcResult !== null ? 38 : 15
+                        font.pixelSize: Math.round((root.calcResult !== null ? 38 : 15) * Config.textScale)
                         font.weight: root.calcResult !== null ? Font.Light : Font.Normal
                         font.features: ({ "tnum": 1 })
                     }
@@ -237,7 +241,7 @@ OverlayWindow {
                         height: 52
                         radius: Theme.radiusRow
                         color: Theme.well
-                        Behavior on y { NumberAnimation { duration: 130; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
+                        Behavior on y { NumberAnimation { duration: Config.reducedMotion ? 0 : 130; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
                     }
 
                     Item {
@@ -245,14 +249,14 @@ OverlayWindow {
                         readonly property bool on: root.mode === "search" && !root.query && root.items.length > 0
                         width: parent.width
                         height: on ? 30 : 0
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             visible: heading.on
                             x: 12
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "Sık kullanılanlar"
+                            text: Lang.t("Sık kullanılanlar")
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round((12) * Config.textScale)
                             font.weight: Font.Medium
                         }
                     }
@@ -277,7 +281,7 @@ OverlayWindow {
                             }
                         }
 
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             visible: root.items.length === 0
                             width: parent.width
                             height: 64
@@ -285,11 +289,11 @@ OverlayWindow {
                             verticalAlignment: Text.AlignVCenter
                             text: root.mode === "install"
                                 ? (root.query.length < 2 ? "Fedora, RPM Fusion ve Flathub'da aranır"
-                                    : Packages.busy ? "Aranıyor…" : "Bir şey bulunamadı")
-                                : "Bir şey bulunamadı"
+                                    : Packages.busy ? Lang.t("Aranıyor…") : Lang.t("Bir şey bulunamadı"))
+                                : Lang.t("Bir şey bulunamadı")
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round((13) * Config.textScale)
                         }
                     }
                 }
@@ -314,13 +318,13 @@ OverlayWindow {
                             implicitWidth: tabLabel.implicitWidth + 20
                             radius: 9
                             color: isOn ? Theme.well : (tabMouse.containsMouse ? Theme.hover : "transparent")
-                            Text {
+                            Text { textFormat: Text.PlainText;
                                 id: tabLabel
                                 anchors.centerIn: parent
                                 text: tab.modelData.label
                                 color: tab.isOn ? Theme.paper : Theme.muted
                                 font.family: Theme.sans
-                                font.pixelSize: 12
+                                font.pixelSize: Math.round((12) * Config.textScale)
                                 font.weight: tab.isOn ? Font.DemiBold : Font.Medium
                             }
                             MouseArea {

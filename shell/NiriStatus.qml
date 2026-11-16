@@ -14,7 +14,7 @@ Rectangle {
         anchors.fill: parent
         anchors.margins: 14
         spacing: 8
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.fillWidth: true
             wrapMode: Text.Wrap
             text: NiriConf.status === "manual"
@@ -22,21 +22,21 @@ Rectangle {
                 : "Bu ayar niri tarafından kabul edilmedi, uygulanmadı. Oturumun etkilenmedi."
             color: Theme.paper
             font.family: Theme.sans
-            font.pixelSize: 14
+            font.pixelSize: Math.round((14) * Config.textScale)
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.fillWidth: true
             visible: NiriConf.lastError !== "" && NiriConf.status === "invalid"
             text: NiriConf.lastError
             color: Theme.soft
             font.family: Theme.mono
-            font.pixelSize: 11
+            font.pixelSize: Math.round((11) * Config.textScale)
             wrapMode: Text.Wrap
         }
         PillButton {
             visible: NiriConf.status === "manual"
             implicitHeight: 40
-            label: "Vabu yönetsin (eskisi yedeklenir)"
+            label: Lang.t("Vabu yönetsin (eskisi yedeklenir)")
             onClicked: NiriConf.apply(true)
         }
     }

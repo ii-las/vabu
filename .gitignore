@@ -7,3 +7,6 @@ out/
 design/
 docs/HAZIRLIK.md
 .claude/
+
+# ISO build-container trust material (generated)
+iso/keys/

@@ -23,7 +23,7 @@ Card {
             color: searchMouse.pressed ? Theme.pressed : searchMouse.containsMouse ? Theme.hover : Theme.well
             Behavior on color { ColorAnimation { duration: Theme.fast } }
             Accessible.role: Accessible.Button
-            Accessible.name: "Ara ve başlat"
+            Accessible.name: Lang.t("Ara ve başlat")
 
             RowLayout {
                 anchors.fill: parent
@@ -31,12 +31,12 @@ Card {
                 anchors.rightMargin: 12
                 spacing: 10
                 Icon { name: "search"; size: 19; color: Theme.soft }
-                Text {
+                Text { textFormat: Text.PlainText;
                     Layout.fillWidth: true
-                    text: "Ara"
+                    text: Lang.t("Ara")
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round((14) * Config.textScale)
                 }
             }
             MouseArea {
@@ -49,14 +49,14 @@ Card {
         }
 
         // Sabitlenenler (Ayarlar > Görünüm'den düzenlenir)
-        Row {
+        Flow {
             id: dock
             Layout.fillWidth: true
             visible: Apps.pinnedEntries.length > 0
             readonly property real cell: Math.floor(width / 6)
 
             Repeater {
-                model: Apps.pinnedEntries.slice(0, 6)
+                model: Apps.pinnedEntries.slice(0, 12)
                 delegate: Item {
                     id: app
                     required property var modelData
@@ -97,9 +97,9 @@ Card {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                        acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                         // orta tuş: açık olsa da yeni pencere
-                        onClicked: e => e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : Apps.open(app.modelData)
+                        onClicked: e => e.button === Qt.RightButton ? Ui.appMenu(app.modelData) : e.button === Qt.MiddleButton ? Apps.launch(app.modelData) : Apps.open(app.modelData)
                     }
                 }
             }

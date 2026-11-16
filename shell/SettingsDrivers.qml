@@ -12,6 +12,7 @@ ColumnLayout {
 
     function refresh() { loading = true; status.running = true }
     Component.onCompleted: refresh()
+    Timer { interval: 12000; running: true; repeat: true; onTriggered: if (!page.loading) page.refresh() }
 
     Process {
         id: status
@@ -28,16 +29,16 @@ ColumnLayout {
 
     readonly property string nv: st ? st.nvidia : "none"
     readonly property var nvText: ({
-        "missing": { title: "Önerilen sürücü kurulu değil", body: "Kart şu an açık kaynak sürücüyle (nouveau) çalışıyor. Oyun, video hızlandırma ve güç yönetimi için NVIDIA sürücüsünü kur.", btn: "Sürücüyü kur", kind: "warn" },
-        "installed-inactive": { title: "Sürücü etkin değil", body: "Paket kurulu, fakat çekirdek modülü yüklenmedi. Yeniden başlatma, akmods derlemesi ve Secure Boot/MOK durumunu denetle.", btn: "", kind: "warn" },
-        "active": { title: "NVIDIA sürücüsü etkin", body: "Kart tam performansla çalışıyor. Çekirdek güncellemelerinde sürücü kendiliğinden yeniden derlenir.", btn: "", kind: "ok" }
+        "missing": { title: Lang.t("Önerilen sürücü kurulu değil"), body: Lang.t("NVIDIA donanımı algılandı; önerilen modül etkin değil. Kurulumdan önce kartının sürücü uyumluluğunu denetle."), btn: Lang.t("Sürücüyü kur"), kind: "warn" },
+        "installed-inactive": { title: Lang.t("Sürücü etkin değil"), body: Lang.t("Paket kurulu, fakat çekirdek modülü yüklenmedi. Yeniden başlatma, akmods derlemesi ve Secure Boot/MOK durumunu denetle."), btn: "", kind: "warn" },
+        "active": { title: Lang.t("NVIDIA sürücüsü etkin"), body: Lang.t("NVIDIA çekirdek modülü yüklü. Güncellemeden sonra sürücü durumunu yeniden denetleyebilirsin."), btn: "", kind: "ok" }
     })
 
     RowLayout {
         visible: page.loading
         spacing: 10
         Spinner { size: 18 }
-        Text { text: "Donanım denetleniyor"; color: Theme.muted; font.family: Theme.sans; font.pixelSize: 14 }
+        Text { textFormat: Text.PlainText; text: Lang.t("Donanım denetleniyor"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale)}
     }
 
     // NVIDIA kartı
@@ -68,12 +69,12 @@ ColumnLayout {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 3
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         Layout.fillWidth: true
                         text: (page.st?.gpus ?? []).find(g => /nvidia/i.test(g)) ?? "NVIDIA ekran kartı"
-                        color: Theme.paper; font.family: Theme.sans; font.pixelSize: 16; font.weight: Font.DemiBold; elide: Text.ElideRight
+                        color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((16) * Config.textScale); font.weight: Font.DemiBold; elide: Text.ElideRight
                     }
-                    Text { text: page.nvText[page.nv]?.title ?? ""; color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13 }
+                    Text { textFormat: Text.PlainText; text: page.nvText[page.nv]?.title ?? ""; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale)}
                 }
                 PillButton {
                     visible: (page.nvText[page.nv]?.btn ?? "") !== ""
@@ -82,10 +83,10 @@ ColumnLayout {
                     onClicked: page.run("nvidia")
                 }
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: page.nvText[page.nv]?.body ?? ""
-                color: Theme.soft; font.family: Theme.sans; font.pixelSize: 13; wrapMode: Text.Wrap; lineHeight: 1.25
+                color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); wrapMode: Text.Wrap; lineHeight: 1.25
             }
             Flow {
                 Layout.fillWidth: true
@@ -99,7 +100,7 @@ ColumnLayout {
 
     Group {
         visible: !page.loading
-        title: "Donanım"
+        title: Lang.t("Donanım")
 
         Repeater {
             model: (page.st?.gpus ?? []).filter(g => !/nvidia/i.test(g))
@@ -107,33 +108,33 @@ ColumnLayout {
                 required property var modelData
                 label: modelData
                 sub: "Mesa"
-                Chip { text: "Hazır"; kind: "ok" }
+                Chip { text: Lang.t("Hazır"); kind: "ok" }
             }
         }
         SettingRow {
-            label: "Medya codec'leri"
+            label: Lang.t("Medya codec'leri")
             sub: ""
-            Chip { visible: page.st?.codecs ?? false; text: "Kurulu"; kind: "ok" }
-            PillButton { visible: !(page.st?.codecs ?? true); implicitHeight: 36; primary: true; label: "Kur"; onClicked: page.run("codecs") }
+            Chip { visible: page.st?.codecs ?? false; text: Lang.t("Kurulu"); kind: "ok" }
+            PillButton { visible: !(page.st?.codecs ?? true); implicitHeight: 36; primary: true; label: Lang.t("Kur"); onClicked: page.run("codecs") }
         }
         SettingRow {
             visible: page.st?.amd ?? false
-            label: "AMD donanım video hızlandırma"
+            label: Lang.t("AMD donanım video hızlandırma")
             sub: ""
-            PillButton { implicitHeight: 36; label: "Kur"; onClicked: page.run("amd") }
+            PillButton { implicitHeight: 36; label: Lang.t("Kur"); onClicked: page.run("amd") }
         }
         SettingRow {
             visible: page.st?.intel ?? false
-            label: "Intel donanım video hızlandırma"
+            label: Lang.t("Intel donanım video hızlandırma")
             sub: ""
-            PillButton { implicitHeight: 36; label: "Kur"; onClicked: page.run("intel") }
+            PillButton { implicitHeight: 36; label: Lang.t("Kur"); onClicked: page.run("intel") }
         }
     }
 
     RowLayout {
         visible: !page.loading
         spacing: 8
-        PillButton { label: "Önerilen her şeyi kur"; primary: true; onClicked: page.run("auto") }
-        PillButton { label: "Yeniden denetle"; icon: "refresh"; onClicked: page.refresh() }
+        PillButton { label: Lang.t("Önerilen her şeyi kur"); primary: true; onClicked: page.run("auto") }
+        PillButton { label: Lang.t("Yeniden denetle"); icon: "refresh"; onClicked: page.refresh() }
     }
 }

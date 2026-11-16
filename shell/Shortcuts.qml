@@ -18,10 +18,10 @@ OverlayWindow {
             ["Pencereler ve alanlar arasında", ["Super", "↑", "↓"]],
             ["Çalışma alanına git", ["Super", "1…9"]],
             ["Pencere değiştir", ["Alt", "Tab"]],
-            ["Genel bakış", ["Super", "O"]],
+            [Lang.t("Genel bakış"), ["Super", "O"]],
             ["Ekranlar arasında", ["Super", "Ctrl", "←", "→"]]
         ]},
-        { title: "Pencereler", items: [
+        { title: Lang.t("Pencereler"), items: [
             ["Taşı", ["Super", "Shift", "yön"]],
             ["Başka alana taşı", ["Super", "Shift", "1…9"]],
             ["Genişliği değiştir", ["Super", "R"]],
@@ -29,18 +29,18 @@ OverlayWindow {
             ["Tam ekran", ["Super", "Shift", "F"]],
             ["Yüzen pencere", ["Super", "V"]],
             ["Kolona al ya da çıkar", ["Super", "[", "]"]],
-            ["Kapat", ["Super", "Q"]]
+            [Lang.t("Kapat"), ["Super", "Q"]]
         ]},
         { title: "Vabu", items: [
-            ["Ara ve başlat", ["Super", "Boşluk"]],
-            ["Uygulama kur", ["Super", "I"]],
+            [Lang.t("Ara ve başlat"), ["Super", "Boşluk"]],
+            [Lang.t("Uygulama kur"), ["Super", "I"]],
             ["Terminal", ["Super", "⏎"]],
-            ["Dosyalar", ["Super", "E"]],
-            ["Kontrol merkezi", ["Super", "A"]],
-            ["Bildirimler", ["Super", "N"]],
-            ["Ayarlar", ["Super", ","]],
-            ["Ekranı kilitle", ["Super", "Alt", "L"]],
-            ["Ekran görüntüsü", ["Print"]]
+            [Lang.t("Dosyalar"), ["Super", "E"]],
+            [Lang.t("Kontrol merkezi"), ["Super", "A"]],
+            [Lang.t("Bildirimler"), ["Super", "N"]],
+            [Lang.t("Ayarlar"), ["Super", ","]],
+            [Lang.t("Ekranı kilitle"), ["Super", "Alt", "L"]],
+            [Lang.t("Ekran görüntüsü"), ["Print"]]
         ]}
     ]
 
@@ -79,16 +79,16 @@ OverlayWindow {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 10
-                Text {
+                Text { textFormat: Text.PlainText;
                     Layout.fillWidth: true
-                    text: "Kısayollar"
+                    text: Lang.t("Kısayollar")
                     color: Theme.paper
                     font.family: Theme.sans
-                    font.pixelSize: 22
+                    font.pixelSize: Math.round((22) * Config.textScale)
                     font.weight: Font.DemiBold
                     font.letterSpacing: -0.3
                 }
-                IconButton { Layout.leftMargin: 10; icon: "close"; tooltip: "Kapat"; onClicked: Ui.shortcutsOpen = false }
+                IconButton { Layout.leftMargin: 10; icon: "close"; tooltip: Lang.t("Kapat"); onClicked: Ui.shortcutsOpen = false }
             }
 
             RowLayout {
@@ -103,12 +103,12 @@ OverlayWindow {
                         Layout.preferredWidth: 1
                         Layout.alignment: Qt.AlignTop
                         spacing: 0
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             Layout.bottomMargin: 10
                             text: group.modelData.title
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round((13) * Config.textScale)
                             font.weight: Font.Medium
                         }
                         DashLine { Layout.fillWidth: true }
@@ -123,12 +123,12 @@ OverlayWindow {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 48
                                     spacing: 5
-                                    Text {
+                                    Text { textFormat: Text.PlainText;
                                         Layout.fillWidth: true
                                         text: line.modelData[0]
                                         color: Theme.paper
                                         font.family: Theme.sans
-                                        font.pixelSize: 14
+                                        font.pixelSize: Math.round((14) * Config.textScale)
                                         elide: Text.ElideRight
                                     }
                                     Repeater {

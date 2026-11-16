@@ -7,14 +7,14 @@ ColumnLayout {
     spacing: 6
 
     PanelHeader {
-        title: "Bildirimler"
-        sub: Notifs.dnd ? "Rahatsız etme açık" : Notifs.count === 0 ? "" : Notifs.count + " bildirim"
+        title: Lang.t("Bildirimler")
+        sub: Notifs.effectiveDnd ? "Rahatsız etme açık" : Notifs.count === 0 ? "" : Notifs.count + " bildirim"
         IconButton {
             implicitWidth: 34; implicitHeight: 34
-            icon: Notifs.dnd ? "notifications_off" : "notifications"
+            icon: Notifs.effectiveDnd ? "notifications_off" : "notifications"
             iconSize: 19
-            active: Notifs.dnd
-            tooltip: "Rahatsız etme"
+            active: Notifs.effectiveDnd
+            tooltip: Lang.t("Rahatsız etme")
             onClicked: Notifs.dnd = !Notifs.dnd
         }
         IconButton {
@@ -23,7 +23,7 @@ ColumnLayout {
             icon: "clear_all"
             iconSize: 20
             iconColor: Theme.soft
-            tooltip: "Tümünü temizle"
+            tooltip: Lang.t("Tümünü temizle")
             onClicked: Notifs.clearAll()
         }
     }
@@ -65,12 +65,12 @@ ColumnLayout {
             weight: 200
             color: Theme.faint
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             Layout.alignment: Qt.AlignHCenter
-            text: "Yeni bildirim yok"
+            text: Lang.t("Yeni bildirim yok")
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: 13
+            font.pixelSize: Math.round((13) * Config.textScale)
         }
     }
 }

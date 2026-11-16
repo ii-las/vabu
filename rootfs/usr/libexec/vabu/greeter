@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-# greetd'nin çalıştırdığı giriş ekranı: Vabu Shell greeter'ı, yoksa metin tabanlı tuigreet.
+# A failed graphical greeter yields a functional text login, not a restart loop.
 if [[ -e /usr/share/vabu/shell/greeter.qml ]] && command -v qs >/dev/null && command -v niri >/dev/null; then
-    exec niri -c /usr/share/vabu/greeter/niri.kdl
+    state="$(mktemp -d)" || exit 1
+    trap 'rm -rf -- "$state"' EXIT
+    export VABU_GREETER_STATUS="$state/status"
+    niri -c /usr/share/vabu/greeter/niri.kdl
+    if [[ -f "$VABU_GREETER_STATUS" ]] && grep -qx launched "$VABU_GREETER_STATUS"; then
+        exit 0
+    fi
+    rm -rf -- "$state"
+    trap - EXIT
+    unset VABU_GREETER_STATUS
 fi
 exec tuigreet --time --remember --remember-session --asterisks --cmd niri-session

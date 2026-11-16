@@ -53,19 +53,19 @@ ColumnLayout {
                 value: level.muted ? 0 : level.value
                 onMoved: v => { if (level.node?.audio) { level.node.audio.muted = false; level.node.audio.volume = v } }
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.preferredWidth: 28
                 horizontalAlignment: Text.AlignRight
                 text: level.muted ? "0" : Math.round(level.value * 100)
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 font.features: ({ "tnum": 1 })
             }
         }
     }
 
-    PanelHeader { title: "Ses" }
+    PanelHeader { title: Lang.t("Ses") }
 
     Level { node: root.sink }
     Repeater {
@@ -79,14 +79,14 @@ ColumnLayout {
         }
     }
 
-    Text {
+    Text { textFormat: Text.PlainText;
         Layout.leftMargin: 6
         Layout.topMargin: 12
         Layout.bottomMargin: 4
-        text: "Mikrofon"
+        text: Lang.t("Mikrofon")
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: 12
+        font.pixelSize: Math.round((12) * Config.textScale)
         font.weight: Font.Medium
     }
     Level { node: root.source; icon: "mic"; mutedIcon: "mic_off" }
@@ -104,7 +104,7 @@ ColumnLayout {
     DashLine { Layout.fillWidth: true; Layout.topMargin: 8; Layout.bottomMargin: 4 }
     ListRow {
         icon: "settings"
-        label: "Ses ayarları"
+        label: Lang.t("Ses ayarları")
         iconColor: Theme.soft
         trailing: "chevron_right"
         onClicked: Ui.settings("sound")

@@ -40,19 +40,24 @@ Rectangle {
             delegate: Item {
                 required property var modelData
                 required property int index
+                activeFocusOnTab: true
+                Keys.onReturnPressed: root.picked(index)
+                Keys.onSpacePressed: root.picked(index)
+                Keys.onLeftPressed: root.picked(Math.max(0, index - 1))
+                Keys.onRightPressed: root.picked(Math.min(root.options.length - 1, index + 1))
                 readonly property bool isOn: root.currentIndex === index
                 width: root.stretch ? (root.width - 8) / Math.max(1, root.options.length) : label.implicitWidth + 28
                 height: root.height - 8
                 Accessible.role: Accessible.RadioButton
                 Accessible.checked: isOn
                 Accessible.name: modelData
-                Text {
+                Text { textFormat: Text.PlainText;
                     id: label
                     anchors.centerIn: parent
                     text: parent.modelData
-                    color: parent.isOn ? Theme.paper : Theme.soft
+                    color: parent.activeFocus ? Theme.accent : parent.isOn ? Theme.paper : Theme.soft
                     font.family: Theme.sans
-                    font.pixelSize: 13
+                    font.pixelSize: Math.round((13) * Config.textScale)
                     font.weight: parent.isOn ? Font.DemiBold : Font.Normal
                     font.features: root.mono ? { "tnum": 1 } : {}
                     Behavior on color { ColorAnimation { duration: Theme.state } }

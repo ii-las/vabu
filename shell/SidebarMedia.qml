@@ -44,21 +44,21 @@ Card {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: root.player?.trackTitle || "Bilinmeyen parça"
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: root.player?.trackArtist || root.player?.identity || ""
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: 12
+                font.pixelSize: Math.round((12) * Config.textScale)
                 elide: Text.ElideRight
             }
         }
@@ -78,7 +78,7 @@ Card {
             iconSize: 22
             filled: true
             iconColor: Theme.soft
-            tooltip: "Sonraki"
+            tooltip: Lang.t("Sonraki")
             onClicked: root.player?.next()
         }
     }
@@ -98,7 +98,7 @@ Card {
             height: 2
             radius: 1
             color: Theme.alpha(Theme.paper, 0.55)
-            Behavior on width { NumberAnimation { duration: 900 } }
+            Behavior on width { NumberAnimation { duration: Config.reducedMotion ? 0 : 900 } }
         }
     }
 }

@@ -38,13 +38,16 @@ Rectangle {
     RowLayout {
         id: row
         anchors.centerIn: parent
+        width: Math.min(implicitWidth, Math.max(0, root.width - 32))
         spacing: 8
         Icon { visible: root.icon !== ""; name: root.icon; size: 18; color: root.primary ? Theme.accentInk : Theme.paper }
-        Text {
+        Text { textFormat: Text.PlainText;
+            Layout.fillWidth: true
+            elide: Text.ElideRight
             text: root.label
             color: root.primary ? Theme.accentInk : Theme.paper
             font.family: Theme.sans
-            font.pixelSize: 14
+            font.pixelSize: Math.round((14) * Config.textScale)
             font.weight: root.primary ? Font.DemiBold : Font.Medium
         }
     }

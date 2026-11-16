@@ -19,9 +19,9 @@ Singleton {
     readonly property var connected: devices.filter(d => d.connected)
 
     readonly property string icon: !available || !isOn ? "bluetooth_disabled" : connected.length ? "bluetooth_connected" : "bluetooth"
-    readonly property string label: !available ? "Yok" : !isOn ? "Kapalı"
+    readonly property string label: !available ? "Yok" : !isOn ? Lang.t("Kapalı")
         : connected.length === 1 ? connected[0].name
-        : connected.length > 1 ? connected.length + " cihaz" : "Açık"
+        : connected.length > 1 ? connected.length + " cihaz" : Lang.t("Açık")
 
     function setOn(v) { if (adapter) adapter.enabled = v }
     function setDiscovering(v) { if (adapter && adapter.enabled) adapter.discovering = v }
@@ -40,6 +40,6 @@ Singleton {
     function activate(d) {
         if (d.connected) d.disconnect()
         else if (d.paired) d.connect()
-        else { d.trusted = true; d.pair() }
+        else Quickshell.execDetached(["blueman-manager"])
     }
 }

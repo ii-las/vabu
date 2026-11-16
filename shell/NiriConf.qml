@@ -6,15 +6,16 @@ import Quickshell.Io
 Singleton {
     id: root
 
+    property var systemKeymap: ({})
     property var values: ({})
     // ok | manual (dosya elle düzenlenmiş) | invalid | busy
     property string status: "ok"
     property string lastError: ""
     property bool ready: false          // niri.json okundu (ya da yok)
 
-    readonly property string xkbLayout: values.xkbLayout ?? "us,tr"
-    readonly property string xkbVariant: values.xkbVariant ?? ""
-    readonly property string xkbOptions: values.xkbOptions ?? "grp:alt_shift_toggle"
+    readonly property string xkbLayout: values.xkbLayout ?? (systemKeymap.layout || "us")
+    readonly property string xkbVariant: values.xkbVariant ?? (systemKeymap.variant || "")
+    readonly property string xkbOptions: values.xkbOptions ?? (systemKeymap.options || "")
     readonly property bool naturalScroll: values.naturalScroll ?? true
     readonly property int gaps: values.gaps ?? 12
     readonly property int radius: values.radius ?? 14
@@ -50,6 +51,8 @@ Singleton {
             root.lastError = code === 0 ? "" : err.text.trim()
         }
     }
+
+    Process { running: true; command: ["/usr/libexec/vabu/desktop-tools", "keymap"]; stdout: StdioCollector { onStreamFinished: { try { root.systemKeymap = JSON.parse(text) } catch(e) {} } } }
 
     FileView {
         id: file

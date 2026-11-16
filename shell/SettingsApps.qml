@@ -45,20 +45,20 @@ ColumnLayout {
     }
 
     Group {
-        title: "Uygulama kaynakları"
+        title: Lang.t("Uygulama kaynakları")
         SettingRow {
             label: "Fedora"
-            Chip { text: "Her zaman açık"; kind: "ok" }
+            Chip { text: Lang.t("Her zaman açık"); kind: "ok" }
         }
         SettingRow {
-            label: "RPM Fusion (özgür)"
+            label: Lang.t("RPM Fusion (özgür)")
             Toggle {
                 checked: page.repoOn["rpmfusion-free"] ?? false
                 onToggled: page.setRepos(["rpmfusion-free", "rpmfusion-free-updates"], !checked)
             }
         }
         SettingRow {
-            label: "RPM Fusion (özgür olmayan)"
+            label: Lang.t("RPM Fusion (özgür olmayan)")
             Toggle {
                 checked: page.repoOn["rpmfusion-nonfree"] ?? false
                 onToggled: page.setRepos(["rpmfusion-nonfree", "rpmfusion-nonfree-updates"], !checked)
@@ -106,31 +106,31 @@ ColumnLayout {
                 row.current = id
             }
         }
-        Text {
+        Text { textFormat: Text.PlainText;
             visible: row.options.length <= 1
             text: row.options[0]?.name ?? "-"
-            color: Theme.soft; font.family: Theme.sans; font.pixelSize: 14
+            color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale)
         }
     }
 
     property var defaults: [defWeb, defFiles, defImage, defVideo, defMusic, defText, defPdf]
     Group {
-        title: "Varsayılan uygulamalar"
-        DefaultApp { id: defWeb;   label: "Web tarayıcı";  mimes: ["x-scheme-handler/https", "x-scheme-handler/http", "text/html"] }
-        DefaultApp { id: defFiles; label: "Dosyalar";      mimes: ["inode/directory"] }
-        DefaultApp { id: defImage; label: "Resimler";      mimes: ["image/png", "image/jpeg", "image/webp"] }
-        DefaultApp { id: defVideo; label: "Videolar";      mimes: ["video/mp4", "video/x-matroska", "video/webm"] }
-        DefaultApp { id: defMusic; label: "Müzik";         mimes: ["audio/mpeg", "audio/flac", "audio/ogg"] }
-        DefaultApp { id: defText; label: "Metin";         mimes: ["text/plain"] }
+        title: Lang.t("Varsayılan uygulamalar")
+        DefaultApp { id: defWeb;   label: Lang.t("Web tarayıcı");  mimes: ["x-scheme-handler/https", "x-scheme-handler/http", "text/html"] }
+        DefaultApp { id: defFiles; label: Lang.t("Dosyalar");      mimes: ["inode/directory"] }
+        DefaultApp { id: defImage; label: Lang.t("Resimler");      mimes: ["image/png", "image/jpeg", "image/webp"] }
+        DefaultApp { id: defVideo; label: Lang.t("Videolar");      mimes: ["video/mp4", "video/x-matroska", "video/webm"] }
+        DefaultApp { id: defMusic; label: Lang.t("Müzik");         mimes: ["audio/mpeg", "audio/flac", "audio/ogg"] }
+        DefaultApp { id: defText; label: Lang.t("Metin");         mimes: ["text/plain"] }
         DefaultApp { id: defPdf;   label: "PDF";           mimes: ["application/pdf"] }
     }
 
     RowLayout {
         spacing: 10
-        PillButton { label: "Uygulama kur"; icon: "download"; primary: true; onClicked: Ui.run(["vabu-launcher", "--install"]) }
+        PillButton { label: Lang.t("Uygulama kur"); icon: "download"; primary: true; onClicked: Ui.run(["vabu-launcher", "--install"]) }
         PillButton {
             visible: Apps.byId("com.github.tchx84.Flatseal") !== null
-            label: "Flatpak izinleri"
+            label: Lang.t("Flatpak izinleri")
             icon: "lock"
             onClicked: Apps.launch(Apps.byId("com.github.tchx84.Flatseal"))
         }

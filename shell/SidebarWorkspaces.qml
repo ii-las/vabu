@@ -85,7 +85,7 @@ Card {
         height: 42
         radius: Theme.radiusRow
         color: Theme.accent
-        Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+        Behavior on y { NumberAnimation { duration: Config.reducedMotion ? 0 : 320; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }
 
     ColumnLayout {
@@ -181,12 +181,12 @@ Card {
                     anchors.rightMargin: 4
                     spacing: 10
                     Icon { name: "add"; size: 17; color: Theme.faint }
-                    Text {
+                    Text { textFormat: Text.PlainText;
                         Layout.fillWidth: true
-                        text: "Yeni alan"
+                        text: Lang.t("Yeni alan")
                         color: Theme.faint
                         font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.pixelSize: Math.round((13) * Config.textScale)
                     }
                     IconButton {
                         implicitWidth: 28; implicitHeight: 28
@@ -195,7 +195,7 @@ Card {
                         iconSize: 17
                         iconColor: Theme.muted
                         active: Niri.overviewOpen
-                        tooltip: "Genel bakış"
+                        tooltip: Lang.t("Genel bakış")
                         onClicked: Niri.toggleOverview()
                     }
                 }
@@ -207,13 +207,14 @@ Card {
                     anchors.rightMargin: 12
                     spacing: 10
 
-                    Text {
-                        Layout.preferredWidth: 10
-                        text: row.ws.idx ?? ""
+                    Text { textFormat: Text.PlainText;
+                        Layout.preferredWidth: row.ws.name ? Math.min(80, root.width * 0.3) : 10
+                        text: row.ws.name || String(row.ws.idx ?? "")
+                        elide: Text.ElideRight
                         color: row.fg
                         opacity: row.isOn ? 1 : 0.75
                         font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.pixelSize: Math.round((13) * Config.textScale)
                         font.weight: Font.DemiBold
                         font.features: ({ "tnum": 1 })
                         Behavior on color { ColorAnimation { duration: Theme.state } }
@@ -282,7 +283,7 @@ Card {
                                 }
                             }
                         }
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             visible: row.wins.length > root.maxIcons
                             anchors.verticalCenter: parent.verticalCenter
                             leftPadding: 6
@@ -290,7 +291,7 @@ Card {
                             color: row.fg
                             opacity: 0.7
                             font.family: Theme.sans
-                            font.pixelSize: 12
+                            font.pixelSize: Math.round((12) * Config.textScale)
                         }
                     }
 

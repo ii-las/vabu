@@ -89,12 +89,12 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
-                Text {
+                Text { textFormat: Text.PlainText;
                     Layout.fillWidth: true
                     text: root.notif?.appName || "Bildirim"
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round((12) * Config.textScale)
                     elide: Text.ElideRight
                 }
                 IconButton {
@@ -103,17 +103,17 @@ Item {
                     opacity: hover.hovered || root.popup ? 1 : 0
                     icon: "close"; iconSize: 15
                     iconColor: Theme.muted
-                    tooltip: "Kapat"
+                    tooltip: Lang.t("Kapat")
                     onClicked: { root.notif.dismiss(); root.closed() }
                     Behavior on opacity { NumberAnimation { duration: Theme.fast } }
                 }
             }
-            Text {
+            Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: root.notif?.summary ?? ""
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: 14
+                font.pixelSize: Math.round((14) * Config.textScale)
                 font.weight: Font.DemiBold
                 wrapMode: Text.Wrap
                 maximumLineCount: 2
@@ -125,7 +125,7 @@ Item {
                 text: root.notif?.body ?? ""
                 color: Theme.soft
                 font.family: Theme.sans
-                font.pixelSize: 13
+                font.pixelSize: Math.round((13) * Config.textScale)
                 lineHeight: 1.18
                 wrapMode: Text.Wrap
                 maximumLineCount: root.popup ? 3 : 5
@@ -149,13 +149,13 @@ Item {
                         width: label.implicitWidth + 26
                         radius: 10
                         color: main ? Theme.accent : (actMouse.containsMouse ? Theme.hover : Theme.well)
-                        Text {
+                        Text { textFormat: Text.PlainText;
                             id: label
                             anchors.centerIn: parent
                             text: act.modelData.text
                             color: act.main ? Theme.accentInk : Theme.paper
                             font.family: Theme.sans
-                            font.pixelSize: 13
+                            font.pixelSize: Math.round((13) * Config.textScale)
                             font.weight: act.main ? Font.DemiBold : Font.Medium
                         }
                         MouseArea {
