@@ -50,7 +50,7 @@ Item {
         width: d; height: d; radius: d / 2
         color: Theme.knob
         border.width: Theme.dark ? 0 : 1
-        border.color: Theme.alpha("#16202C", 0.12)
+        border.color: Qt.rgba(22 / 255, 32 / 255, 44 / 255, 0.12)
         Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on height { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }

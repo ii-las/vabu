@@ -25,7 +25,7 @@ Rectangle {
         radius: Theme.radiusRow - 3
         color: Theme.segOn
         border.width: Theme.dark ? 0 : 1
-        border.color: Theme.alpha("#16202C", 0.08)
+        border.color: Qt.rgba(22 / 255, 32 / 255, 44 / 255, 0.08)
         Behavior on x { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }
