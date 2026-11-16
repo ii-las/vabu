@@ -25,11 +25,12 @@ Card {
     function isOpen(name) { return Ui.popover === name && Ui.popoverScreen === screenName }
     function toggle(name) { Ui.togglePopover(name, screenName) }
 
+    // Düğmeler kartın genişliğine eşit aralıkla yayılır; dizüstünde pil de araya girer
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 8
         anchors.rightMargin: 8
-        spacing: 2
+        spacing: 0
 
         IconButton {
             icon: Net.icon
@@ -38,6 +39,7 @@ Card {
             active: root.isOpen("wifi")
             onClicked: root.toggle("wifi")
         }
+        Item { Layout.fillWidth: true; visible: Bt.available }
         IconButton {
             visible: Bt.available
             icon: Bt.icon
@@ -46,6 +48,7 @@ Card {
             active: root.isOpen("bluetooth")
             onClicked: root.toggle("bluetooth")
         }
+        Item { Layout.fillWidth: true }
         IconButton {
             icon: root.muted || root.volume === 0 ? "volume_off" : root.volume < 0.4 ? "volume_down" : "volume_up"
             iconColor: root.muted ? Theme.muted : Theme.paper
@@ -60,6 +63,7 @@ Card {
                 }
             }
         }
+        Item { Layout.fillWidth: true }
         IconButton {
             id: bell
             icon: Notifs.dnd ? "notifications_off" : "notifications"
@@ -76,9 +80,9 @@ Card {
             }
         }
 
-        Item { Layout.fillWidth: true }
 
         // Pil: yalnızca dizüstünde
+        Item { Layout.fillWidth: true; visible: root.hasBattery }
         Item {
             visible: root.hasBattery
             implicitWidth: batt.implicitWidth + 12
@@ -107,6 +111,7 @@ Card {
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.toggle("control") }
         }
 
+        Item { Layout.fillWidth: true }
         IconButton {
             icon: "tune"
             tooltip: "Kontrol merkezi"
