@@ -12,6 +12,7 @@ bileşenler ve işlevi açıklayan hareket yaklaşımını uygular; marka varlı
   Kullanıcı yazı ölçeği korunur. Ayrıntılar gereksiz yere düşük opaklığa indirilmez.
 - Giriş alanı seçilebilir, Tab ile erişilebilir, odaktayken belirgin çerçevelidir.
   Seçim yalnız renk değişimine dayanmaz: kutuda tik/çizgi, radyoda iç işaret görünür.
+- Küçük ikonlar yerel font çizimini kullanır; dolgu ekseni kare başına değiştirilmez.
 - Düğme basınca zıplamaz. Kabukta açılış 240 ms, kapanış 140 ms, durum 160 ms,
   hızlı geri bildirim 120 ms. Azaltılmış hareket bunları sıfırlar.
 - Opak yüzey varsayılandır. İsteğe bağlı cam efekti kapalıyken duvar kâğıdı ve

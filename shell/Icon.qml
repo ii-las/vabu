@@ -1,6 +1,6 @@
 import QtQuick
 
-// Material Symbols Rounded. Dolgu (filled) ve kalınlık değişken eksenlerle animasyonlu değişir.
+// Material Symbols Rounded: küçük ikonlar yerel font çizimiyle net kalır.
 Text { textFormat: Text.PlainText;
     id: root
     property string name: ""
@@ -9,8 +9,9 @@ Text { textFormat: Text.PlainText;
     property real weight: 300
     property real stroke: 0                      // eski çizgi ikonlarıyla uyumluluk, kullanılmıyor
 
-    property real fillAmount: filled ? 1 : 0
-    Behavior on fillAmount { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
+    // Avoid distance-field artifacts and re-rasterizing variable axes every frame.
+    readonly property real fillAmount: filled ? 1 : 0
+    renderType: Text.NativeRendering
 
     // Eski kısa adlar -> Material Symbols adları; listede yoksa ad olduğu gibi kullanılır
     readonly property var aliases: ({
