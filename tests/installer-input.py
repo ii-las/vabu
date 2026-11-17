@@ -200,6 +200,7 @@ quit-at-end: false
                                                    str(fixture / 'branding/vabu') + '/'))
         view = os.environ.get('VABU_TEST_VIEW', '')
         if view:
+            navigation.write_text((source / 'branding/vabu/calamares-navigation.qml').read_text())
             if view not in ('welcomeq', 'finishedq'):
                 raise RuntimeError('Unsupported view fixture')
             settings_file = fixture / 'settings.conf'
@@ -224,11 +225,14 @@ quit-at-end: false
                         time.sleep(.3)
                         shot('language-popup.png')
                         run('wtype', '-s', '300', '-k', 'Escape')
+                        time.sleep(.3)
+                        shot('language-closed.png')
                         # Traverse to a real Qt button and activate with Space.
                         for _ in range(12):
                             run('wtype', '-s', '300', '-k', 'Tab')
                             time.sleep(.1)
-                            target = next((b for b in buttons() if b.name == expected), None)
+                            target = next((b for b in buttons() if b.name == expected
+                                           and b.getState().contains(pyatspi.STATE_FOCUSED)), None)
                             if target and target.getState().contains(pyatspi.STATE_FOCUSED):
                                 shot('keyboard-focus.png')
                                 run('wtype', '-s', '300', '-k', 'space')

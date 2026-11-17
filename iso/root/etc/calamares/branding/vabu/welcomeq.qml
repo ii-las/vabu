@@ -118,6 +118,9 @@ Rectangle {
             }
             ComboBox {
                 id: lang
+                focusPolicy: Qt.StrongFocus
+                KeyNavigation.tab: tryButton
+                KeyNavigation.backtab: installButton
                 Layout.fillWidth: true
                 Layout.topMargin: 6
                 Layout.preferredHeight: 46
@@ -158,6 +161,9 @@ Rectangle {
                     Behavior on rotation { NumberAnimation { duration: 200; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] } }
                 }
                 popup: Popup {
+                    focus: true
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+                    onClosed: lang.forceActiveFocus(Qt.PopupFocusReason)
                     y: lang.height + 6
                     width: lang.width
                     height: Math.min(contentItem.implicitHeight + 12, 320)
@@ -291,11 +297,17 @@ Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 10
                     VabuButton {
+                        id: tryButton
+                        KeyNavigation.tab: installButton
+                        KeyNavigation.backtab: lang
                         implicitWidth: 200
                         text: "Kurmadan dene"
                         onClicked: ViewManager.quit()
                     }
                     VabuButton {
+                        id: installButton
+                        KeyNavigation.tab: lang
+                        KeyNavigation.backtab: tryButton
                         implicitWidth: 200
                         primary: true
                         text: "Vabu’yu kur"
@@ -307,5 +319,5 @@ Rectangle {
         }
     }
 
-    function onActivate() { flick.contentY = 0 }
+    function onActivate() { flick.contentY = 0; lang.forceActiveFocus(Qt.TabFocusReason) }
 }
