@@ -132,7 +132,7 @@ magick -size 1920x1080 xc:'#202420' -depth 8 PNG32:grub/background.png
 rsvg-convert -w 104 -h 104 branding/logo-mark.svg -o grub/logo.png
 # seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür. Köşe parçaları
 # satırın üstüne ve altına taşar; tema satır yüksekliğini buna göre ayarlar (30 + 2 × 12).
-# GRUB yalnızca 8 bit RGBA PNG okur; PNG32: biçimi paletli yazılmasını önler.
+# PNG32: varlıkları öngörülebilir 8 bit RGBA üretir; düşük bitli paletli çıktıyı önler.
 magick -size 36x36 xc:none -fill '#8FB2FF' -draw 'roundrectangle 0,0 35,35 12,12' PNG32:pill.png
 i=0
 for part in nw n ne w c e sw s se; do

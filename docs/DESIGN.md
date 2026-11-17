@@ -52,7 +52,10 @@ hataları korunur. Bu bir Calamares kaynak yaması değildir.
 - `tests/installer-style.py`: gerçek Qt Widgets çizimi, SVG geçerliliği,
   işaretlerin piksel kontrolü, seçim/pasif durumlar, radyo, liste ve sayı alanı.
 - `tests/ekran.sh`: kabuk ekranları, açık/koyu görünüm, Türkçe/İngilizce,
-  dar pencere, %150 yazı, azaltılmış hareket ve yüksek kontrast.
+  gerçek 800×600 pencere sınırı, %150 yazı, azaltılmış hareket ve yüksek kontrast.
+  Uzun gezinme başlıkları sarılır; düğmeler dar alanda alt satıra geçer.
+- `tests/grub-ekran.sh`: görsellerin 8 bit RGB/RGBA biçimi ve QEMU içinde
+  gerçek temalı çizim zorunludur; temasız menü başarılı sayılmaz.
 - RPM iş akışı: aarch64 ve x86_64 hesap/görünüm testleri, qmllint, çalışma
   zamanı QML derlemesi ve ekran görüntüleri.
 

@@ -77,8 +77,8 @@ for yol in sorted(glob.glob(os.path.join(tema, "*.pf2"))):
     adlar.add(ad)
     print('%s: "%s"' % (os.path.basename(yol), ad))
 
-# GRUB's reader requires 8-bit RGB/RGBA; ImageMagick may optimize flat
-# surfaces to a palette PNG unless the writer format is explicitly selected.
+# Keep Vabu assets in predictable 8-bit RGB/RGBA. GRUB also accepts some
+# palette formats, but not the 1-bit output ImageMagick chooses for flat fills.
 for yol in sorted(glob.glob(os.path.join(tema, "*.png"))):
     with open(yol, "rb") as image:
         header = image.read(33)

@@ -131,7 +131,9 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
+    Flow {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
         visible: !page.loading
         spacing: 8
         PillButton { label: Lang.t("Önerilen her şeyi kur"); primary: true; onClicked: page.run("auto") }

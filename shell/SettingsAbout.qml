@@ -145,7 +145,9 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
+    Flow {
+        Layout.fillWidth: true
+        Layout.minimumWidth: 0
         spacing: 8
         PillButton {
             label: Lang.t("Sistem bilgisini kopyala")
