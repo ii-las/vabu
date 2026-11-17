@@ -211,6 +211,13 @@ quit-at-end: false
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
             pointer, pointer_send = virtual_pointer()
+            # A real desktop keeps a keyboard attached. wtype otherwise removes
+            # the seat's final keyboard after every command, which resets focus
+            # on Qt's embedded Wayland surfaces between Tab/Escape events.
+            # This device sends no keys during the bounded test; teardown stops it.
+            keyboard_device = subprocess.Popen(['wtype', '-s', '180000', '-k', 'Shift_L'],
+                                               stdout=subprocess.DEVNULL, stderr=log)
+            time.sleep(.3)
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 if view:
@@ -326,6 +333,8 @@ quit-at-end: false
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait(timeout=5)
+                keyboard_device.terminate()
+                keyboard_device.wait(timeout=5)
                 pointer.close()
 
 
