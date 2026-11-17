@@ -2,9 +2,10 @@
 """Real Calamares input regression; isolated Fedora CI only, no install jobs.
 
 Run inside tests/ekran.sh's disposable Wayland + D-Bus session. AT-SPI reads
-actual widgets, while a virtual pointer and wtype deliver real input events.
+actual widgets, while persistent virtual devices deliver real input events.
 No clipboard, block devices, mount operations or account creation are used.
 """
+import array
 import json
 import os
 from pathlib import Path
@@ -17,12 +18,12 @@ import tempfile
 import time
 
 
-def virtual_pointer():
-    """Keep a pointer device alive in the disposable headless compositor.
+def virtual_input():
+    """Keep pointer and keyboard devices alive in the disposable headless compositor.
 
     IPC cursor commands alone do not advertise wl_seat pointer capability.
     The tiny wire client keeps the device alive and delivers its mouse events.
-    Protocol: swaywm/wlr-protocols/unstable/wlr-virtual-pointer-unstable-v1.xml
+    Protocols: wlr-virtual-pointer-unstable-v1 and virtual-keyboard-unstable-v1.
     """
     connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     connection.settimeout(5)
@@ -69,7 +70,47 @@ def virtual_pointer():
         send(2, 0, struct.pack('=II', name, len(interface)) + padded + struct.pack('=II', 1, 4))
         send(4, 0, struct.pack('=II', 0, 5))  # create pointer on the default seat
         roundtrip(6)
-        return connection, send
+        # Bind one keyboard with one keymap for the whole session. Replacing
+        # the keymap/device for each command resets Qt's child-window focus.
+        def bind(interface_name, object_id):
+            interface = interface_name.encode() + b'\0'
+            padded = interface + b'\0' * (-len(interface) % 4)
+            send(2, 0, struct.pack('=II', globals_[interface_name], len(interface))
+                 + padded + struct.pack('=II', 1, object_id))
+        bind('wl_seat', 7)
+        bind('zwp_virtual_keyboard_manager_v1', 8)
+        send(8, 0, struct.pack('=II', 7, 9))
+        named = {'Escape': (9, 'Escape'), 'Tab': (23, 'Tab'),
+                 'BackSpace': (22, 'BackSpace'), 'Return': (36, 'Return'),
+                 'Control': (37, 'Control_L')}
+        mapping = {chr(n): (n + 48, 'U%04X' % n) for n in range(32, 127)}
+        mapping.update(named)
+        codes = ' '.join('<K%d> = %d;' % (code, code) for code, sym in mapping.values())
+        symbols = ' '.join('key <K%d> { [ %s ] };' % (code, sym) for code, sym in mapping.values())
+        keymap = ('xkb_keymap { xkb_keycodes { minimum = 8; maximum = 255; ' + codes +
+                  ' }; xkb_types { include "complete" }; xkb_compatibility { include "complete" }; '
+                  'xkb_symbols { ' + symbols + ' modifier_map Control { <K37> }; }; };\0').encode()
+        descriptor = os.memfd_create('vabu-test-keymap', os.MFD_CLOEXEC)
+        try:
+            os.write(descriptor, keymap)
+            payload = struct.pack('=II', 1, len(keymap))
+            connection.sendmsg([struct.pack('=II', 9, (16 << 16)) + payload],
+                               [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array('i', [descriptor]))])
+            roundtrip(10)
+        finally:
+            os.close(descriptor)
+
+        def key(name, control=False):
+            if name == 'space': name = ' '
+            code = mapping[name][0] - 8
+            send(9, 2, struct.pack('=IIII', 4 if control else 0, 0, 0, 0))
+            now = int(time.monotonic() * 1000) & 0xffffffff
+            send(9, 1, struct.pack('=III', now, code, 1))
+            time.sleep(.03)
+            send(9, 1, struct.pack('=III', (now + 30) & 0xffffffff, code, 0))
+            send(9, 2, struct.pack('=IIII', 0, 0, 0, 0))
+            time.sleep(.03)
+        return connection, send, key
     except Exception:
         connection.close()
         raise
@@ -154,7 +195,10 @@ def main():
 
     def fill(widget, value, secret=False):
         click(widget)
-        run('wtype', '-s', '300', '-M', 'ctrl', '-k', 'a', '-m', 'ctrl', '-k', 'BackSpace', '-d', '30', value)
+        keyboard('a', control=True)
+        keyboard('BackSpace')
+        for character in value:
+            keyboard(character)
         if secret:
             wait_for(lambda: widget.queryText().characterCount == len(value), 'password key input')
         else:
@@ -210,14 +254,7 @@ quit-at-end: false
             (fixture / 'modules/welcomeq.conf').write_text('qmlSearch: both\nrequirements:\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
-            pointer, pointer_send = virtual_pointer()
-            # A real desktop keeps a keyboard attached. wtype otherwise removes
-            # the seat's final keyboard after every command, which resets focus
-            # on Qt's embedded Wayland surfaces between Tab/Escape events.
-            # This device sends no keys during the bounded test; teardown stops it.
-            keyboard_device = subprocess.Popen(['wtype', '-s', '180000', '-k', 'Shift_L'],
-                                               stdout=subprocess.DEVNULL, stderr=log)
-            time.sleep(.3)
+            pointer, pointer_send, keyboard = virtual_input()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 if view:
@@ -231,18 +268,18 @@ quit-at-end: false
                         click(combo)
                         time.sleep(.3)
                         shot('language-popup.png')
-                        run('wtype', '-s', '300', '-k', 'Escape')
+                        keyboard('Escape')
                         time.sleep(.3)
                         shot('language-closed.png')
                         # Traverse to a real Qt button and activate with Space.
                         for _ in range(12):
-                            run('wtype', '-s', '300', '-k', 'Tab')
+                            keyboard('Tab')
                             time.sleep(.1)
                             target = next((b for b in buttons() if b.name == expected
                                            and b.getState().contains(pyatspi.STATE_FOCUSED)), None)
                             if target and target.getState().contains(pyatspi.STATE_FOCUSED):
                                 shot('keyboard-focus.png')
-                                run('wtype', '-s', '300', '-k', 'space')
+                                keyboard('space')
                                 wait_for(lambda: len(entries()) == 5, 'welcome keyboard navigation')
                                 break
                         else:
@@ -270,7 +307,7 @@ quit-at-end: false
                 wait_for(lambda: next_button.getState().contains(pyatspi.STATE_ENABLED), 'matching password validation')
                 # Clicking a different field and returning with Tab must preserve text.
                 click(full)
-                run('wtype', '-s', '300', '-k', 'Tab')
+                keyboard('Tab')
                 if [text(n) for n in (full, login, host)] != ['Vabu Input Test', 'vabuinputtest', 'vabu-input-test']:
                     raise RuntimeError('Identity text lost on focus change')
                 # Real pointer + keyboard toggle on a native checkbox; restore its state.
@@ -283,7 +320,7 @@ quit-at-end: false
                 click(checkbox)
                 wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) != was_checked,
                          'checkbox mouse toggle')
-                run('wtype', '-s', '300', '-k', 'space')
+                keyboard('space')
                 wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) == was_checked,
                          'checkbox keyboard toggle')
                 shot('51-kurulum-hesap-giris.png')
@@ -333,8 +370,6 @@ quit-at-end: false
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.wait(timeout=5)
-                keyboard_device.terminate()
-                keyboard_device.wait(timeout=5)
                 pointer.close()
 
 

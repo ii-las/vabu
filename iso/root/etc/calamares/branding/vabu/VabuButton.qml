@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Window 2.15
 import QtQuick.Controls 2.15 as Controls
 
 // Qt's button keeps mouse, keyboard, focus and accessibility behavior together.
@@ -12,6 +13,7 @@ Controls.Button {
     font.pixelSize: 15
     font.weight: Font.Medium
     focusPolicy: Qt.StrongFocus
+    onPressed: if (control.Window.window) control.Window.window.requestActivate()
     hoverEnabled: true
     Accessible.name: text
     contentItem: Text {

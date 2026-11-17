@@ -2,6 +2,7 @@
 import io.calamares.core 1.0
 import io.calamares.ui 1.0
 import QtQuick 2.15
+import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import QtQuick.Shapes 1.15
@@ -119,6 +120,7 @@ Rectangle {
             ComboBox {
                 id: lang
                 focusPolicy: Qt.StrongFocus
+                onPressedChanged: if (pressed && page.Window.window) page.Window.window.requestActivate()
                 KeyNavigation.tab: tryButton
                 KeyNavigation.backtab: installButton
                 Layout.fillWidth: true
