@@ -58,7 +58,7 @@ Card {
                 text: root.player?.trackArtist || root.player?.identity || ""
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: Math.round((12) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 elide: Text.ElideRight
             }
         }

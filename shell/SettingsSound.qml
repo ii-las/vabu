@@ -50,7 +50,7 @@ ColumnLayout {
             text: level.muted ? "0" : Math.round((level.node?.audio?.volume ?? 0) * 100)
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: Math.round((12) * Config.textScale)
+            font.pixelSize: Theme.textSmall
             font.features: ({ "tnum": 1 })
         }
     }

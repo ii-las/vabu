@@ -195,11 +195,49 @@ quit-at-end: false
                           '                 && (ViewManager.nextEnabled || ViewManager.backEnabled)',
                           'visible: ViewManager.backAndNextVisible')
         navigation.write_text(nav)
+        style = fixture / 'branding/vabu/stylesheet.qss'
+        style.write_text(style.read_text().replace('/etc/calamares/branding/vabu/',
+                                                   str(fixture / 'branding/vabu') + '/'))
+        view = os.environ.get('VABU_TEST_VIEW', '')
+        if view:
+            if view not in ('welcomeq', 'finishedq'):
+                raise RuntimeError('Unsupported view fixture')
+            settings_file = fixture / 'settings.conf'
+            settings_file.write_text(settings_file.read_text().replace('[ users, summaryq ]',
+                                    '[ ' + view + ', users ]'))
+            # Tests do not probe storage/network or execute the installer.
+            (fixture / 'modules/welcomeq.conf').write_text('qmlSearch: both\nrequirements:\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
             pointer, pointer_send = virtual_pointer()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
+                if view:
+                    expected = 'Vabu’yu kur' if view == 'welcomeq' else 'Yeniden başlat'
+                    wait_for(lambda: any(b.name == expected for b in buttons()), view + ' loaded')
+                    time.sleep(.5)
+                    shot('view.png')
+                    if view == 'welcomeq':
+                        combo = wait_for(lambda: next((n for n in nodes() if n.getRole() == pyatspi.ROLE_COMBO_BOX), None),
+                                         'language chooser')
+                        click(combo)
+                        time.sleep(.3)
+                        shot('language-popup.png')
+                        run('wtype', '-k', 'Escape')
+                        # Traverse to a real Qt button and activate with Space.
+                        for _ in range(12):
+                            run('wtype', '-k', 'Tab')
+                            time.sleep(.1)
+                            target = next((b for b in buttons() if b.name == expected), None)
+                            if target and target.getState().contains(pyatspi.STATE_FOCUSED):
+                                shot('keyboard-focus.png')
+                                run('wtype', '-k', 'space')
+                                wait_for(lambda: len(entries()) == 5, 'welcome keyboard navigation')
+                                break
+                        else:
+                            raise RuntimeError('Welcome primary button is not keyboard reachable')
+                    print('Installer view loaded and controls checked:', view)
+                    return
                 fields = wait_for(lambda: entries() if len(entries()) >= 5 else None, 'native account fields')
                 if len(fields) != 5:
                     raise RuntimeError('Expected precisely three identity and two password fields; got ' + str(len(fields)))
@@ -216,6 +254,7 @@ quit-at-end: false
                 next_button = wait_for(lambda: next((b for b in buttons() if 'Next' in b.name or 'Install' in b.name), None), 'navigation button')
                 if next_button.getState().contains(pyatspi.STATE_ENABLED):
                     raise RuntimeError('Next accepted mismatching passwords')
+                shot('52-kurulum-parola-uyusmazligi.png')
                 fill(repeat, 'Test-Only-9347', secret=True)
                 wait_for(lambda: next_button.getState().contains(pyatspi.STATE_ENABLED), 'matching password validation')
                 # Clicking a different field and returning with Tab must preserve text.
@@ -223,10 +262,48 @@ quit-at-end: false
                 run('wtype', '-s', '300', '-k', 'Tab')
                 if [text(n) for n in (full, login, host)] != ['Vabu Input Test', 'vabuinputtest', 'vabu-input-test']:
                     raise RuntimeError('Identity text lost on focus change')
+                # Real pointer + keyboard toggle on a native checkbox; restore its state.
+                checkbox = next((n for n in nodes() if n.getRole() == pyatspi.ROLE_CHECK_BOX
+                                 and n.getState().contains(pyatspi.STATE_SHOWING)
+                                 and n.getState().contains(pyatspi.STATE_ENABLED)), None)
+                if checkbox is None:
+                    raise RuntimeError('No accessible account checkbox')
+                was_checked = checkbox.getState().contains(pyatspi.STATE_CHECKED)
+                click(checkbox)
+                wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) != was_checked,
+                         'checkbox mouse toggle')
+                run('wtype', '-k', 'space')
+                wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) == was_checked,
+                         'checkbox keyboard toggle')
                 shot('51-kurulum-hesap-giris.png')
+                # A laptop-sized output must keep all five fields reachable.
+                run('swaymsg', 'output', 'HEADLESS-1', 'resolution', '2048x1536', 'scale', '2')
+                time.sleep(1)
+                bounds = json.loads(subprocess.check_output(['swaymsg', '-t', 'get_outputs', '-r'], text=True))[0]['rect']
+                for widget in fields:
+                    rect = widget.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
+                    if not (rect.width >= 200 and rect.height >= 32 and rect.x >= 0 and rect.y >= 0
+                            and rect.x + rect.width <= bounds['width'] and rect.y + rect.height <= bounds['height']):
+                        raise RuntimeError('Account field outside laptop viewport: ' + str(rect))
+                fill(host, 'vabu-small-screen')
+                wait_for(lambda: next_button.getState().contains(pyatspi.STATE_ENABLED), 'small viewport validation')
+                shot('53-kurulum-hesap-1024.png')
+                # Only view modules exist. Next can show the summary but cannot install.
+                click(next_button)
+                wait_for(lambda: not entries(), 'summary navigation')
+                time.sleep(.5)
+                shot('54-kurulum-ozet.png')
+                back = wait_for(lambda: next((b for b in buttons() if 'Back' in b.name), None), 'back button')
+                click(back)
+                wait_for(lambda: len(entries()) == 5, 'return to accounts')
+                if text(entries()[2]) != 'vabu-small-screen':
+                    raise RuntimeError('Account values lost when navigating back')
+                run('swaymsg', 'output', 'HEADLESS-1', 'resolution', '2880x1800', 'scale', '2')
                 (out / 'calamares-input.json').write_text(json.dumps({
                     'module': 'users', 'mouseAndKeyboard': True, 'fields': 5,
                     'mismatchedPasswordBlocked': True, 'matchingPasswordAccepted': True,
+                    'checkboxMouseAndKeyboard': True, 'smallViewport': '1024x768',
+                    'navigationPreservesInput': True,
                     'installJobs': [], 'installationStarted': False,
                 }, indent=2) + '\n')
                 print('Calamares input: mouse, keyboard, identity persistence and password validation passed.')

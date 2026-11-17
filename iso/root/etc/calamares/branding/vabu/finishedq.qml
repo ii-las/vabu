@@ -6,16 +6,23 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#F4F5F7"
+    color: "#F4F3EF"
     readonly property bool failed: (config.failureMessage || "") !== ""
 
+    Flickable {
+        id: flick
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: column.y + column.height + 24
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        interactive: contentHeight > height
     ColumnLayout {
         id: column
         x: Math.round((page.width - width) / 2)
         y: Math.max(24, Math.round((page.height - height) * 0.42))
         width: Math.min(480, page.width - 48)
         spacing: 0
-        transform: Translate { id: shift }
 
         // Durum simgesi: başarıda vurgu, hatada tehlike rengi
         Rectangle {
@@ -24,17 +31,11 @@ Rectangle {
             Layout.preferredHeight: 64
             radius: 22
             color: page.failed ? "#B93A30" : "#2C56CC"
-            Text {
+            Image {
                 anchors.centerIn: parent
                 width: 34
                 height: 34
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                text: page.failed ? "close" : "check"
-                color: "#FFFFFF"
-                font.family: "Material Symbols Rounded"
-                font.weight: Font.Normal
-                font.pixelSize: 34
+                source: page.failed ? "assets/close.svg" : "assets/check.svg"
             }
         }
         Text {
@@ -43,7 +44,7 @@ Rectangle {
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
             text: page.failed ? "Kurulum tamamlanamadı" : "Vabu kuruldu"
-            color: page.failed ? "#B93A30" : "#15181E"
+            color: page.failed ? "#B93A30" : "#222725"
             font.family: "Hanken Grotesk"
             font.pixelSize: 28
             font.weight: Font.DemiBold
@@ -59,7 +60,7 @@ Rectangle {
             wrapMode: Text.Wrap
             lineHeight: 1.2
             text: config.failureMessage || ""
-            color: "#3B4250"
+            color: "#414749"
             font.family: "Hanken Grotesk"
             font.pixelSize: 14
         }
@@ -88,53 +89,22 @@ Rectangle {
                     width: detailsView.width
                     wrapMode: Text.Wrap
                     text: config.failureDetails || ""
-                    color: "#566070"
+                    color: "#585F5B"
                     font.family: "Hanken Grotesk"
-                    font.pixelSize: 13
+                    font.pixelSize: 14
                 }
             }
         }
 
-        Rectangle {
+        VabuButton {
             Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: 28
-            Layout.preferredWidth: Math.max(200, restartText.implicitWidth + 48)
-            Layout.preferredHeight: 46
+            Layout.preferredWidth: 220
             visible: !page.failed
-            radius: 13
-            color: restartMouse.pressed ? "#2347AE" : restartMouse.containsMouse ? "#284EBD" : "#2C56CC"
-            Behavior on color { ColorAnimation { duration: 120 } }
-            Accessible.role: Accessible.Button
-            Accessible.name: "Yeniden başlat"
-
-            Text {
-                id: restartText
-                anchors.centerIn: parent
-                text: "Yeniden başlat"
-                color: "#FFFFFF"
-                font.family: "Hanken Grotesk"
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-            }
-            MouseArea {
-                id: restartMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: config.doRestart(true)
-            }
+            primary: true
+            text: "Yeniden başlat"
+            onClicked: config.doRestart(true)
         }
     }
-
-    // Sayfa açılırken hafifçe belirip yükselir
-    ParallelAnimation {
-        id: enter
-        NumberAnimation { target: column; property: "opacity"; from: 0; to: 1; duration: 300; easing.type: Easing.OutCubic }
-        NumberAnimation {
-            target: shift; property: "y"; from: 12; to: 0; duration: 400
-            easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1]
-        }
     }
-    // Calamares sayfa her açıldığında çağırır
-    function onActivate() { enter.restart() }
 }

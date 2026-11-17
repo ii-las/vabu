@@ -207,7 +207,7 @@ ShellRoot {
                                                 text: root.updateCount
                                                 color: Theme.accentInk
                                                 font.family: Theme.sans
-                                                font.pixelSize: Math.round((11) * Config.textScale)
+                                                font.pixelSize: Theme.textSmall
                                                 font.weight: Font.DemiBold
                                             }
                                         }

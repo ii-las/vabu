@@ -2,8 +2,8 @@
 componentName: vabu
 welcomeStyleCalamares: false
 welcomeExpandingLogo: true
-windowExpanding: fullscreen
-windowSize: 1200px,760px
+windowExpanding: normal
+windowSize: 1080px,760px
 windowPlacement: center
 sidebar: qml,top
 navigation: qml,bottom
@@ -26,8 +26,8 @@ images:
   productWelcome: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
 
 style:
-  SidebarBackground: "#F4F5F7"
-  SidebarText: "#15181E"
+  SidebarBackground: "#F4F3EF"
+  SidebarText: "#222725"
   SidebarTextCurrent: "#FFFFFF"
   SidebarBackgroundCurrent: "#2C56CC"
 

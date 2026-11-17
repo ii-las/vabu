@@ -44,7 +44,7 @@ ColumnLayout {
         text: root.note
         color: Theme.faint
         font.family: Theme.sans
-        font.pixelSize: Math.round((12) * Config.textScale)
+        font.pixelSize: Theme.textSmall
         lineHeight: 1.2
         wrapMode: Text.Wrap
     }

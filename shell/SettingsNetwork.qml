@@ -74,7 +74,7 @@ ColumnLayout {
                             }
                             PillButton { implicitHeight: 40; primary: true; label: Lang.t("Bağlan"); enabled: pw.text.length >= 8; onClicked: Net.connect(net.modelData, pw.text) }
                         }
-                        Text { textFormat: Text.PlainText; visible: Net.error !== ""; text: Net.error; color: Theme.danger; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                        Text { textFormat: Text.PlainText; visible: Net.error !== ""; text: Net.error; color: Theme.danger; font.family: Theme.sans; font.pixelSize: Theme.textSmall}
                     }
                 }
                 onAskingChanged: if (asking) pw.focusField()

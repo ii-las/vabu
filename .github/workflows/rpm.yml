@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Gerçek hesap formuna fare ve klavyeyle yaz
         run: |
-          dnf -y install calamares sway grim wtype mesa-dri-drivers dbus-daemon python3-pyatspi at-spi2-core findutils procps-ng
+          dnf -y install calamares sway grim wtype mesa-dri-drivers dbus-daemon python3-pyatspi at-spi2-core findutils procps-ng python3-qt6
           VABU_TEST_ISOLATED=1 bash tests/installer-input.sh /tmp/installer-input
       - uses: actions/upload-artifact@v4
         if: always()

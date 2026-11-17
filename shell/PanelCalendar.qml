@@ -103,7 +103,7 @@ ColumnLayout {
                 text: modelData
                 color: index >= 5 ? Theme.faint : Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: Math.round((12) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 font.weight: Font.Medium
             }
         }
@@ -149,7 +149,7 @@ ColumnLayout {
 
             Column {
                 spacing: 1
-                Text { textFormat: Text.PlainText; text: Lang.t("Gün doğumu"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                Text { textFormat: Text.PlainText; text: Lang.t("Gün doğumu"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Theme.textSmall}
                 Text { textFormat: Text.PlainText; text: Sun.sunriseText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
             // gündüzün neresindeyiz
@@ -173,7 +173,7 @@ ColumnLayout {
             }
             Column {
                 spacing: 1
-                Text { textFormat: Text.PlainText; anchors.right: parent.right; text: Lang.t("Gün batımı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                Text { textFormat: Text.PlainText; anchors.right: parent.right; text: Lang.t("Gün batımı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Theme.textSmall}
                 Text { textFormat: Text.PlainText; anchors.right: parent.right; text: Sun.sunsetText; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: Font.Medium; font.features: ({ "tnum": 1 }) }
             }
         }

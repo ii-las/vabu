@@ -6,7 +6,7 @@ import QtQuick.Shapes 1.15
 
 Rectangle {
     id: root
-    color: "#F4F5F7"
+    color: "#F4F3EF"
     // Calamares yatay şeritlere en çok 64 px verir
     implicitHeight: 64
     height: implicitHeight
@@ -15,7 +15,7 @@ Rectangle {
     component CatMark: Item {
         id: mark
         property color tint: "#2C56CC"
-        property color cutout: "#F4F5F7"
+        property color cutout: "#F4F3EF"
         implicitWidth: 30
         implicitHeight: 30
         // kenarlar yumuşak çıksın diye çoklu örnekleme
@@ -63,29 +63,37 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: "Vabu kurulumu"
-            color: "#15181E"
+            color: "#222725"
             font.family: "Hanken Grotesk"
             font.pixelSize: 15
             font.weight: Font.DemiBold
         }
     }
 
-    // Geçilen ve bulunulan adımlar vurgu renginde; bulunulan uzun bir hap
+    // A readable location, not decorative progress dots.
     Row {
-        anchors.centerIn: parent
-        spacing: 6
+        anchors.right: parent.right
+        anchors.rightMargin: 32
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 12
         Repeater {
+            id: steps
             model: ViewManager
-            Rectangle {
-                width: index === ViewManager.currentStepIndex ? 28 : 10
-                height: 5
-                radius: 2.5
-                color: index <= ViewManager.currentStepIndex ? "#2C56CC" : Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.18)
-                Behavior on width {
-                    NumberAnimation { duration: 220; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
-                }
-                Behavior on color { ColorAnimation { duration: 220 } }
+            Text {
+                visible: index === ViewManager.currentStepIndex
+                text: display
+                color: "#414749"
+                font.family: "Hanken Grotesk"
+                font.pixelSize: 15
+                Accessible.role: Accessible.StaticText
             }
         }
+        Text {
+            text: (ViewManager.currentStepIndex + 1) + " / " + steps.count
+            color: "#585F5B"
+            font.family: "Hanken Grotesk"
+            font.pixelSize: 15
+        }
     }
+    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: "#D8DAD3" }
 }

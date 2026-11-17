@@ -3,8 +3,7 @@ import QtQuick.Effects
 import Quickshell.Widgets
 
 // Buzlu cam yüzey. Arkasında, ekrandaki yerine denk gelen duvar kağıdı parçasını
-// bulanık gösterir, üstüne koyu bir ton ve 1 px kenar ışığı koyar. Bulanıklık duvar
-// kağıdının küçük bir kopyasında hesaplanır; bu yüzden yükü yok denecek kadar azdır.
+// bulanık gösterir. Efektler isteğe bağlıdır; kapalıyken görüntü ve shader yüklenmez.
 Item {
     id: root
     property real radius: Theme.radiusCard
@@ -22,11 +21,13 @@ Item {
     property real sy: 0
     // Dönüşümler (kayma, ölçek) bilerek hesaba katılmaz: kart hareket ederken arkası yerinde kalır
     function locate() {
+        if (!root.frosted || !root.visible) return
         let px = originX, py = originY
         for (let it = root; it; it = it.parent) { px += it.x; py += it.y }
         sx = px
         sy = py
     }
+    onFrostedChanged: if (frosted) locate()
     onXChanged: locate()
     onYChanged: locate()
     onWidthChanged: locate()
@@ -68,8 +69,8 @@ Item {
         radius: root.radius
         color: root.frosted ? (Theme.dark ? "#1B191E" : "#E6E9EF") : "transparent"
 
-        Item {
-            visible: root.frosted
+        Loader {
+            active: root.frosted && root.visible
             x: -root.sx
             y: -root.sy
             width: Screen.width / root.k
@@ -77,6 +78,7 @@ Item {
             scale: root.k
             transformOrigin: Item.TopLeft
 
+            sourceComponent: Item {
             Image {
                 id: small
                 anchors.fill: parent
@@ -96,6 +98,7 @@ Item {
                 blurMax: 20
                 blurMultiplier: 0.5
                 saturation: Theme.dark ? 0.5 : 0.7
+            }
             }
         }
 

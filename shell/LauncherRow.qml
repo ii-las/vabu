@@ -102,7 +102,7 @@ Item {
                         text: src.info.label
                         color: Theme.soft
                         font.family: Theme.sans
-                        font.pixelSize: Math.round((12) * Config.textScale)
+                        font.pixelSize: Theme.textSmall
                         font.weight: Font.Medium
                     }
                 }
@@ -123,7 +123,7 @@ Item {
             text: ({ "installed": Lang.t("Kurulu"), "done": Lang.t("Kuruldu"), "installing": Lang.t("Kuruluyor"), "error": Lang.t("Kurulamadı") })[root.state_] ?? ""
             color: root.state_ === "error" ? Theme.danger : root.state_ === "done" ? Theme.ok : Theme.muted
             font.family: Theme.sans
-            font.pixelSize: Math.round((12) * Config.textScale)
+            font.pixelSize: Theme.textSmall
             font.weight: Font.Medium
         }
 

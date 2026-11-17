@@ -70,14 +70,14 @@ PanelWindow {
         radius: Theme.radiusPanel
         shadow: true
 
-        width: 372
+        width: Math.min(400, root.width - 2 * Theme.gap)
         height: Math.min(root.height - 2 * Theme.gap, (loader.item ? loader.item.implicitHeight : 120) + 2 * Theme.pad)
         originX: root.onRight ? 0 : root.inset
         x: root.onRight ? root.width - Theme.gap - width : Theme.gap
         y: root.top ? Theme.gap : root.height - Theme.gap - height
         Behavior on height {
             enabled: root.shown > 0.9
-            NumberAnimation { duration: Config.reducedMotion ? 0 : 300; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
+            NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
         }
 
         opacity: Math.min(1, root.shown * 1.4)
@@ -85,10 +85,10 @@ PanelWindow {
             Scale {
                 origin.x: root.onRight ? frame.width : 0
                 origin.y: root.top ? 0 : frame.height
-                xScale: 0.94 + 0.06 * root.shown
-                yScale: 0.94 + 0.06 * root.shown
+                xScale: 0.985 + 0.015 * root.shown
+                yScale: 0.985 + 0.015 * root.shown
             },
-            Translate { x: (root.onRight ? 1 : -1) * 18 * (1 - root.shown) }
+            Translate { x: (root.onRight ? 1 : -1) * 8 * (1 - root.shown) }
         ]
 
         // panelin içine tıklamak kapatmasın

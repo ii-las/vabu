@@ -20,8 +20,6 @@ Rectangle {
          : mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : Theme.well
     opacity: enabled ? 1 : 0.45
     Behavior on color { ColorAnimation { duration: Theme.fast } }
-    scale: mouse.pressed ? 0.97 : 1
-    Behavior on scale { NumberAnimation { duration: Theme.fast } }
     Rectangle {
         anchors.fill: parent
         anchors.margins: -3
@@ -29,7 +27,7 @@ Rectangle {
         color: "transparent"
         border.width: 2
         border.color: Theme.accent
-        visible: root.activeFocus
+        visible: root.activeFocus && root.enabled
     }
 
     Accessible.role: Accessible.Button

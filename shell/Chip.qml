@@ -21,7 +21,7 @@ Rectangle {
             text: root.text
             color: root.kind === "off" ? Theme.muted : Theme.soft
             font.family: Theme.sans
-            font.pixelSize: Math.round((12) * Config.textScale)
+            font.pixelSize: Theme.textSmall
             font.weight: Font.Medium
         }
     }

@@ -8,7 +8,7 @@ import QtQuick.Shapes 1.15
 
 Rectangle {
     id: page
-    color: "#F4F5F7"
+    color: "#F4F3EF"
 
     // Düğmelerin ortası sayfa ortasının 110 px altında durur. Eksik gereksinim çıkınca
     // üstteki blok yukarı kayar, düğmeler yerinde kalır. tests/ekran.sh "Vabu'yu kur"a
@@ -21,7 +21,7 @@ Rectangle {
         height: font.pixelSize
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        color: "#15181E"
+        color: "#222725"
         font.family: "Material Symbols Rounded"
         font.weight: Font.Light
         font.pixelSize: 20
@@ -66,42 +66,6 @@ Rectangle {
         }
     }
 
-    // Düğme: primary vurgu renginde, değilse sakin yüzey
-    component ActionButton: Rectangle {
-        id: button
-        property string label
-        property bool primary: false
-        signal clicked()
-
-        implicitWidth: 200
-        implicitHeight: 46
-        radius: 13
-        color: primary ? (mouse.pressed ? "#2347AE" : mouse.containsMouse ? "#284EBD" : "#2C56CC")
-             : mouse.pressed ? Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.13)
-             : mouse.containsMouse ? Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.09)
-             : Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.06)
-        opacity: enabled ? 1 : 0.45
-        Behavior on color { ColorAnimation { duration: 120 } }
-        Accessible.role: Accessible.Button
-        Accessible.name: label
-
-        Text {
-            anchors.centerIn: parent
-            text: button.label
-            color: button.primary ? "#FFFFFF" : "#15181E"
-            font.family: "Hanken Grotesk"
-            font.pixelSize: 15
-            font.weight: button.primary ? Font.DemiBold : Font.Medium
-        }
-        MouseArea {
-            id: mouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: button.clicked()
-        }
-    }
-
     Flickable {
         id: flick
         anchors.fill: parent
@@ -117,7 +81,6 @@ Rectangle {
             y: Math.max(24, page.actionsCenter - 23 - actions.y)
             width: Math.min(440, flick.width - 48)
             spacing: 0
-            transform: Translate { id: shift }
 
             Rectangle {
                 Layout.alignment: Qt.AlignHCenter
@@ -137,7 +100,7 @@ Rectangle {
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
                 text: "Vabu’ya hoş geldin"
-                color: "#15181E"
+                color: "#222725"
                 font.family: "Hanken Grotesk"
                 font.pixelSize: 30
                 font.weight: Font.DemiBold
@@ -148,9 +111,9 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.topMargin: 32
                 text: "Dil"
-                color: "#566070"
+                color: "#585F5B"
                 font.family: "Hanken Grotesk"
-                font.pixelSize: 13
+                font.pixelSize: 14
                 font.weight: Font.Medium
             }
             ComboBox {
@@ -183,14 +146,14 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideRight
                     text: lang.displayText
-                    color: "#15181E"
+                    color: "#222725"
                     font: lang.font
                 }
-                indicator: Glyph {
+                indicator: Image {
+                    width: 20; height: 20
+                    source: "assets/chevron-down.svg"
                     x: lang.width - width - 12
                     y: Math.round((lang.height - height) / 2)
-                    text: "expand_more"
-                    color: "#566070"
                     rotation: lang.popup.visible ? 180 : 0
                     Behavior on rotation { NumberAnimation { duration: 200; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] } }
                 }
@@ -221,7 +184,7 @@ Rectangle {
                 delegate: ItemDelegate {
                     id: option
                     width: lang.width - 12
-                    height: 38
+                    height: 44
                     leftPadding: 0
                     rightPadding: 0
                     topPadding: 0
@@ -236,19 +199,19 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             elide: Text.ElideRight
                             text: model.label
-                            color: "#15181E"
+                            color: "#222725"
                             font.family: "Hanken Grotesk"
                             font.pixelSize: 15
                             font.weight: lang.currentIndex === index ? Font.Medium : Font.Normal
                         }
-                        Glyph {
+                        Image {
+                            width: 20; height: 20
+                            source: "assets/check-accent.svg"
                             id: tick
                             anchors.right: parent.right
                             anchors.rightMargin: 10
                             anchors.verticalCenter: parent.verticalCenter
                             visible: lang.currentIndex === index
-                            text: "check"
-                            color: "#2C56CC"
                         }
                     }
                     background: Rectangle {
@@ -308,7 +271,7 @@ Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 wrapMode: Text.Wrap
                                 text: negatedText
-                                color: "#15181E"
+                                color: "#222725"
                                 font.family: "Hanken Grotesk"
                                 font.pixelSize: 14
                             }
@@ -327,13 +290,15 @@ Rectangle {
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 10
-                    ActionButton {
-                        label: "Kurmadan dene"
+                    VabuButton {
+                        implicitWidth: 200
+                        text: "Kurmadan dene"
                         onClicked: ViewManager.quit()
                     }
-                    ActionButton {
+                    VabuButton {
+                        implicitWidth: 200
                         primary: true
-                        label: "Vabu’yu kur"
+                        text: "Vabu’yu kur"
                         enabled: ViewManager.nextEnabled
                         onClicked: ViewManager.next()
                     }
@@ -342,16 +307,5 @@ Rectangle {
         }
     }
 
-    // Sayfa açılırken hafifçe belirip yükselir
-    ParallelAnimation {
-        id: enter
-        NumberAnimation { target: column; property: "opacity"; from: 0; to: 1; duration: 300; easing.type: Easing.OutCubic }
-        NumberAnimation {
-            target: shift; property: "y"; from: 12; to: 0; duration: 400
-            easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1]
-        }
-    }
-    Component.onCompleted: enter.start()
-    // Calamares sayfa her açıldığında çağırır
-    function onActivate() { enter.restart() }
+    function onActivate() { flick.contentY = 0 }
 }

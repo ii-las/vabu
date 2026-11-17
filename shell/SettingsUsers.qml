@@ -103,7 +103,7 @@ ColumnLayout {
                     adder.write(newPass.text + "\n")
                 }
             }
-            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: page.message; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale); wrapMode: Text.Wrap }
+            Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: page.message; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Theme.textSmall; wrapMode: Text.Wrap }
         }
     }
 }

@@ -206,7 +206,7 @@ ColumnLayout {
             anchors.rightMargin: 16
             spacing: 12
             Text { textFormat: Text.PlainText; Layout.fillWidth: true; text: pr.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((14) * Config.textScale); font.weight: pr.ours ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
-            Text { textFormat: Text.PlainText; Layout.maximumWidth: pr.width * 0.5; text: pr.version; color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale); font.features: ({ "tnum": 1 }); elide: Text.ElideMiddle }
+            Text { textFormat: Text.PlainText; Layout.maximumWidth: pr.width * 0.5; text: pr.version; color: Theme.muted; font.family: Theme.sans; font.pixelSize: Theme.textSmall; font.features: ({ "tnum": 1 }); elide: Text.ElideMiddle }
         }
     }
 

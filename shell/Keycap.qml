@@ -30,6 +30,6 @@ Rectangle {
         color: root.superKey ? Theme.accentInk : Theme.paper
         font.family: Theme.sans
         font.weight: root.superKey ? Font.DemiBold : Font.Medium
-        font.pixelSize: Math.round((12) * Config.textScale)
+        font.pixelSize: Theme.textSmall
     }
 }

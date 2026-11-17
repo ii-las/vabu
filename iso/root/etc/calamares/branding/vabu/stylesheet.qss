@@ -1,25 +1,25 @@
 /* Vabu kurulum teması: QML olmayan Calamares sayfaları (konum, klavye, disk) ve iletişim kutuları.
    Açık ve sakin, düz yüzeyler. Saydam tonlar zemin üstündeki karşılıklarıyla yazıldı:
-     zemin #F4F5F7      kart #FFFFFF, kenarı #E4E6E9, içindeki çizgi #ECEDEE
-     alan #E7E8EB       üzerinde #E0E1E4, basılı #D7D9DC
-     iz #D5D7DA         düğme topuzu #FFFFFF
-     metin #15181E      ikincil #3B4250     soluk #566070    pasif #8E939C
+     zemin #F4F3EF      kart #FFFFFF, kenarı #D8DAD3, içindeki çizgi #DDE0D8
+     alan #E8E8E2       üzerinde #DDE0D7, basılı #D7D9DC
+     iz #C9CEC4         düğme topuzu #FFFFFF
+     metin #222725      ikincil #414749     soluk #585F5B    pasif #666E66
      vurgu #2C56CC, üstünde beyaz yazı (üzerinde #284EBD, basılı #2347AE)
      tehlike #B93A30    uyarı #9A5A14       tamam #1E7A52
    Vurgu yalnızca birincil düğmede, seçili olanda ve odakta.
    Not: border-radius kutunun yarısını aşarsa Qt köşeyi hiç yuvarlatmaz. */
 
 QWidget {
-    background: #F4F5F7;
-    color: #15181E;
+    background: #F4F3EF;
+    color: #222725;
     font-family: "Hanken Grotesk";
-    font-size: 14px;
+    font-size: 15px;
     selection-background-color: #2C56CC;
     selection-color: #FFFFFF;
 }
 
 QLabel { background: transparent; }
-QLabel:disabled { color: #8E939C; }
+QLabel:disabled { color: #666E66; }
 
 /* Sayfa başlıkları */
 QLabel#pageTitle, QLabel#m_title, QLabel[class="title"] {
@@ -29,19 +29,19 @@ QLabel#pageTitle, QLabel#m_title, QLabel[class="title"] {
 
 /* Düğmeler */
 QPushButton {
-    background: #E7E8EB;
-    color: #15181E;
+    background: #E8E8E2;
+    color: #222725;
     border: 2px solid transparent;
     border-radius: 13px;
     padding: 8px 18px;
-    min-height: 24px;
+    min-height: 28px;
     font-weight: 500;
-    outline: none;
+
 }
-QPushButton:hover { background: #E0E1E4; }
+QPushButton:hover { background: #DDE0D7; }
 QPushButton:pressed { background: #D7D9DC; }
 QPushButton:focus { border-color: #2C56CC; }
-QPushButton:disabled { background: #ECEDEF; color: #8E939C; }
+QPushButton:disabled { background: #E5E7E0; color: #666E66; }
 /* İletişim kutularında öne çıkan düğme */
 QPushButton:default { background: #2C56CC; color: #FFFFFF; font-weight: 600; }
 QPushButton:default:hover { background: #284EBD; }
@@ -55,22 +55,22 @@ QToolButton {
     border-radius: 10px;
     padding: 6px;
 }
-QToolButton:hover { background: #E7E8EB; }
-QToolButton:pressed, QToolButton:checked { background: #E0E1E4; }
+QToolButton:hover { background: #E8E8E2; }
+QToolButton:pressed, QToolButton:checked { background: #DDE0D7; }
 QToolBar { background: transparent; border: none; spacing: 6px; }
 
 /* Yazı alanları ve açılır listeler: alan zemini, odakta vurgu halkası */
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
-    background: #E7E8EB;
-    color: #15181E;
+    background: #E8E8E2;
+    color: #222725;
     border: 2px solid transparent;
     border-radius: 12px;
     padding: 7px 12px;
-    min-height: 24px;
+    min-height: 28px;
 }
-QLineEdit:hover, QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover { background: #E0E1E4; }
+QLineEdit:hover, QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover { background: #DDE0D7; }
 QLineEdit:focus, QComboBox:focus, QComboBox:on, QSpinBox:focus, QDoubleSpinBox:focus { border-color: #2C56CC; }
-QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled { color: #8E939C; }
+QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled { color: #666E66; }
 /* Liste ve sayı kutularının içindeki yazı alanı ikinci kez çizilmesin */
 QComboBox QLineEdit, QAbstractSpinBox QLineEdit {
     background: transparent;
@@ -88,21 +88,17 @@ QComboBox::drop-down {
     border: none;
     background: transparent;
 }
-/* Ok: kenarlıklardan çizilen küçük üçgen */
+/* QSS has no CSS triangles: use resolution-independent vector assets. */
 QComboBox::down-arrow {
-    image: none;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 6px solid #566070;
+    image: url(/etc/calamares/branding/vabu/assets/chevron-down.svg);
+    width: 18px; height: 18px;
 }
 QComboBox QAbstractItemView {
     background: #FFFFFF;
-    border: 1px solid #D9DBDE;
+    border: 1px solid #D0D5CA;
     border-radius: 12px;
     padding: 6px;
-    outline: none;
+
     selection-background-color: #2C56CC;
     selection-color: #FFFFFF;
 }
@@ -114,27 +110,17 @@ QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
     background: transparent;
 }
 QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-    image: none;
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-bottom: 5px solid #566070;
+    image: url(/etc/calamares/branding/vabu/assets/chevron-up.svg); width: 16px; height: 16px;
 }
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
-    image: none;
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid #566070;
+    image: url(/etc/calamares/branding/vabu/assets/chevron-down.svg); width: 16px; height: 16px;
 }
 
 /* Disk sayfasındaki seçenekler beyaz kart; seçili olanın 2 px vurgu halkası var.
    Kenar kalınlaşınca iç boşluk aynı oranda azalır, içerik kaymaz. */
 QRadioButton {
     background: #FFFFFF;
-    border: 1px solid #E4E6E9;
+    border: 1px solid #D8DAD3;
     border-radius: 14px;
     padding: 13px 15px;
     spacing: 12px;
@@ -144,47 +130,40 @@ QRadioButton:checked {
     border: 2px solid #2C56CC;
     padding: 12px 14px;
 }
-QRadioButton:disabled { color: #8E939C; }
+QRadioButton:disabled { color: #666E66; }
 QRadioButton::indicator {
-    width: 14px;
-    height: 14px;
-    border: 2px solid #A3A8B0;
-    border-radius: 9px;
-    background: #FFFFFF;
+    width: 20px; height: 20px;
+    border: 2px solid #6B746B; border-radius: 12px; background: #FFFFFF;
 }
 QRadioButton::indicator:checked {
-    width: 8px;
-    height: 8px;
-    padding: 3px;
-    border: 2px solid #2C56CC;
-    background: #2C56CC;
-    background-clip: content;
+    border-color: #2C56CC; image: url(/etc/calamares/branding/vabu/assets/radio.svg);
 }
-
-QCheckBox { background: transparent; spacing: 10px; }
-QCheckBox:disabled { color: #8E939C; }
+QRadioButton:focus { border-color: #2C56CC; }
+QCheckBox { background: transparent; spacing: 12px; min-height: 32px; }
+QCheckBox:disabled { color: #666E66; }
 QCheckBox::indicator, QListView::indicator, QTreeView::indicator {
-    width: 14px;
-    height: 14px;
-    border: 2px solid #A3A8B0;
-    border-radius: 6px;
-    background: #FFFFFF;
+    width: 20px; height: 20px;
+    border: 2px solid #6B746B; border-radius: 6px; background: #FFFFFF;
 }
-QCheckBox::indicator:hover { border-color: #7E8591; }
+QCheckBox::indicator:hover, QCheckBox:focus::indicator { border-color: #2C56CC; }
 QCheckBox::indicator:checked, QListView::indicator:checked, QTreeView::indicator:checked {
-    background: #2C56CC;
-    border-color: #2C56CC;
+    background: #2C56CC; border-color: #2C56CC; image: url(/etc/calamares/branding/vabu/assets/check.svg);
 }
+QCheckBox::indicator:indeterminate, QListView::indicator:indeterminate, QTreeView::indicator:indeterminate {
+    background: #2C56CC; border-color: #2C56CC; image: url(/etc/calamares/branding/vabu/assets/minus.svg);
+}
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled { border-color: #90988C; background: #E5E7E0; }
+QCheckBox::indicator:checked:disabled { background: #697761; image: url(/etc/calamares/branding/vabu/assets/check.svg); }
 
 /* Listeler ve tablolar: beyaz gruplu yüzey, seçili satır vurgu renginde */
 QListView, QTreeView, QTableView {
     background: #FFFFFF;
     alternate-background-color: #FFFFFF;
-    border: 1px solid #E4E6E9;
+    border: 1px solid #D8DAD3;
     border-radius: 14px;
     padding: 6px;
-    outline: none;
-    gridline-color: #ECEDEE;
+
+    gridline-color: #DDE0D8;
 }
 QListView::item { padding: 8px 10px; border-radius: 10px; }
 QTreeView::item, QTableView::item { padding: 6px 8px; }
@@ -196,24 +175,24 @@ QListView::item:selected, QTreeView::item:selected, QTableView::item:selected {
 QHeaderView { background: transparent; }
 QHeaderView::section {
     background: #FFFFFF;
-    color: #566070;
+    color: #585F5B;
     border: none;
-    border-bottom: 1px solid #ECEDEE;
+    border-bottom: 1px solid #DDE0D8;
     padding: 8px 10px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 QPlainTextEdit, QTextEdit {
     background: #FFFFFF;
-    color: #3B4250;
-    border: 1px solid #E4E6E9;
+    color: #414749;
+    border: 1px solid #D8DAD3;
     border-radius: 14px;
     padding: 10px;
 }
 
 QGroupBox {
-    border: 1px solid #E4E6E9;
+    border: 1px solid #D8DAD3;
     border-radius: 14px;
     margin-top: 12px;
     padding: 16px 12px 12px 12px;
@@ -223,15 +202,15 @@ QGroupBox::title {
     subcontrol-position: top left;
     left: 14px;
     padding: 0 6px;
-    background: #F4F5F7;
-    color: #566070;
+    background: #F4F3EF;
+    color: #585F5B;
 }
 
 QScrollArea { border: none; }
 QTabWidget::pane { border: none; }
 
 /* Kaydırıcı ve ilerleme: ince iz, vurgu dolgu, beyaz topuz */
-QSlider::groove:horizontal { height: 4px; background: #D5D7DA; border-radius: 2px; }
+QSlider::groove:horizontal { height: 4px; background: #C9CEC4; border-radius: 2px; }
 QSlider::sub-page:horizontal { background: #2C56CC; border-radius: 2px; }
 QSlider::handle:horizontal {
     width: 16px;
@@ -243,7 +222,7 @@ QSlider::handle:horizontal {
 }
 
 QProgressBar {
-    background: #D5D7DA;
+    background: #C9CEC4;
     border: none;
     border-radius: 3px;
     min-height: 6px;
@@ -253,8 +232,8 @@ QProgressBar {
 }
 QProgressBar::chunk { background: #2C56CC; border-radius: 3px; }
 
-QScrollBar:vertical { background: transparent; width: 8px; margin: 2px 0; }
-QScrollBar:horizontal { background: transparent; height: 8px; margin: 0 2px; }
+QScrollBar:vertical { background: transparent; width: 12px; margin: 2px 0; }
+QScrollBar:horizontal { background: transparent; height: 12px; margin: 0 2px; }
 QScrollBar::handle:vertical { background: #C8CACE; border-radius: 4px; min-height: 32px; }
 QScrollBar::handle:horizontal { background: #C8CACE; border-radius: 4px; min-width: 32px; }
 QScrollBar::handle:hover { background: #B1B4B9; }
@@ -263,18 +242,35 @@ QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
 
 QMenu {
     background: #FFFFFF;
-    border: 1px solid #D9DBDE;
+    border: 1px solid #D0D5CA;
     border-radius: 10px;
     padding: 6px;
 }
 QMenu::item { padding: 6px 14px; border-radius: 6px; }
-QMenu::item:selected { background: #E7E8EB; }
-QMenu::separator { height: 1px; background: #ECEDEE; margin: 4px 8px; }
+QMenu::item:selected { background: #E8E8E2; }
+QMenu::separator { height: 1px; background: #DDE0D8; margin: 4px 8px; }
 
 QToolTip {
     background: #FFFFFF;
-    color: #15181E;
-    border: 1px solid #D9DBDE;
+    color: #222725;
+    border: 1px solid #D0D5CA;
     border-radius: 8px;
     padding: 6px 8px;
 }
+
+/* Native pages keep their actual input widgets, validation and tab order. */
+QWidget#Page_UserSetup { padding: 20px 28px; }
+QWidget#Page_UserSetup QLineEdit { min-width: 260px; }
+/* Calamares 3.3.14 sizes these pixmaps from the message label, distorting them.
+   Keep its full text errors; suppress only the redundant, stretched decoration. */
+QLabel#labelFullName, QLabel#labelUsername, QLabel#labelHostname,
+QLabel#labelUserPassword, QLabel#labelRootPassword {
+    min-width: 0px; max-width: 0px; min-height: 0px; max-height: 0px;
+}
+QLabel#labelFullNameError, QLabel#labelUsernameError, QLabel#labelHostnameError,
+QLabel#labelUserPasswordError, QLabel#labelRootPasswordError { color: #A33026; }
+QTabBar::tab { padding: 12px 18px; border-bottom: 2px solid transparent; }
+QTabBar::tab:selected { border-bottom-color: #2C56CC; color: #2C56CC; }
+QTabBar::tab:hover { background: #E8E8E2; }
+QTreeView::branch:has-children:closed { image: url(/etc/calamares/branding/vabu/assets/chevron-right.svg); }
+QTreeView::branch:has-children:open { image: url(/etc/calamares/branding/vabu/assets/chevron-down.svg); }

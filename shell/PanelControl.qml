@@ -23,17 +23,21 @@ ColumnLayout {
         property string detail: ""
         property bool isOn: false
         property bool hasMore: false          // sağ üstte ok: ayrıntı paneline götürür
+        activeFocusOnTab: true
+        Keys.onSpacePressed: if (enabled) toggled()
+        Keys.onReturnPressed: if (enabled) toggled()
+        Keys.onEnterPressed: if (enabled) toggled()
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.paper
         signal toggled()
         signal more()
 
         Layout.fillWidth: true
         implicitWidth: 120
-        implicitHeight: 100
+        implicitHeight: Math.max(108, 80 * Config.textScale)
         radius: Theme.radiusTile
         color: isOn ? Theme.accent : (tileMouse.pressed ? Theme.pressed : tileMouse.containsMouse ? Theme.hover : Theme.well)
         Behavior on color { ColorAnimation { duration: Theme.state } }
-        scale: tileMouse.pressed ? 0.975 : 1
-        Behavior on scale { NumberAnimation { duration: Theme.fast } }
         Accessible.role: Accessible.CheckBox
         Accessible.name: name
         Accessible.checked: isOn
@@ -89,9 +93,9 @@ ColumnLayout {
                 width: parent.width
                 text: tile.detail
                 color: tile.fg
-                opacity: 0.66
+                opacity: 1
                 font.family: Theme.sans
-                font.pixelSize: Math.round((12) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 elide: Text.ElideRight
             }
         }
@@ -102,6 +106,12 @@ ColumnLayout {
         property string icon: ""
         property string tip: ""
         property color tone: Theme.paper
+        activeFocusOnTab: true
+        Keys.onSpacePressed: if (enabled) clicked()
+        Keys.onReturnPressed: if (enabled) clicked()
+        Keys.onEnterPressed: if (enabled) clicked()
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.accent
         signal clicked()
         Layout.fillWidth: true
         Layout.fillHeight: true
@@ -146,7 +156,7 @@ ColumnLayout {
                 text: Math.round(level.value * 100)
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: Math.round((12) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 font.features: ({ "tnum": 1 })
             }
         }

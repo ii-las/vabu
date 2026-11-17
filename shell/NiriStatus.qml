@@ -30,7 +30,7 @@ Rectangle {
             text: NiriConf.lastError
             color: Theme.soft
             font.family: Theme.mono
-            font.pixelSize: Math.round((11) * Config.textScale)
+            font.pixelSize: Theme.textSmall
             wrapMode: Text.Wrap
         }
         PillButton {

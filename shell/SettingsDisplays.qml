@@ -178,7 +178,7 @@ ColumnLayout {
                     anchors.centerIn: parent
                     spacing: 2
                     Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: mon.index + 1; color: mon.isOn ? Theme.accentInk : Theme.paper; font.family: Theme.sans; font.weight: Font.DemiBold; font.pixelSize: Math.round((26) * Config.textScale)}
-                    Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((12) * Config.textScale)}
+                    Text { textFormat: Text.PlainText; anchors.horizontalCenter: parent.horizontalCenter; text: mon.modelData.name; color: mon.isOn ? Theme.accentInk : Theme.soft; font.family: Theme.sans; font.pixelSize: Theme.textSmall}
                 }
                 MouseArea {
                     anchors.fill: parent
@@ -211,7 +211,7 @@ ColumnLayout {
             text: page.outputs.length > 1 ? "Ekranları sürükleyerek diz" : ""
             color: Theme.faint
             font.family: Theme.sans
-            font.pixelSize: Math.round((12) * Config.textScale)
+            font.pixelSize: Theme.textSmall
         }
     }
 
@@ -345,7 +345,7 @@ ColumnLayout {
             text: Lang.t("Onaylamazsan 15 saniye içinde eski ayara döner.")
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: Math.round((12) * Config.textScale)
+            font.pixelSize: Theme.textSmall
             wrapMode: Text.Wrap
         }
     }

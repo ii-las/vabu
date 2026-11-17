@@ -256,7 +256,7 @@ OverlayWindow {
                             text: Lang.t("Sık kullanılanlar")
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: Math.round((12) * Config.textScale)
+                            font.pixelSize: Theme.textSmall
                             font.weight: Font.Medium
                         }
                     }
@@ -324,7 +324,7 @@ OverlayWindow {
                                 text: tab.modelData.label
                                 color: tab.isOn ? Theme.paper : Theme.muted
                                 font.family: Theme.sans
-                                font.pixelSize: Math.round((12) * Config.textScale)
+                                font.pixelSize: Theme.textSmall
                                 font.weight: tab.isOn ? Font.DemiBold : Font.Medium
                             }
                             MouseArea {

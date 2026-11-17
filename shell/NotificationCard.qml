@@ -94,7 +94,7 @@ Item {
                     text: root.notif?.appName || "Bildirim"
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: Math.round((12) * Config.textScale)
+                    font.pixelSize: Theme.textSmall
                     elide: Text.ElideRight
                 }
                 IconButton {

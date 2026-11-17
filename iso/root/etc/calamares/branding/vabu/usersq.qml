@@ -7,7 +7,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#F4F5F7"
+    color: "#F4F3EF"
 
     // Üstte ad, altında alan
     component LabeledField: Column {
@@ -22,7 +22,7 @@ Rectangle {
         Text {
             width: parent.width
             text: field.label
-            color: "#566070"
+            color: "#585F5B"
             font.family: "Hanken Grotesk"
             font.pixelSize: 13
             font.weight: Font.Medium
@@ -39,7 +39,7 @@ Rectangle {
             topPadding: 0
             bottomPadding: 0
             verticalAlignment: TextInput.AlignVCenter
-            color: "#15181E"
+            color: "#222725"
             font.family: "Hanken Grotesk"
             font.pixelSize: 15
             echoMode: field.secret ? TextInput.Password : TextInput.Normal
@@ -70,7 +70,7 @@ Rectangle {
         Text {
             Layout.fillWidth: true
             text: "Hesabını oluştur"
-            color: "#15181E"
+            color: "#222725"
             font.family: "Hanken Grotesk"
             font.pixelSize: 26
             font.weight: Font.DemiBold

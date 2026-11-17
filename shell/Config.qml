@@ -61,7 +61,7 @@ Singleton {
     readonly property bool clipboardEnabled: values.clipboardEnabled === true
     readonly property bool reducedMotion: values.reducedMotion ?? false
     readonly property bool highContrast: values.highContrast ?? false
-    readonly property bool effects: values.effects ?? true
+    readonly property bool effects: values.effects ?? false
     readonly property real textScale: [1, 1.15, 1.3, 1.5].includes(values.textScale) ? values.textScale : 1
     readonly property int sidebarWidth: Math.max(240, Math.min(360, Number(values.sidebarWidth) || 280))
     readonly property string language: values.language === "en" ? "en" : "tr"

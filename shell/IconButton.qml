@@ -21,7 +21,7 @@ Rectangle {
     radius: Theme.radiusRow
     color: active ? Theme.accent : (mouse.pressed ? Theme.pressed : mouse.containsMouse ? Theme.hover : idle)
     Behavior on color { ColorAnimation { duration: Theme.fast } }
-    scale: mouse.pressed ? 0.94 : 1
+    scale: 1
     Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
 
     Rectangle {
@@ -31,7 +31,7 @@ Rectangle {
         color: "transparent"
         border.width: 2
         border.color: Theme.accent
-        visible: root.activeFocus
+        visible: root.activeFocus && root.enabled
     }
 
     Accessible.role: Accessible.Button

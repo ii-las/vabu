@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.3
 
 Rectangle {
     id: page
-    color: "#F4F5F7"
+    color: "#F4F3EF"
 
     // Adımın simgesi başlığından seçilir; tanınmayan adımlar genel simgeyi alır
     function iconFor(title) {
@@ -34,12 +34,11 @@ Rectangle {
             y: 32
             width: Math.min(640, flick.width - 48)
             spacing: 0
-            transform: Translate { id: shift }
 
             Text {
                 Layout.fillWidth: true
                 text: "Özet"
-                color: "#15181E"
+                color: "#222725"
                 font.family: "Hanken Grotesk"
                 font.pixelSize: 26
                 font.weight: Font.DemiBold
@@ -84,7 +83,7 @@ Rectangle {
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 text: page.iconFor(model.title)
-                                color: "#3B4250"
+                                color: "#414749"
                                 font.family: "Material Symbols Rounded"
                                 font.weight: Font.Light
                                 font.pixelSize: 20
@@ -101,7 +100,7 @@ Rectangle {
                                     width: parent.width
                                     wrapMode: Text.Wrap
                                     text: model.title
-                                    color: "#15181E"
+                                    color: "#222725"
                                     font.family: "Hanken Grotesk"
                                     font.pixelSize: 14
                                     font.weight: Font.Medium
@@ -112,10 +111,10 @@ Rectangle {
                                     wrapMode: Text.Wrap
                                     text: model.message
                                     textFormat: Text.RichText
-                                    color: "#566070"
+                                    color: "#585F5B"
                                     linkColor: "#2C56CC"
                                     font.family: "Hanken Grotesk"
-                                    font.pixelSize: 13
+                                    font.pixelSize: 14
                                 }
                             }
                         }
@@ -125,18 +124,5 @@ Rectangle {
         }
     }
 
-    // Sayfa açılırken hafifçe belirip yükselir
-    ParallelAnimation {
-        id: enter
-        NumberAnimation { target: column; property: "opacity"; from: 0; to: 1; duration: 300; easing.type: Easing.OutCubic }
-        NumberAnimation {
-            target: shift; property: "y"; from: 12; to: 0; duration: 400
-            easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1]
-        }
-    }
-    // Calamares sayfa her açıldığında çağırır
-    function onActivate() {
-        flick.contentY = 0
-        enter.restart()
-    }
+    function onActivate() { flick.contentY = 0 }
 }

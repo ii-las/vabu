@@ -219,10 +219,13 @@ pkill -x qs; sleep 1
 # parola doğrulaması denenir. Disk modülleri yüklenmez, kurulum başlatılamaz.
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 if command -v calamares >/dev/null; then
-    timeout 100 python3 -B "$REPO/tests/installer-input.py" "$OUT" || {
+    timeout 150 python3 -B "$REPO/tests/installer-input.py" "$OUT" || {
         echo "::error::Calamares hesap formu giriş testi başarısız"
         touch "$OUT/test-failed"
     }
+    for view in welcomeq finishedq; do
+        VABU_TEST_VIEW="$view" timeout 60 python3 -B "$REPO/tests/installer-input.py" "$OUT/$view" || touch "$OUT/test-failed"
+    done
 fi
 
 # Giriş ekranı (greetd olmadan sadece görünüm)

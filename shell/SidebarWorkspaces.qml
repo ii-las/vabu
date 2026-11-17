@@ -291,7 +291,7 @@ Card {
                             color: row.fg
                             opacity: 0.7
                             font.family: Theme.sans
-                            font.pixelSize: Math.round((12) * Config.textScale)
+                            font.pixelSize: Theme.textSmall
                         }
                     }
 
