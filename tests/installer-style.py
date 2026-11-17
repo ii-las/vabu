@@ -12,7 +12,7 @@ import sys
 if sys.platform != 'linux' or os.environ.get('VABU_TEST_ISOLATED') != '1':
     raise SystemExit('Only runs in isolated Linux CI.')
 
-from PyQt6.QtCore import Qt, qInstallMessageHandler
+from PyQt6.QtCore import Qt, QPoint, qInstallMessageHandler
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
@@ -53,11 +53,11 @@ buttons.addStretch(); buttons.addWidget(back); buttons.addWidget(next_); layout.
 window.resize(960, 720); window.show(); QTest.qWait(150)
 # Native editing and keyboard selection must still work after the stylesheet.
 field.setFocus(); QTest.keyClicks(field, 'vabu-laptop'); assert field.text() == 'vabu-laptop'
-QTest.mouseClick(unchecked, Qt.MouseButton.LeftButton); assert unchecked.isChecked()
+QTest.mouseClick(unchecked, Qt.MouseButton.LeftButton, pos=QPoint(12, unchecked.height() // 2)); assert unchecked.isChecked()
 QTest.keyClick(unchecked, Qt.Key.Key_Space); assert not unchecked.isChecked()
 combo.setFocus(); QTest.keyClick(combo, Qt.Key.Key_Down); assert combo.currentIndex() == 1
 spin.setFocus(); QTest.keyClick(spin, Qt.Key.Key_Up); assert spin.value() == 9
-QTest.mouseClick(r2, Qt.MouseButton.LeftButton); assert r2.isChecked() and not r1.isChecked()
+QTest.mouseClick(r2, Qt.MouseButton.LeftButton, pos=QPoint(22, r2.height() // 2)); assert r2.isChecked() and not r1.isChecked()
 # Check rendered indicator pixels: a filled rectangle without a tick must fail.
 for box in (checked, mixed, disabled):
     option = QStyleOptionButton(); box.initStyleOption(option)

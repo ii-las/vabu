@@ -79,26 +79,26 @@ Item {
             transformOrigin: Item.TopLeft
 
             sourceComponent: Item {
-            Image {
-                id: small
-                anchors.fill: parent
-                source: Config.wallpaper
-                sourceSize.width: 480
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                visible: false
-            }
-            // Gauss bulanıklığı küçük kopyada; büyütülünce yumuşak, pürüzsüz bir cam olur
-            MultiEffect {
-                anchors.fill: parent
-                source: small
-                autoPaddingEnabled: false
-                blurEnabled: true
-                blur: 1
-                blurMax: 20
-                blurMultiplier: 0.5
-                saturation: Theme.dark ? 0.5 : 0.7
-            }
+                Image {
+                    id: small
+                    anchors.fill: parent
+                    source: Config.wallpaper
+                    sourceSize.width: 480
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    visible: false
+                }
+                // Gauss bulanıklığı küçük kopyada; büyütülünce yumuşak, pürüzsüz bir cam olur
+                MultiEffect {
+                    anchors.fill: parent
+                    source: small
+                    autoPaddingEnabled: false
+                    blurEnabled: true
+                    blur: 1
+                    blurMax: 20
+                    blurMultiplier: 0.5
+                    saturation: Theme.dark ? 0.5 : 0.7
+                }
             }
         }
 

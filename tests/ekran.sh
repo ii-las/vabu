@@ -211,6 +211,21 @@ swaymsg '[title="Vabu Ayarlar"] kill' >/dev/null 2>&1
 swaymsg '[app_id="foot"] kill' >/dev/null 2>&1
 sleep 0.6
 
+# Larger panel text must remain scrollable. Also instantiate the opt-in blur path.
+printf '{"theme":"koyu","onboardingDone":true,"textScale":1.5,"reducedMotion":true}\n' > "$HOME/.config/vabu/shell.json"
+sleep 1
+for panel in control wifi bluetooth sound calendar notifications; do
+    call panel toggle "$panel"
+    shot "large-panel-$panel" 0.3
+    call panel close
+ done
+printf '{"theme":"acik","onboardingDone":true,"effects":true}\n' > "$HOME/.config/vabu/shell.json"
+sleep 1
+call panel toggle control
+shot effects-control 0.5
+call panel close
+gorunum acik
+
 # Katman pencereleri ve ayrılmış kenar boşlukları hesap testinin imlecini
 # etkilemesin. Kabuk senaryoları bitti; sonraki oturumlar kendi kabuğunu açar.
 pkill -x qs; sleep 1

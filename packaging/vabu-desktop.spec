@@ -127,8 +127,7 @@ magick -size 8x8 xc:'rgba(255,255,255,0.16)' track.png
 
 # Önyükleme menüsü (GRUB) teması
 mkdir -p grub
-magick wallpaper.png -resize '1920x1080^' -gravity center -extent 1920x1080 \
-    -blur 0x22 -fill '#0C0B0F' -colorize 42 -depth 8 grub/background.png
+magick -size 1920x1080 xc:'#202420' -depth 8 grub/background.png
 rsvg-convert -w 104 -h 104 branding/logo-mark.svg -o grub/logo.png
 # seçili satırın zemini: yuvarlak köşeli hap, dokuz parçaya bölünür. Köşe parçaları
 # satırın üstüne ve altına taşar; tema satır yüksekliğini buna göre ayarlar (30 + 2 × 12).

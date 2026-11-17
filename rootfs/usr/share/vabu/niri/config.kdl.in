@@ -66,7 +66,7 @@ screenshot-path "~/Pictures/Screenshots/%Y-%m-%d %H-%M-%S.png"
 // Genel bakış (Super + O): çalışma alanları küçülür, arkada duvar kağıdı kalır
 overview {
     zoom 0.5
-    backdrop-color "#0F0E11"
+    backdrop-color "#202420"
 }
 
 // Duvar kağıdı çalışma alanlarıyla birlikte kaymaz, hep yerinde durur.

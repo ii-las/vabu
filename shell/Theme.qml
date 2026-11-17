@@ -24,7 +24,7 @@ Singleton {
     readonly property color nav: pick("#E9EBE4", "#191D19")
     readonly property color group: pick("#FFFFFF", Qt.rgba(1, 1, 1, 0.045))
     readonly property color groupEdge: pick(Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.07), Qt.rgba(1, 1, 1, 0.06))
-    readonly property color night: pick("#E9ECF1", "#0F0E11")
+    readonly property color night: pick("#E9EBE4", "#191D19")
 
     // Etkileşim
     readonly property color well: pick(Qt.rgba(22 / 255, 28 / 255, 40 / 255, 0.055), Qt.rgba(1, 1, 1, 0.07))

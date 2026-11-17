@@ -49,7 +49,7 @@ ColumnLayout {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: tile.toggled()
+            onClicked: { tile.forceActiveFocus(Qt.MouseFocusReason); tile.toggled() }
         }
 
         Icon {
@@ -121,7 +121,7 @@ ColumnLayout {
         Accessible.role: Accessible.Button
         Accessible.name: tip
         Icon { anchors.centerIn: parent; name: sb.icon; size: 20; color: sb.tone }
-        MouseArea { id: sbMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: sb.clicked() }
+        MouseArea { id: sbMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { sb.forceActiveFocus(Qt.MouseFocusReason); sb.clicked() } }
     }
 
     component Level: Rectangle {

@@ -4,7 +4,7 @@
 title-text: ""
 desktop-image: "background.png"
 desktop-image-scale-method: "crop"
-desktop-color: "#0F0E11"
+desktop-color: "#202420"
 terminal-font: "@FONT_MONO@"
 terminal-box: "terminal_box_*.png"
 terminal-left: "16%"

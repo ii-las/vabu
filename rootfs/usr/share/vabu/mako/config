@@ -1,9 +1,9 @@
 # Vabu bildirim teması
-font=Inter 11
-background-color=#1b1e2aee
-text-color=#e6e9f2
-border-color=#5eead4
-progress-color=over #a78bfa55
+font=Hanken Grotesk 11
+background-color=#202420ff
+text-color=#F0EEE9
+border-color=#A9BFFF
+progress-color=over #A9BFFF55
 border-size=2
 border-radius=14
 padding=14
@@ -16,14 +16,14 @@ max-visible=4
 layer=overlay
 
 [urgency=low]
-border-color=#2a2f3d
+border-color=#30362F
 
 [urgency=critical]
-border-color=#fb7185
+border-color=#F09A8E
 default-timeout=0
 
 [app-name=vabu]
-border-color=#a78bfa
+border-color=#A9BFFF
 
 # Oyun modu: normal bildirimleri gizle, kritikler yine görünsün.
 [mode=do-not-disturb]

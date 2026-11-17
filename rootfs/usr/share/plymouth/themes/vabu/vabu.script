@@ -1,7 +1,7 @@
 # Vabu açılış ekranı: koyu zemin, ortada işaret, altında ince ilerleme çizgisi.
 # Disk şifreliyse şifre istemi aynı yerde belirir.
-Window.SetBackgroundTopColor(0.059, 0.055, 0.067);
-Window.SetBackgroundBottomColor(0.059, 0.055, 0.067);
+Window.SetBackgroundTopColor(0.1255, 0.1412, 0.1255);
+Window.SetBackgroundBottomColor(0.1255, 0.1412, 0.1255);
 
 W = Window.GetWidth();
 H = Window.GetHeight();

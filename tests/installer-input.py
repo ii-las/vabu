@@ -223,15 +223,15 @@ quit-at-end: false
                         click(combo)
                         time.sleep(.3)
                         shot('language-popup.png')
-                        run('wtype', '-k', 'Escape')
+                        run('wtype', '-s', '300', '-k', 'Escape')
                         # Traverse to a real Qt button and activate with Space.
                         for _ in range(12):
-                            run('wtype', '-k', 'Tab')
+                            run('wtype', '-s', '300', '-k', 'Tab')
                             time.sleep(.1)
                             target = next((b for b in buttons() if b.name == expected), None)
                             if target and target.getState().contains(pyatspi.STATE_FOCUSED):
                                 shot('keyboard-focus.png')
-                                run('wtype', '-k', 'space')
+                                run('wtype', '-s', '300', '-k', 'space')
                                 wait_for(lambda: len(entries()) == 5, 'welcome keyboard navigation')
                                 break
                         else:
@@ -272,7 +272,7 @@ quit-at-end: false
                 click(checkbox)
                 wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) != was_checked,
                          'checkbox mouse toggle')
-                run('wtype', '-k', 'space')
+                run('wtype', '-s', '300', '-k', 'space')
                 wait_for(lambda: checkbox.getState().contains(pyatspi.STATE_CHECKED) == was_checked,
                          'checkbox keyboard toggle')
                 shot('51-kurulum-hesap-giris.png')

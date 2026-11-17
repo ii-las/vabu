@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -94,8 +95,18 @@ PanelWindow {
         // panelin içine tıklamak kapatmasın
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
 
-        Item {
+        Flickable {
             id: body
+            contentWidth: width
+            contentHeight: loader.item ? loader.item.implicitHeight : 0
+            boundsBehavior: Flickable.StopAtBounds
+            interactive: contentHeight > height
+            Controls.ScrollBar.vertical: Controls.ScrollBar {
+                policy: Controls.ScrollBar.AsNeeded
+                minimumSize: 0.08
+                contentItem: Rectangle { implicitWidth: 6; radius: 3; color: Theme.muted }
+                background: Rectangle { color: "transparent" }
+            }
             anchors.fill: parent
             anchors.margins: Theme.pad
             clip: true
