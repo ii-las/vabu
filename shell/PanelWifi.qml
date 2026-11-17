@@ -133,7 +133,7 @@ ColumnLayout {
         text: Net.scanning ? "Ağlar aranıyor…" : "Yakında ağ bulunamadı"
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: Math.round((13) * Config.textScale)
+        font.pixelSize: Theme.textSmall
     }
 
     DashLine { Layout.fillWidth: true; Layout.topMargin: 4; Layout.bottomMargin: 4 }

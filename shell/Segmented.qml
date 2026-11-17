@@ -57,7 +57,7 @@ Rectangle {
                     text: parent.modelData
                     color: parent.activeFocus ? Theme.accent : parent.isOn ? Theme.paper : Theme.soft
                     font.family: Theme.sans
-                    font.pixelSize: Math.round((13) * Config.textScale)
+                    font.pixelSize: Theme.textSmall
                     font.weight: parent.isOn ? Font.DemiBold : Font.Normal
                     font.features: root.mono ? { "tnum": 1 } : {}
                     Behavior on color { ColorAnimation { duration: Theme.state } }

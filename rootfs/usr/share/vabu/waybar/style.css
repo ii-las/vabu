@@ -1,16 +1,16 @@
-/* Vabu bar teması - yüzen, yuvarlatılmış "ada" düzeni. */
-@define-color bg      rgba(18, 20, 28, 0.82);
-@define-color surface rgba(42, 47, 61, 0.9);
-@define-color text    #e6e9f2;
-@define-color muted   #9aa3b8;
-@define-color mint    #5eead4;
-@define-color violet  #a78bfa;
+/* Vabu bar teması - yedek panel; kabukla aynı opak yüzeyler. */
+@define-color bg      #202420;
+@define-color surface #30362F;
+@define-color text    #F0EEE9;
+@define-color muted   #B4BCAE;
+@define-color mint    #A9BFFF;
+@define-color violet  #A9BFFF;
 @define-color peach   #fbbf77;
 @define-color rose    #fb7185;
 
 * {
-  font-family: "Inter", "JetBrains Mono", sans-serif;
-  font-size: 13px;
+  font-family: "Hanken Grotesk", "JetBrains Mono", sans-serif;
+  font-size: 14px;
   min-height: 0;
 }
 
@@ -42,7 +42,7 @@ window#waybar {
 }
 #workspaces button.active {
   color: #12141c;
-  background: linear-gradient(135deg, @mint, @violet);
+  background: @mint;
 }
 #workspaces button:hover {
   background: @surface;

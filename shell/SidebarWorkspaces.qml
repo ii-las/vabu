@@ -186,7 +186,7 @@ Card {
                         text: Lang.t("Yeni alan")
                         color: Theme.faint
                         font.family: Theme.sans
-                        font.pixelSize: Math.round((13) * Config.textScale)
+                        font.pixelSize: Theme.textSmall
                     }
                     IconButton {
                         implicitWidth: 28; implicitHeight: 28
@@ -214,7 +214,7 @@ Card {
                         color: row.fg
                         opacity: row.isOn ? 1 : 0.75
                         font.family: Theme.sans
-                        font.pixelSize: Math.round((13) * Config.textScale)
+                        font.pixelSize: Theme.textSmall
                         font.weight: Font.DemiBold
                         font.features: ({ "tnum": 1 })
                         Behavior on color { ColorAnimation { duration: Theme.state } }

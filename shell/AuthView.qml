@@ -239,7 +239,7 @@ Item {
                 text: root.error ? Lang.t("Şifre hatalı") : ""
                 color: Theme.danger
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 font.weight: Font.Medium
             }
 
@@ -264,7 +264,7 @@ Item {
                 visible: root.hasBattery
                 spacing: 5
                 Icon { anchors.verticalCenter: parent.verticalCenter; name: "battery_" + Math.max(0, Math.min(6, Math.round(root.batteryPct / 100 * 6))) + "_bar"; size: 19 }
-                Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "%" + root.batteryPct; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.features: ({ "tnum": 1 }) }
+                Text { textFormat: Text.PlainText; anchors.verticalCenter: parent.verticalCenter; text: "%" + root.batteryPct; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Theme.textSmall; font.features: ({ "tnum": 1 }) }
             }
             Text { textFormat: Text.PlainText;
                 visible: Niri.kbShort !== ""
@@ -272,7 +272,7 @@ Item {
                 text: Niri.kbShort
                 color: Theme.paper
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.4
             }

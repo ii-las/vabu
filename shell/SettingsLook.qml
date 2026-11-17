@@ -13,7 +13,7 @@ ColumnLayout {
     ColumnLayout {
         Layout.fillWidth: true
         spacing: 10
-        Text { textFormat: Text.PlainText; Layout.leftMargin: 4; text: Lang.t("Duvar kağıdı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
+        Text { textFormat: Text.PlainText; Layout.leftMargin: 4; text: Lang.t("Duvar kağıdı"); color: Theme.muted; font.family: Theme.sans; font.pixelSize: Theme.textSmall; font.weight: Font.Medium }
         GridLayout {
             id: wallpaperGrid
             Layout.fillWidth: true
@@ -94,7 +94,7 @@ ColumnLayout {
                         text: Lang.t(wp.modelData.name)
                         color: wp.isOn ? Theme.paper : Theme.soft
                         font.family: Theme.sans
-                        font.pixelSize: Math.round((13) * Config.textScale)
+                        font.pixelSize: Theme.textSmall
                         font.weight: wp.isOn ? Font.DemiBold : Font.Normal
                     }
                 }
@@ -224,7 +224,7 @@ ColumnLayout {
                         anchors.margins: 9
                         spacing: 8
                         IconImage { Layout.alignment: Qt.AlignVCenter; implicitSize: 22; source: Quickshell.iconPath(pin.modelData.icon, "application-x-executable") }
-                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); font.weight: Font.Medium }
+                        Text { textFormat: Text.PlainText; Layout.fillWidth: true; elide: Text.ElideRight; text: pin.modelData.name; color: Theme.paper; font.family: Theme.sans; font.pixelSize: Theme.textSmall; font.weight: Font.Medium }
                         IconButton {
                             Layout.alignment: Qt.AlignVCenter
                             implicitWidth: 24; implicitHeight: 24

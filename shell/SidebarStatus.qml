@@ -124,7 +124,7 @@ Card {
                     text: root.batteryPct
                     color: batt.tone
                     font.family: Theme.sans
-                    font.pixelSize: Math.round((13) * Config.textScale)
+                    font.pixelSize: Theme.textSmall
                     font.weight: Font.Medium
                     font.features: ({ "tnum": 1 })
                 }

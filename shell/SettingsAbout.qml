@@ -74,7 +74,7 @@ ColumnLayout {
                 text: "Fedora " + (page.info.fedora || "") + " tabanlı. Uygulamalar Fedora, RPM Fusion ve Flathub'dan gelir."
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 wrapMode: Text.Wrap
                 lineHeight: 1.2
             }

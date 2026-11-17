@@ -53,14 +53,14 @@ Card {
                 text: Lang.date(clock.date, "dddd")
                 color: Theme.soft
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 font.weight: Font.Medium
             }
             Text { textFormat: Text.PlainText;
                 text: Lang.date(clock.date, "d MMMM")
                 color: Theme.muted
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
             }
         }
     }

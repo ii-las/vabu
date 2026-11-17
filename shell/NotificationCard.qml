@@ -125,7 +125,7 @@ Item {
                 text: root.notif?.body ?? ""
                 color: Theme.soft
                 font.family: Theme.sans
-                font.pixelSize: Math.round((13) * Config.textScale)
+                font.pixelSize: Theme.textSmall
                 lineHeight: 1.18
                 wrapMode: Text.Wrap
                 maximumLineCount: root.popup ? 3 : 5
@@ -155,7 +155,7 @@ Item {
                             text: act.modelData.text
                             color: act.main ? Theme.accentInk : Theme.paper
                             font.family: Theme.sans
-                            font.pixelSize: Math.round((13) * Config.textScale)
+                            font.pixelSize: Theme.textSmall
                             font.weight: act.main ? Font.DemiBold : Font.Medium
                         }
                         MouseArea {

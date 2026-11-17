@@ -19,7 +19,7 @@ ColumnLayout {
         text: root.title
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: Math.round((13) * Config.textScale)
+        font.pixelSize: Theme.textSmall
         font.weight: Font.Medium
     }
     Rectangle {

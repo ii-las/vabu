@@ -72,7 +72,7 @@ ColumnLayout {
         text: Lang.t("Yakında cihaz yok")
         color: Theme.muted
         font.family: Theme.sans
-        font.pixelSize: Math.round((13) * Config.textScale)
+        font.pixelSize: Theme.textSmall
         lineHeight: 1.2
     }
 

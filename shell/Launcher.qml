@@ -154,7 +154,7 @@ OverlayWindow {
                             text: root.modeInfo.label
                             color: Theme.accentInk
                             font.family: Theme.sans
-                            font.pixelSize: Math.round((13) * Config.textScale)
+                            font.pixelSize: Theme.textSmall
                             font.weight: Font.DemiBold
                         }
                     }
@@ -293,7 +293,7 @@ OverlayWindow {
                                 : Lang.t("Bir şey bulunamadı")
                             color: Theme.muted
                             font.family: Theme.sans
-                            font.pixelSize: Math.round((13) * Config.textScale)
+                            font.pixelSize: Theme.textSmall
                         }
                     }
                 }

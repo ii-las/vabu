@@ -128,7 +128,7 @@ ColumnLayout {
         wrapMode: Text.Wrap
         color: Theme.danger
         font.family: Theme.sans
-        font.pixelSize: Math.round((13) * Config.textScale)
+        font.pixelSize: Theme.textSmall
     }
 
     // Yerleşim

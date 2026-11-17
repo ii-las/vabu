@@ -145,7 +145,7 @@ ColumnLayout {
                     text: ""
                     color: Theme.muted
                     font.family: Theme.sans
-                    font.pixelSize: Math.round((13) * Config.textScale)
+                    font.pixelSize: Theme.textSmall
                     elide: Text.ElideRight
                 }
             }
@@ -167,7 +167,7 @@ ColumnLayout {
         wrapMode: Text.Wrap
         color: Theme.danger
         font.family: Theme.sans
-        font.pixelSize: Math.round((13) * Config.textScale)
+        font.pixelSize: Theme.textSmall
     }
 
     Group {

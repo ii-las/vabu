@@ -70,7 +70,7 @@ ColumnLayout {
             text: Lang.t("Yeni bildirim yok")
             color: Theme.muted
             font.family: Theme.sans
-            font.pixelSize: Math.round((13) * Config.textScale)
+            font.pixelSize: Theme.textSmall
         }
     }
 }

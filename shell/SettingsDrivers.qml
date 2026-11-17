@@ -74,7 +74,7 @@ ColumnLayout {
                         text: (page.st?.gpus ?? []).find(g => /nvidia/i.test(g)) ?? "NVIDIA ekran kartı"
                         color: Theme.paper; font.family: Theme.sans; font.pixelSize: Math.round((16) * Config.textScale); font.weight: Font.DemiBold; elide: Text.ElideRight
                     }
-                    Text { textFormat: Text.PlainText; text: page.nvText[page.nv]?.title ?? ""; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale)}
+                    Text { textFormat: Text.PlainText; text: page.nvText[page.nv]?.title ?? ""; color: Theme.soft; font.family: Theme.sans; font.pixelSize: Theme.textSmall}
                 }
                 PillButton {
                     visible: (page.nvText[page.nv]?.btn ?? "") !== ""
@@ -86,7 +86,7 @@ ColumnLayout {
             Text { textFormat: Text.PlainText;
                 Layout.fillWidth: true
                 text: page.nvText[page.nv]?.body ?? ""
-                color: Theme.soft; font.family: Theme.sans; font.pixelSize: Math.round((13) * Config.textScale); wrapMode: Text.Wrap; lineHeight: 1.25
+                color: Theme.soft; font.family: Theme.sans; font.pixelSize: Theme.textSmall; wrapMode: Text.Wrap; lineHeight: 1.25
             }
             Flow {
                 Layout.fillWidth: true
