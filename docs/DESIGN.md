@@ -24,6 +24,11 @@ Hesap oluşturma, disk seçimi ve doğrulama Calamares'in gerçek yerel kontroll
 kullanır. Görsel özelleştirme QSS ve Qt Quick bileşenlerindedir; parola politikası,
 kurulum işleri ve güvenlik sınırları değiştirilmez. `usersq` etkin değildir.
 
+Calamares 3.3.14'ün Qt 6 pencere kapsayıcısı varsayılan olarak klavye odağı
+almaz. `QWindowContainer` için hedefli QSS odak politikası bunu düzeltir; pasif
+etiketlerin odak davranışı değişmez. Bu Qt sınıfına bağımlılık gerçek klavye
+regresyon testi ve Qt Widgets odak politikası kontrolüyle korunur.
+
 Düğmeler ortak `VabuButton.qml` ile fare, klavye ve erişilebilirlik davranışını
 korur. Üstte adım adı ve sayı, altta tutarlı gezinme yer alır. Sayfa girişindeki
 kayma kaldırılmıştır; kullanıcı yazarken form hareket etmez. Kurulum ilerlemesi

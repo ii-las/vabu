@@ -18,6 +18,11 @@ QWidget {
     selection-color: #FFFFFF;
 }
 
+/* Calamares 3.3.14 embeds Qt Quick in a QWidget window container without
+   enabling its focus policy. Styling the QML button alone cannot deliver keys.
+   Restrict this to the container; labels and other passive widgets stay passive. */
+QWindowContainer { qproperty-focusPolicy: StrongFocus; }
+
 QLabel { background: transparent; }
 QLabel:disabled { color: #666E66; }
 
