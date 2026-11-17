@@ -22,6 +22,12 @@ COPR_KEY_SHA256=<doğrulanmış-açık-anahtar-dosyası-özeti> just iso
 
 ISO `out/` dizinine yazılır. Paketler COPR'dan alındığı için önce COPR derlemelerinin bitmiş olması gerekir.
 
+Temel ISO, Mesa video ve medya için Fedora'nın `mesa-va-drivers` ve
+`ffmpeg-free` paketlerini kullanır. RPM Fusion'ın ek codec paketleri Fedora
+ile farklı zamanda güncellenebildiği için canlı sistemin zorunlu bağımlılığı
+değildir. Ek destek, depolar uyumlu olduğunda Ayarlar → Sürücüler veya
+`vabu-drivers install codecs` üzerinden kurulur; imza ve bağımlılık denetimleri korunur.
+
 GitHub'da: Actions → **ISO** → Run workflow. aarch64 ISO, GitHub'ın arm64 makinelerini kullandığı için yalnızca public repoda üretilir.
 
 ## Sanal makine

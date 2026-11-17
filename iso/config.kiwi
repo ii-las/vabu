@@ -107,9 +107,11 @@
          vabu-drivers ile kurulur (akmod derlemesi hedef çekirdekte yapılmalı). -->
     <package name="mesa-dri-drivers"/>
     <package name="mesa-vulkan-drivers"/>
-    <package name="mesa-va-drivers-freeworld"/>
+    <!-- Keep base media on Fedora's synchronized stack. Extra codecs are
+         available after installation via vabu-drivers, when RPM Fusion aligns. -->
+    <package name="mesa-va-drivers"/>
     <package name="intel-media-driver" arch="x86_64"/>
-    <package name="ffmpeg"/>
+    <package name="ffmpeg-free"/>
 
     <!-- Vabu -->
     <package name="vabu-desktop"/>
