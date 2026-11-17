@@ -251,7 +251,7 @@ quit-at-end: false
             settings_file.write_text(settings_file.read_text().replace('[ users, summary ]',
                                     ('[ finished ]' if view == 'finished' else '[ welcome, users ]')))
             # Tests do not probe storage/network or execute the installer.
-            (fixture / 'modules/welcome.conf').write_text('requirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
+            (fixture / 'modules/welcome.conf').write_text('languageIcon: languages\nshowSupportUrl: false\nshowKnownIssuesUrl: false\nshowReleaseNotesUrl: false\nrequirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
             pointer, pointer_send, keyboard = virtual_input()

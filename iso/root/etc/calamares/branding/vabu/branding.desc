@@ -23,7 +23,8 @@ strings:
 images:
   productLogo: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
   productIcon: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
-  productWelcome: "/usr/share/icons/hicolor/scalable/apps/vabu-logo.svg"
+  productWelcome: "assets/welcome.svg"
+  languages: "assets/language.svg"
 
 style:
   SidebarBackground: "#F4F3EF"

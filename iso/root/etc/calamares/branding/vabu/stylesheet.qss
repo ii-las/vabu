@@ -274,3 +274,13 @@ QTabBar::tab:selected { border-bottom-color: #2C56CC; color: #2C56CC; }
 QTabBar::tab:hover { background: #E8E8E2; }
 QTreeView::branch:has-children:closed { image: url(/etc/calamares/branding/vabu/assets/chevron-right.svg); }
 QTreeView::branch:has-children:open { image: url(/etc/calamares/branding/vabu/assets/chevron-down.svg); }
+
+/* Native navigation retains Calamares' validation and keyboard shortcuts. */
+QPushButton#view-button-back, QPushButton#view-button-cancel { min-width: 88px; }
+QPushButton#view-button-next { min-width: 120px; background: #2C56CC; color: #FFFFFF; font-weight: 600; }
+QPushButton#view-button-next:hover { background: #284EBD; }
+QPushButton#view-button-next:pressed { background: #2347AE; }
+QPushButton#view-button-next:focus { border-color: #132B66; }
+QPushButton#view-button-next:disabled { background: #E5E7E0; color: #666E66; }
+QComboBox#languageWidget { min-width: 320px; max-width: 540px; }
+QLabel#languageIcon { qproperty-scaledContents: true; min-width: 28px; max-width: 28px; min-height: 28px; max-height: 28px; }
