@@ -14,7 +14,6 @@ if sys.platform != 'linux' or os.environ.get('VABU_TEST_ISOLATED') != '1':
 
 from PyQt6.QtCore import Qt, QPoint, qInstallMessageHandler
 from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.QtGui import QWindow
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QCheckBox, QRadioButton, QComboBox, QSpinBox,
@@ -31,10 +30,6 @@ app = QApplication([])
 app.setStyle('Fusion')
 app.setStyleSheet((branding / 'stylesheet.qss').read_text().replace(
     '/etc/calamares/branding/vabu/', str(branding) + '/'))
-container = QWidget.createWindowContainer(QWindow())
-container.ensurePolished()
-assert container.focusPolicy() == Qt.FocusPolicy.StrongFocus, 'Embedded QML window cannot receive keyboard focus'
-container.deleteLater()
 for asset in (branding / 'assets').glob('*.svg'):
     assert QSvgRenderer(str(asset)).isValid(), 'Invalid vector asset: ' + str(asset)
 window = QWidget(); window.setWindowTitle('Vabu — kontroller')

@@ -238,7 +238,7 @@ if command -v calamares >/dev/null; then
         echo "::error::Calamares hesap formu giriş testi başarısız"
         touch "$OUT/test-failed"
     }
-    for view in welcomeq finishedq; do
+    for view in welcome finished; do
         VABU_TEST_VIEW="$view" timeout 60 python3 -B "$REPO/tests/installer-input.py" "$OUT/$view" || touch "$OUT/test-failed"
     done
 fi

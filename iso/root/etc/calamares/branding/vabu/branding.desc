@@ -1,12 +1,12 @@
 ---
 componentName: vabu
 welcomeStyleCalamares: false
-welcomeExpandingLogo: true
+welcomeExpandingLogo: false
 windowExpanding: normal
 windowSize: 1080px,760px
 windowPlacement: center
 sidebar: qml,top
-navigation: qml,bottom
+navigation: widget,bottom
 
 strings:
   productName: Vabu

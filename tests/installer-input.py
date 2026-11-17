@@ -128,6 +128,8 @@ def main():
     settings = (source / 'settings.conf').read_text()
     if settings.count('      - users\n') != 2 or '      - usersq\n' in settings:
         raise RuntimeError('Production show and exec must use the same native users module.')
+    if any('      - ' + name + '\n' in settings for name in ('welcomeq', 'summaryq', 'finishedq')):
+        raise RuntimeError('Interactive installer pages must use the tested native Qt controls.')
 
     def run(*args):
         return subprocess.run(args, check=True, timeout=8, stdout=subprocess.DEVNULL)
@@ -220,7 +222,7 @@ def main():
         # accidentally activates Next. In particular no partition/mount/users job.
         (fixture / 'settings.conf').write_text('''modules-search: [ local, /usr/lib64/calamares/modules ]
 sequence:
-  - show: [ users, summaryq ]
+  - show: [ users, summary ]
 branding: vabu
 prompt-install: true
 dont-chroot: false
@@ -230,6 +232,7 @@ disable-cancel-during-exec: true
 hide-back-and-next-during-exec: true
 quit-at-end: false
 ''')
+        # Keep the optional QML navigation fixture compatible with older branches.
         # The isolated account form is page zero, whereas production reaches
         # it after partition. Keep the same navigation controls visible without
         # requiring unrelated pages or any disk module in this regression.
@@ -245,24 +248,24 @@ quit-at-end: false
         view = os.environ.get('VABU_TEST_VIEW', '')
         if view:
             navigation.write_text((source / 'branding/vabu/calamares-navigation.qml').read_text())
-            if view not in ('welcomeq', 'finishedq'):
+            if view not in ('welcome', 'finished'):
                 raise RuntimeError('Unsupported view fixture')
             settings_file = fixture / 'settings.conf'
-            settings_file.write_text(settings_file.read_text().replace('[ users, summaryq ]',
+            settings_file.write_text(settings_file.read_text().replace('[ users, summary ]',
                                     '[ ' + view + ', users ]'))
             # Tests do not probe storage/network or execute the installer.
-            (fixture / 'modules/welcomeq.conf').write_text('qmlSearch: both\nrequirements:\n  check: []\n  required: []\n')
+            (fixture / 'modules/welcome.conf').write_text('requirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
             pointer, pointer_send, keyboard = virtual_input()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 if view:
-                    expected = 'Vabu’yu kur' if view == 'welcomeq' else 'Yeniden başlat'
+                    expected = 'Next' if view == 'welcome' else 'Done'
                     wait_for(lambda: any(b.name == expected for b in buttons()), view + ' loaded')
                     time.sleep(.5)
                     shot('view.png')
-                    if view == 'welcomeq':
+                    if view == 'welcome':
                         combo = wait_for(lambda: next((n for n in nodes() if n.getRole() == pyatspi.ROLE_COMBO_BOX), None),
                                          'language chooser')
                         click(combo)
@@ -271,6 +274,7 @@ quit-at-end: false
                         keyboard('Escape')
                         time.sleep(.3)
                         shot('language-closed.png')
+                        wait_for(lambda: not combo.getState().contains(pyatspi.STATE_EXPANDED), 'language popup Escape')
                         # Traverse to a real Qt button and activate with Space.
                         for _ in range(12):
                             keyboard('Tab')

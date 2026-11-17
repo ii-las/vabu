@@ -39,6 +39,6 @@ export SWAYSOCK="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'sway-ipc.*
 timeout 150 python3 -B "$(dirname "$0")/installer-input.py" "$OUT"
 
 QT_QPA_PLATFORM=offscreen python3 -B "$repo/tests/installer-style.py" "$OUT"
-for view in welcomeq finishedq; do
+for view in welcome finished; do
     VABU_TEST_VIEW="$view" timeout 60 python3 -B "$repo/tests/installer-input.py" "$OUT/$view"
 done
