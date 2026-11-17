@@ -109,7 +109,7 @@ ColumnLayout {
                 wrapMode: TextEdit.Wrap
                 color: Theme.paper
                 font.family: Theme.mono
-                font.pixelSize: Math.round(12 * Config.textScale)
+                font.pixelSize: Theme.textSmall
             }
         }
         PillButton { label: Lang.t("İncelediğim raporu kopyala"); enabled: page.reportText !== ""; onClicked: Quickshell.clipboardText = page.reportText }

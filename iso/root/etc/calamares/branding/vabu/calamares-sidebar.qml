@@ -1,4 +1,4 @@
-// Üst şerit: solda işaret ve ad, ortada adımlar. Adımlar Calamares ViewManager'dan gelir.
+// Üst şerit: marka ve gerçek adım adı/sayacı Calamares ViewManager ile birlikte çizilir.
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
 import QtQuick 2.15
@@ -62,7 +62,7 @@ Rectangle {
         }
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: "Vabu kurulumu"
+            text: "Vabu"
             color: "#222725"
             font.family: "Hanken Grotesk"
             font.pixelSize: 15

@@ -122,7 +122,7 @@ ColumnLayout {
                     anchors.centerIn: parent
                     text: modelData.day
                     color: modelData.today ? Theme.accentInk
-                        : !modelData.inMonth ? Theme.alpha(Theme.paper, 0.22)
+                        : !modelData.inMonth ? Theme.faint
                         : modelData.weekend ? Theme.muted : Theme.paper
                     font.family: Theme.sans
                     font.pixelSize: Math.round((14) * Config.textScale)
