@@ -9,8 +9,8 @@
 # Gerekenler: qemu-system-x86-core edk2-ovmf grub2-tools-extra grub2-efi-x64-modules
 #             mtools ImageMagick python3   (eksik olan dnf ile kurulmaya çalışılır)
 #
-# Yalnızca temadaki bir hata derlemeyi durdurur. Araç eksikse ya da QEMU açılamazsa
-# uyarı verilip geçilir.
+# Tema biçimi ve gerçek temalı çizim zorunludur. Ayrılmış CI ortamında
+# eksik araç veya QEMU hatası da kontrolü başarısız yapar.
 set -uo pipefail
 
 OUT="${1:-/tmp/ekran}"
@@ -21,7 +21,7 @@ mkdir -p "$OUT"
 rm -f "$OUT"/6[0-2]-grub*.png "$OUT"/grub-*.log
 durum=0
 
-atla() { echo "::warning::önyükleme menüsünün görüntüsü alınamadı: $*"; exit "$durum"; }
+atla() { echo "::error::önyükleme menüsünün görüntüsü alınamadı: $*"; exit 1; }
 
 if [[ ! -f "$TEMA/theme.txt" ]]; then
     echo "::error::GRUB teması yok: $TEMA/theme.txt"
@@ -76,6 +76,15 @@ for yol in sorted(glob.glob(os.path.join(tema, "*.pf2"))):
     ad = d[20:20 + n].split(b"\0")[0].decode("utf-8", "replace")
     adlar.add(ad)
     print('%s: "%s"' % (os.path.basename(yol), ad))
+
+# GRUB's reader requires 8-bit RGB/RGBA; ImageMagick may optimize flat
+# surfaces to a palette PNG unless the writer format is explicitly selected.
+for yol in sorted(glob.glob(os.path.join(tema, "*.png"))):
+    with open(yol, "rb") as image:
+        header = image.read(33)
+    if len(header) < 33 or header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR" or header[24] != 8 or header[25] not in (2, 6):
+        print("::error::GRUB için 8 bit RGB/RGBA PNG gerekli: " + yol)
+        hata = 3
 
 parcalar = "nw n ne w c e sw s se".split()
 bilesen, sayac = "genel", None
@@ -255,7 +264,8 @@ goruntu() {
     if read -r gw gh gd < <(kare) && magick "$TMP/kare.ppm" "$OUT/$1.png" 2>>"$OUT/grub-qemu.log"; then
         echo "$1.png: ${gw}x${gh}, doluluk %${gd}"
     else
-        echo "::warning::görüntü alınamadı: $1"
+        echo "::error::görüntü alınamadı: $1"
+        durum=1
     fi
 }
 kayitlar() {
@@ -344,7 +354,8 @@ if (( hazir )); then
 else
     neden="GRUB'a ulaşılamadı"
     grep -aq "VABU_GRUB" "$OUT/grub-seri.log" 2>/dev/null && neden="GRUB açıldı ama temalı menü çizilmedi"
-    echo "::warning::$BEKLEME saniyede $neden; ekran yine de kaydediliyor"
+    echo "::error::$BEKLEME saniyede $neden; hata görüntüsü kaydediliyor"
+    durum=1
     kayitlar
 fi
 
