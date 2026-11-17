@@ -8,6 +8,7 @@ No clipboard, block devices, mount operations or account creation are used.
 import array
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import socket
@@ -209,6 +210,13 @@ def main():
     def shot(name):
         run('grim', str(out / name))
 
+    def check_qml_log():
+        content = (out / 'calamares-input.log').read_text(errors='replace')
+        if re.search(r'ReferenceError|TypeError|Cannot assign|Unable to assign|is not a type|'
+                     r'non-existent property|QQmlComponent::Error|QML error:', content):
+            raise RuntimeError('Installer QML runtime error; see calamares-input.log')
+
+
     with tempfile.TemporaryDirectory(prefix='vabu-installer-input-') as folder:
         fixture = Path(folder) / 'calamares'
         shutil.copytree(source, fixture)
@@ -232,27 +240,16 @@ disable-cancel-during-exec: true
 hide-back-and-next-during-exec: true
 quit-at-end: false
 ''')
-        # Keep the optional QML navigation fixture compatible with older branches.
-        # The isolated account form is page zero, whereas production reaches
-        # it after partition. Keep the same navigation controls visible without
-        # requiring unrelated pages or any disk module in this regression.
-        navigation = fixture / 'branding/vabu/calamares-navigation.qml'
-        nav = navigation.read_text()
-        nav = nav.replace('visible: ViewManager.backAndNextVisible && ViewManager.currentStepIndex > 0\n'
-                          '                 && (ViewManager.nextEnabled || ViewManager.backEnabled)',
-                          'visible: ViewManager.backAndNextVisible')
-        navigation.write_text(nav)
         style = fixture / 'branding/vabu/stylesheet.qss'
         style.write_text(style.read_text().replace('/etc/calamares/branding/vabu/',
                                                    str(fixture / 'branding/vabu') + '/'))
         view = os.environ.get('VABU_TEST_VIEW', '')
         if view:
-            navigation.write_text((source / 'branding/vabu/calamares-navigation.qml').read_text())
             if view not in ('welcome', 'finished'):
                 raise RuntimeError('Unsupported view fixture')
             settings_file = fixture / 'settings.conf'
             settings_file.write_text(settings_file.read_text().replace('[ users, summary ]',
-                                    '[ ' + view + ', users ]'))
+                                    ('[ finished ]' if view == 'finished' else '[ welcome, users ]')))
             # Tests do not probe storage/network or execute the installer.
             (fixture / 'modules/welcome.conf').write_text('requirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
@@ -288,6 +285,7 @@ quit-at-end: false
                                 break
                         else:
                             raise RuntimeError('Welcome primary button is not keyboard reachable')
+                    check_qml_log()
                     print('Installer view loaded and controls checked:', view)
                     return
                 fields = wait_for(lambda: entries() if len(entries()) >= 5 else None, 'native account fields')
@@ -358,6 +356,7 @@ quit-at-end: false
                     'navigationPreservesInput': True,
                     'installJobs': [], 'installationStarted': False,
                 }, indent=2) + '\n')
+                check_qml_log()
                 print('Calamares input: mouse, keyboard, identity persistence and password validation passed.')
             except Exception:
                 try:
