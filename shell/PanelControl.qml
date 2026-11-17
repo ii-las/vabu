@@ -34,7 +34,7 @@ ColumnLayout {
 
         Layout.fillWidth: true
         implicitWidth: 120
-        implicitHeight: Math.max(108, 80 * Config.textScale)
+        implicitHeight: Math.max(108, tileLabels.implicitHeight + 56)
         radius: Theme.radiusTile
         color: isOn ? Theme.accent : (tileMouse.pressed ? Theme.pressed : tileMouse.containsMouse ? Theme.hover : Theme.well)
         Behavior on color { ColorAnimation { duration: Theme.state } }
@@ -73,6 +73,7 @@ ColumnLayout {
             onClicked: tile.more()
         }
         Column {
+            id: tileLabels
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
@@ -87,7 +88,7 @@ ColumnLayout {
                 font.family: Theme.sans
                 font.pixelSize: Math.round((14) * Config.textScale)
                 font.weight: Font.DemiBold
-                elide: Text.ElideRight
+                wrapMode: Text.Wrap
             }
             Text { textFormat: Text.PlainText;
                 width: parent.width
@@ -96,7 +97,7 @@ ColumnLayout {
                 opacity: 1
                 font.family: Theme.sans
                 font.pixelSize: Theme.textSmall
-                elide: Text.ElideRight
+                wrapMode: Text.Wrap
             }
         }
     }

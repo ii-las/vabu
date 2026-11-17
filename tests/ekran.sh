@@ -188,9 +188,24 @@ gorunum koyu
 shot 29b-ayarlar-koyu 1
 gorunum acik
 # Narrow window + both languages + 150% text and reduced motion/high contrast.
-swaymsg output HEADLESS-1 resolution 1920x1280 scale 2 >/dev/null
+# Leave room for the 280 px desktop sidebar beside the actual 800 px window.
+# Otherwise Sway centers the floating test window partly outside the output.
+swaymsg output HEADLESS-1 resolution 2240x1280 scale 2 >/dev/null
 swaymsg '[title="Vabu Ayarlar"] resize set width 800 height 600'  >/dev/null
 swaymsg '[title="Vabu Ayarlar"] move position center' >/dev/null
+sleep 0.3
+python3 - <<'WINDOW_BOUNDS' || exit 1
+import json, subprocess
+def walk(node):
+    yield node
+    for child in node.get('nodes', []) + node.get('floating_nodes', []):
+        yield from walk(child)
+tree = json.loads(subprocess.check_output(['swaymsg', '-t', 'get_tree', '-r'], text=True))
+window = next(n for n in walk(tree) if n.get('name') == 'Vabu Ayarlar' and n.get('pid'))
+r = window['rect']
+assert r['width'] == 800 and r['height'] == 600, ('Wrong test viewport', r)
+assert r['x'] >= 280 and r['y'] >= 0 and r['x'] + r['width'] <= 1120 and r['y'] + r['height'] <= 640, ('Test window outside usable output', r)
+WINDOW_BOUNDS
 for language in tr en; do
     for scale in 1 1.5; do
         printf '{"theme":"acik","onboardingDone":true,"language":"%s","textScale":%s,"reducedMotion":true,"highContrast":true}\n' "$language" "$scale" > "$HOME/.config/vabu/shell.json"

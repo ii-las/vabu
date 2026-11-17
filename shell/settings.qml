@@ -50,18 +50,23 @@ ShellRoot {
         function audit(): string {
             if (Quickshell.env("VABU_TEST_ISOLATED") !== "1" || !loader.item) return "unavailable"
             let failed = false
-            function visit(item) {
+            function visit(item, scope) {
                 if (!item.visible) return
                 if (item.activeFocusOnTab && item.enabled && item.width > 0) {
-                    const point = item.mapToItem(loader.item, 0, 0)
-                    if (point.x < -1 || point.x + item.width > loader.item.width + 1) {
-                        console.warn("UI-AUDIT-FAIL " + root.page + " horizontal overflow " + item + " x=" + point.x + " width=" + item.width + " available=" + loader.item.width)
+                    const point = item.mapToItem(scope, 0, 0)
+                    if (point.x < -1 || point.x + item.width > scope.width + 1) {
+                        console.warn("UI-AUDIT-FAIL " + root.page + " horizontal overflow " + item + " x=" + point.x + " width=" + item.width + " available=" + scope.width)
                         failed = true
                     }
                 }
-                for (const child of item.children || []) visit(child)
+                if (item.objectName === "vabu-navigation-label" && item.contentWidth > item.width + 1) {
+                    console.warn("UI-AUDIT-FAIL navigation text overflow " + item.text)
+                    failed = true
+                }
+                for (const child of item.children || []) visit(child, scope)
             }
-            visit(loader.item)
+            visit(loader.item, loader.item)
+            visit(nav, nav)
             return failed ? "failed" : "ok"
         }
         function open(page: string): void {
@@ -84,7 +89,7 @@ ShellRoot {
             // Gezinme
             Rectangle {
                 Layout.fillHeight: true
-                Layout.preferredWidth: win.width < 820 ? 180 : 264
+                Layout.preferredWidth: win.width < 820 ? Math.min(240, 180 * Config.textScale) : 264
                 color: Theme.nav
 
                 Rectangle { anchors.right: parent.right; width: 1; height: parent.height; color: Theme.line }
@@ -114,6 +119,9 @@ ShellRoot {
                         Icon { x: 11; anchors.verticalCenter: parent.verticalCenter; name: "search"; size: 18; color: Theme.muted }
                         TextInput {
                             id: searchInput
+                            activeFocusOnTab: true
+                            selectByMouse: true
+                            Accessible.name: Lang.t("Ara")
                             anchors.fill: parent
                             anchors.leftMargin: 38
                             anchors.rightMargin: 12
@@ -136,21 +144,11 @@ ShellRoot {
                     }
 
                     Flickable {
+                        id: navViewport
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         contentHeight: nav.implicitHeight
                         clip: true
-
-                        // Seçili sayfanın zemini: sayfadan sayfaya kayar
-                        Rectangle {
-                            visible: !root.search
-                            y: root.pageIndex * 42
-                            width: parent.width
-                            height: 40
-                            radius: Theme.radiusRow
-                            color: Theme.well
-                            Behavior on y { NumberAnimation { duration: Config.reducedMotion ? 0 : 260; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
-                        }
 
                         Column {
                             id: nav
@@ -166,9 +164,16 @@ ShellRoot {
                                     readonly property bool match: !root.search || modelData.title.toLowerCase().includes(root.search)
                                     readonly property color fg: Theme.paper
                                     width: nav.width
-                                    height: 40
+                                    height: Math.max(42, navLabel.implicitHeight + 20)
                                     visible: match
                                     activeFocusOnTab: true
+                                    onActiveFocusChanged: {
+                                        if (!activeFocus) return
+                                        if (y < navViewport.contentY) navViewport.contentY = y
+                                        else if (y + height > navViewport.contentY + navViewport.height)
+                                            navViewport.contentY = y + height - navViewport.height
+                                    }
+                                    Keys.onEnterPressed: root.page = modelData.key
                                     Keys.onReturnPressed: root.page = modelData.key
                                     Keys.onSpacePressed: root.page = modelData.key
                                     Accessible.role: Accessible.PageTab
@@ -177,8 +182,7 @@ ShellRoot {
                                     Rectangle {
                                         anchors.fill: parent
                                         radius: Theme.radiusRow
-                                        // arama sırasında kayan zemin gizlidir; seçili satır kendi zeminini çizer
-                                        color: navItem.isOn ? (root.search ? Theme.well : "transparent")
+                                        color: navItem.isOn ? Theme.well
                                             : mouse.pressed ? Theme.pressed : mouse.containsMouse || navItem.activeFocus ? Theme.hover : "transparent"
                                         Behavior on color { ColorAnimation { duration: Theme.fast } }
                                     }
@@ -189,13 +193,16 @@ ShellRoot {
                                         spacing: 12
                                         Icon { name: navItem.modelData.icon; size: 19; color: navItem.isOn ? Theme.accent : Theme.soft; filled: navItem.isOn }
                                         Text { textFormat: Text.PlainText;
+                                            id: navLabel
+                                            objectName: "vabu-navigation-label"
                                             Layout.fillWidth: true
+                                            Layout.minimumWidth: 0
                                             text: navItem.modelData.title
                                             color: navItem.fg
                                             font.family: Theme.sans
                                             font.pixelSize: Math.round((14) * Config.textScale)
                                             font.weight: navItem.isOn ? Font.DemiBold : Font.Medium
-                                            elide: Text.ElideRight
+                                            wrapMode: Text.Wrap
                                         }
                                         Rectangle {
                                             visible: navItem.modelData.key === "updates" && root.updateCount > 0
@@ -217,7 +224,7 @@ ShellRoot {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.page = navItem.modelData.key
+                                        onClicked: { navItem.forceActiveFocus(Qt.MouseFocusReason); root.page = navItem.modelData.key }
                                     }
                                 }
                             }

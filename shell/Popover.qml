@@ -97,11 +97,13 @@ PanelWindow {
 
         Flickable {
             id: body
+            readonly property bool overflowing: contentHeight > height + 1
             contentWidth: width
             contentHeight: loader.item ? loader.item.implicitHeight : 0
             boundsBehavior: Flickable.StopAtBounds
-            interactive: contentHeight > height
+            interactive: overflowing
             Controls.ScrollBar.vertical: Controls.ScrollBar {
+                visible: body.overflowing
                 policy: Controls.ScrollBar.AsNeeded
                 minimumSize: 0.08
                 contentItem: Rectangle { implicitWidth: 6; radius: 3; color: Theme.muted }
@@ -115,7 +117,7 @@ PanelWindow {
 
             Loader {
                 id: loader
-                width: parent.width
+                width: body.width - (body.overflowing ? 12 : 0)
                 source: root.current !== "" ? root.sources[root.current] : ""
                 onLoaded: if (item && item.forceActiveFocus) body.forceActiveFocus()
             }
