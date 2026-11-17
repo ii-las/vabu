@@ -58,11 +58,13 @@ QTest.keyClick(unchecked, Qt.Key.Key_Space); assert not unchecked.isChecked()
 combo.setFocus(); QTest.keyClick(combo, Qt.Key.Key_Down); assert combo.currentIndex() == 1
 spin.setFocus(); QTest.keyClick(spin, Qt.Key.Key_Up); assert spin.value() == 9
 QTest.mouseClick(r2, Qt.MouseButton.LeftButton, pos=QPoint(22, r2.height() // 2)); assert r2.isChecked() and not r1.isChecked()
+assert window.grab().save(str(out / '55-kurulum-kontroller.png'))
 # Check rendered indicator pixels: a filled rectangle without a tick must fail.
-for box in (checked, mixed, disabled):
+for i, box in enumerate((checked, mixed, disabled)):
     option = QStyleOptionButton(); box.initStyleOption(option)
     rect = box.style().subElementRect(QStyle.SubElement.SE_CheckBoxIndicator, option, box)
     image = box.grab(rect).toImage()
+    image.save(str(out / ('indicator-' + str(i) + '.png')))
     whites = sum(image.pixelColor(x, y).red() > 240 and image.pixelColor(x, y).green() > 240
                  and image.pixelColor(x, y).blue() > 240
                  for x in range(image.width() // 4, image.width() * 3 // 4)

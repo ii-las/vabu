@@ -36,6 +36,15 @@ ColumnLayout {
                     Layout.minimumWidth: 0
                     spacing: 8
                     Item {
+                        id: wallpaperChoice
+                        activeFocusOnTab: true
+                        Accessible.role: Accessible.RadioButton
+                        Accessible.name: wp.modelData.name
+                        Accessible.checked: wp.isOn
+                        function choose() { wp.custom ? picker.open() : Config.set("wallpaper", wp.auto ? null : wp.modelData.path) }
+                        Keys.onSpacePressed: choose()
+                        Keys.onReturnPressed: choose()
+                        Keys.onEnterPressed: choose()
                         Layout.fillWidth: true
                         implicitHeight: Math.round(width * 0.6)
                         ClippingRectangle {
@@ -77,13 +86,13 @@ ColumnLayout {
                             color: "transparent"
                             border.width: 2
                             border.color: Theme.accent
-                            opacity: wp.isOn ? 1 : 0
+                            opacity: wp.isOn || wallpaperChoice.activeFocus ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: Theme.state } }
                         }
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: wp.custom ? picker.open() : Config.set("wallpaper", wp.auto ? null : wp.modelData.path)
+                            onClicked: { wallpaperChoice.forceActiveFocus(Qt.MouseFocusReason); wallpaperChoice.choose() }
                         }
                     }
                     Text { textFormat: Text.PlainText;
@@ -128,30 +137,42 @@ ColumnLayout {
                     required property var modelData
                     readonly property bool isOn: Config.accentName === modelData
                     readonly property color tone: Theme.dark ? Config.accents[modelData].dark : Config.accents[modelData].light
-                    width: 32; height: 32
+                    width: 36; height: 36
+                    activeFocusOnTab: true
+                    function choose() { Config.set("accent", modelData); NiriConf.apply(false) }
+                    Keys.onSpacePressed: choose()
+                    Keys.onReturnPressed: choose()
+                    Keys.onEnterPressed: choose()
+                    Accessible.checked: isOn
                     Accessible.role: Accessible.RadioButton
                     Accessible.name: Lang.t(Config.accents[modelData].name)
                     Rectangle {
                         anchors.fill: parent
-                        radius: 16
+                        radius: 18
                         color: "transparent"
                         border.width: 2
                         border.color: swatch.tone
-                        opacity: swatch.isOn ? 1 : 0
+                        opacity: swatch.activeFocus ? 1 : 0
                         Behavior on opacity { NumberAnimation { duration: Theme.state } }
                     }
                     Rectangle {
                         anchors.centerIn: parent
-                        width: swatch.isOn ? 22 : 26
+                        width: 26
                         height: width
                         radius: width / 2
                         color: swatch.tone
-                        Behavior on width { NumberAnimation { duration: Theme.state; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+                    }
+                    Icon {
+                        anchors.centerIn: parent
+                        visible: swatch.isOn
+                        name: "check"
+                        size: 18
+                        color: Theme.dark ? Config.accents[swatch.modelData].darkInk : "#FFFFFF"
                     }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: { Config.set("accent", swatch.modelData); NiriConf.apply(false) }
+                        onClicked: { swatch.forceActiveFocus(Qt.MouseFocusReason); swatch.choose() }
                     }
                 }
             }

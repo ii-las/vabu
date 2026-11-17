@@ -199,7 +199,7 @@ ShellRoot {
                                         }
                                         Rectangle {
                                             visible: navItem.modelData.key === "updates" && root.updateCount > 0
-                                            implicitWidth: Math.max(20, badge.implicitWidth + 12); implicitHeight: 20; radius: 10
+                                            implicitWidth: Math.max(24, badge.implicitWidth + 12); implicitHeight: Math.max(24, badge.implicitHeight + 6); radius: height / 2
                                             color: Theme.accent
                                             Text { textFormat: Text.PlainText;
                                                 id: badge
