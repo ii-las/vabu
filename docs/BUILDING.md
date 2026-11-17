@@ -54,15 +54,19 @@ qs -p shell
 `tests/ekran.sh` kabuğu başsız bir sway oturumunda çalıştırır, her ekranın görüntüsünü alır ve QML hatalarını denetler. Yalnızca ayrılmış, atılabilir Fedora CI kapsayıcısında:
 
 ```bash
-dnf install sway grim wtype mesa-dri-drivers dbus-daemon libnotify calamares python3-pyatspi at-spi2-core
+dnf install sway grim wtype mesa-dri-drivers dbus-daemon libnotify calamares python3-pyatspi at-spi2-core python3-pyqt6
 VABU_TEST_ISOLATED=1 bash tests/ekran.sh /tmp/ekran
 ```
 
 Hesap formunu tek başına denemek için aynı atılabilir ortamda
 `VABU_TEST_ISOLATED=1 bash tests/installer-input.sh /tmp/installer-input`
-çalıştırılır. Test yalnızca `users`, `summaryq` görünüm modüllerini
-yükler; `exec` dizisi ve disk modülleri içermez. Fare/klavye girişi, odak değişiminde
-metnin korunması ve parola eşleşmesi gerçek Calamares/AT-SPI üzerinden doğrulanır.
+çalıştırılır. Test `users`, `summary` görünüm modüllerini ve ayrı süreçlerde `welcome`,
+`finished` sayfalarını yükler; `exec` dizisi ve disk modülleri içermez. Gerçek
+Calamares/AT-SPI üzerinden fare/klavye girişi, parola eşleşmesi, tikler, dil
+listesi, Tab/Space ile ilerleme, 1024×768 boyutunda erişilebilirlik ve ileri/geri
+geçişte verilerin korunması doğrulanır. Bitiş sayfasında yeniden başlatma seçimi
+sınanır; kurulum veya yeniden başlatma çalıştırılmaz. Qt kontrol galerisi
+SVG varlıklarının çizimini ve seçim işaretlerini piksel üzerinden denetler.
 RPM yayını aarch64 ve x86_64 giriş testleri geçmeden başlamaz.
 
 GitHub Actions bunu her derlemede yapar; görüntüler `ekran` adlı çıktıda durur.

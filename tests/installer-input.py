@@ -251,15 +251,30 @@ quit-at-end: false
             settings_file.write_text(settings_file.read_text().replace('[ users, summary ]',
                                     ('[ finished ]' if view == 'finished' else '[ welcome, users ]')))
             # Tests do not probe storage/network or execute the installer.
-            (fixture / 'modules/welcome.conf').write_text('languageIcon: languages\nshowSupportUrl: false\nshowKnownIssuesUrl: false\nshowReleaseNotesUrl: false\nrequirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
+            (fixture / 'modules/welcome.conf').write_text('languageIcon: assets/language.svg\nshowSupportUrl: false\nshowKnownIssuesUrl: false\nshowReleaseNotesUrl: false\nrequirements:\n  requiredStorage: 0\n  requiredRam: 0\n  internetCheckUrl: https://example.invalid/\n  check: []\n  required: []\n')
         env = dict(os.environ, QT_LINUX_ACCESSIBILITY_ALWAYS_ON='1', QT_ACCESSIBILITY='1')
         with (out / 'calamares-input.log').open('w') as log:
             pointer, pointer_send, keyboard = virtual_input()
             proc = subprocess.Popen(['calamares', '-d', '-c', str(fixture)], env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 if view:
-                    expected = 'Next' if view == 'welcome' else 'Done'
-                    wait_for(lambda: any(b.name == expected for b in buttons()), view + ' loaded')
+                    expected = 'Next'
+                    if view == 'welcome':
+                        wait_for(lambda: any(b.name == expected for b in buttons()), 'welcome loaded')
+                    else:
+                        # A view-only fixture has no completed job queue, so its
+                        # navigation deliberately remains in pre-install state.
+                        # Exercise the real page control without quitting/rebooting.
+                        restart = wait_for(lambda: next((n for n in nodes()
+                            if n.getRole() == pyatspi.ROLE_CHECK_BOX and 'Restart' in n.name
+                            and n.getState().contains(pyatspi.STATE_SHOWING)), None), 'finished restart choice')
+                        was_checked = restart.getState().contains(pyatspi.STATE_CHECKED)
+                        click(restart)
+                        wait_for(lambda: restart.getState().contains(pyatspi.STATE_CHECKED) != was_checked,
+                                 'restart choice mouse toggle')
+                        keyboard('space')
+                        wait_for(lambda: restart.getState().contains(pyatspi.STATE_CHECKED) == was_checked,
+                                 'restart choice keyboard toggle')
                     time.sleep(.5)
                     shot('view.png')
                     if view == 'welcome':
@@ -286,6 +301,10 @@ quit-at-end: false
                         else:
                             raise RuntimeError('Welcome primary button is not keyboard reachable')
                     check_qml_log()
+                    (out / 'view-check.json').write_text(json.dumps({
+                        'view': view, 'mouseAndKeyboard': True,
+                        'installJobs': [], 'installationStarted': False, 'rebootStarted': False,
+                    }, indent=2) + '\n')
                     print('Installer view loaded and controls checked:', view)
                     return
                 fields = wait_for(lambda: entries() if len(entries()) >= 5 else None, 'native account fields')
